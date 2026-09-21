@@ -13,6 +13,7 @@ jobs:
       - name: Build iOS simulator app
         run: >-
           xcodebuild
+          -skipMacroValidation
           -project CityChainApp.xcodeproj
           -scheme CityChainApp
           -destination 'generic/platform=iOS Simulator'
