@@ -28,6 +28,7 @@ public enum ComputerSelection: Sendable, Equatable {
   case onlyAvailableCity
   case acceptedByDecision(confidence: Double)
   case fallbackByDecision(confidence: Double, reason: String)
+  case randomFallback
 }
 
 /// The outcome of one player submission. Decision abstention and fallback remain explicit.
@@ -48,15 +49,28 @@ public enum CityGameTurnResult: Sendable, Equatable {
 public actor CityChainGame {
   private let decisions: DecisionEngine
   private let catalog: USCityCatalog
+  /// Chooses from the deterministic reply candidates if Choice inference fails.
+  private let randomCandidateIndex: @Sendable (Range<Int>) -> Int
   private var usedCities: [USCity] = []
   private var usedCityIDs = Set<String>()
   private var requiredStartingLetter: Character?
   private var ending: CityGameEnding?
   private var isSubmissionInProgress = false
 
-  public init(decisions: DecisionEngine, catalog: USCityCatalog = .standard) {
+  /// Creates a game. Choice failures fall back to a random candidate from the ordered first five.
+  ///
+  /// - Parameters:
+  ///   - decisions: The engine used to validate the player's city and rank computer replies.
+  ///   - catalog: Ordered cities eligible as computer replies.
+  ///   - randomCandidateIndex: An index selector used only when Choice inference throws.
+  public init(
+    decisions: DecisionEngine,
+    catalog: USCityCatalog = .standard,
+    randomCandidateIndex: @escaping @Sendable (Range<Int>) -> Int = { Int.random(in: $0) }
+  ) {
     self.decisions = decisions
     self.catalog = catalog
+    self.randomCandidateIndex = randomCandidateIndex
   }
 
   public func snapshot() -> CityGameSnapshot {
@@ -155,13 +169,36 @@ public actor CityChainGame {
 
     case .askModel:
       let options = Array(candidates.prefix(5))
-      let result = try await decisions.choice(
-        instructions:
-          "Choose the strongest legal next US city for a city-chain game. Select only from the provided options. Prefer a familiar, unambiguous city name.",
-        context:
-          "The previous city was \(playerCity.name). Your city must start with \(nextLetter). Already-used cities are excluded.",
-        options: options.map { ChoiceOption(label: $0, description: $0.name) }
-      )
+      let result: DecisionResult<USCity>
+      do {
+        result = try await decisions.choice(
+          instructions:
+            "Choose the strongest legal next US city for a city-chain game. Select only from the provided options. Prefer a familiar, unambiguous city name.",
+          context:
+            "The previous city was \(playerCity.name). Your city must start with \(nextLetter). Already-used cities are excluded.",
+          options: options.map { ChoiceOption(label: $0, description: $0.name) }
+        )
+      } catch {
+        if error is CancellationError {
+          throw error
+        }
+        try Task.checkCancellation()
+
+        let requestedIndex = randomCandidateIndex(options.indices)
+        let selectedIndex =
+          options.indices.contains(requestedIndex)
+          ? requestedIndex
+          : options.startIndex
+        let computerCity = options[selectedIndex]
+        commit(playerCity)
+        commit(computerCity)
+        requiredStartingLetter = computerCity.lastLetter
+        return .computerReplied(
+          playerCity: playerCity,
+          computerCity: computerCity,
+          selection: .randomFallback
+        )
+      }
 
       switch result.outcome {
       case .accepted(let computerCity):

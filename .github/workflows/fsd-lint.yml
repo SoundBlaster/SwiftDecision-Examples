@@ -1,0 +1,24 @@
+name: FSD Architecture Lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  architecture:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: SoundBlaster/FSD@v0.4.0
+        with:
+          config: .fsd-ios.yml
+          strict: "true"
+          architecture: "true"
+          format: sarif
+          output: fsd-ios.sarif
+      - name: Upload FSD lint report
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: fsd-ios.sarif

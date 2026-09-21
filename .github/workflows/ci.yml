@@ -1,0 +1,22 @@
+name: iOS CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  iOS:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build iOS simulator app
+        run: >-
+          xcodebuild
+          -project CityChainApp.xcodeproj
+          -scheme CityChainApp
+          -destination 'generic/platform=iOS Simulator'
+          build
+          CODE_SIGNING_ALLOWED=NO
+      - name: Test the game engine
+        run: swift test

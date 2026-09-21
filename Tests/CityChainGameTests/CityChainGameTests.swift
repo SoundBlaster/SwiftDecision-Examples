@@ -146,6 +146,35 @@ struct CityChainGameTests {
     #expect(snapshot.ending != nil)
   }
 
+  @Test("An unavailable Choice backend uses a random one of the first five candidates")
+  func choiceBackendFailureUsesRandomCandidateFallback() async throws {
+    let backend = FixtureBackend(failChoice: true)
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: backend),
+      catalog: catalog("Dover", "Detroit", "Durham", "Duluth", "Dublin", "Dayton"),
+      randomCandidateIndex: { $0.lowerBound + 2 }
+    )
+
+    let result = try await game.submit("Riverhead")
+
+    #expect(
+      result
+        == .computerReplied(
+          playerCity: USCity("Riverhead"),
+          computerCity: USCity("Durham"),
+          selection: .randomFallback
+        ))
+    let prompts = await backend.receivedPrompts()
+    #expect(prompts.map(\.kind) == [.noul, .choice])
+    #expect(
+      prompts[1].options.map(\.description) == ["Dover", "Detroit", "Durham", "Duluth", "Dublin"])
+    #expect(prompts[1].options.count == 5)
+
+    let snapshot = await game.snapshot()
+    #expect(snapshot.usedCities == [USCity("Riverhead"), USCity("Durham")])
+    #expect(snapshot.requiredStartingLetter == "M")
+  }
+
   @Test("A concurrent submission cannot validate against a stale game snapshot")
   func concurrentSubmissionIsRejectedWhileInferenceIsInProgress() async throws {
     let backend = SuspendedNoulBackend()
@@ -201,24 +230,29 @@ private actor FixtureBackend: DecisionBackend {
   private let noulAnswer: Bool
   private let abstainNoul: Bool
   private let abstainChoice: Bool
+  private let failChoice: Bool
   private var prompts: [DecisionPrompt] = []
 
   init(
     choiceIndex: Int = 0,
     noulAnswer: Bool = true,
     abstainNoul: Bool = false,
-    abstainChoice: Bool = false
+    abstainChoice: Bool = false,
+    failChoice: Bool = false
   ) {
     self.choiceIndex = choiceIndex
     self.noulAnswer = noulAnswer
     self.abstainNoul = abstainNoul
     self.abstainChoice = abstainChoice
+    self.failChoice = failChoice
   }
 
   func predict(for prompt: DecisionPrompt) async throws -> DecisionPrediction {
     prompts.append(prompt)
     let probabilities: [Double]
     switch prompt.kind {
+    case .choice where failChoice:
+      throw ChoiceFailure()
     case .noul where abstainNoul:
       probabilities = [0.5, 0.5]
     case .noul:
@@ -239,6 +273,8 @@ private actor FixtureBackend: DecisionBackend {
 
   func receivedPrompts() -> [DecisionPrompt] { prompts }
 }
+
+private struct ChoiceFailure: Error, Sendable {}
 
 private actor SuspendedNoulBackend: DecisionBackend {
   private var predictionContinuation: CheckedContinuation<DecisionPrediction, Never>?
