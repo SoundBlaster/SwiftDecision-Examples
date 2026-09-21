@@ -17,17 +17,4 @@ jobs:
           ref: v0.4.0
           path: .fsd-ios-tooling
       - name: Run FSD architecture lint
-        id: fsd_lint
-        continue-on-error: true
-        run: |
-          swift .fsd-ios-tooling/tools/fsd-ios.swift lint \
-            --config .fsd-ios.yml \
-            --format sarif > fsd-ios.sarif
-      - name: Upload FSD lint report
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: fsd-ios.sarif
-      - name: Fail when FSD lint failed
-        if: steps.fsd_lint.outcome == 'failure'
-        run: exit 1
+        run: swift .fsd-ios-tooling/tools/fsd-ios.swift lint --config .fsd-ios.yml --format text
