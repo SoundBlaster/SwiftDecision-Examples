@@ -7,13 +7,9 @@ on:
 
 jobs:
   iOS:
-    runs-on: macos-latest
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v4
-      - name: Select current Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest
       - name: Build iOS simulator app
         run: >-
           xcodebuild
