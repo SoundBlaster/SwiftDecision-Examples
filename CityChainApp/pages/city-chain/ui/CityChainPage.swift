@@ -68,6 +68,18 @@ struct CityChainPage: View {
         .foregroundStyle(.secondary)
         .accessibilityAddTraits(.updatesFrequently)
 
+      if snapshot.consecutiveMistakes >= 2, let hint = snapshot.cityHint {
+        Label("Hint: \(hint.maskedName)", systemImage: "lightbulb")
+          .font(.headline)
+          .accessibilityLabel("City hint: \(hint.maskedName)")
+      }
+
+      if snapshot.validationSource == .localCatalogFallback {
+        Label("City accepted from the offline catalog", systemImage: "checkmark.icloud")
+          .font(.footnote)
+          .foregroundStyle(.secondary)
+      }
+
       if snapshot.isFinished {
         Label("Game over", systemImage: "flag.checkered")
           .font(.headline)

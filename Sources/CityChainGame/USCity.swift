@@ -1,4 +1,5 @@
 import Foundation
+import SpecificationCore
 
 /// A US city name used by the game. User-entered cities do not need to be in the reply catalog.
 public struct USCity: Hashable, Identifiable, Sendable, CustomStringConvertible {
@@ -37,8 +38,20 @@ public struct USCityCatalog: Sendable {
   public let cities: [USCity]
 
   public init(cities: [USCity]) {
+    let isNotAlreadyIncluded = AnySpecification<CatalogDeduplicationContext> { context in
+      !context.seenCityIDs.contains(context.city.id)
+    }
     var seen = Set<String>()
-    self.cities = cities.filter { seen.insert($0.id).inserted }
+    var uniqueCities: [USCity] = []
+    for city in cities {
+      if isNotAlreadyIncluded.isSatisfiedBy(
+        CatalogDeduplicationContext(city: city, seenCityIDs: seen))
+      {
+        uniqueCities.append(city)
+        seen.insert(city.id)
+      }
+    }
+    self.cities = uniqueCities
   }
 
   public static let standard = USCityCatalog(cities: stateCapitals + majorCities)
@@ -74,4 +87,9 @@ public struct USCityCatalog: Sendable {
     "Laredo",
     "Scottsdale", "Seattle",
   ].map(USCity.init)
+}
+
+private struct CatalogDeduplicationContext {
+  let city: USCity
+  let seenCityIDs: Set<String>
 }
