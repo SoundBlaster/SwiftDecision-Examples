@@ -8,8 +8,21 @@ public struct CityGameSnapshot: Sendable, Equatable {
   public let requiredStartingLetter: Character?
   public let ending: CityGameEnding?
   public let isSubmissionInProgress: Bool
+  public let consecutiveMistakes: Int
+  public let cityHint: CityHint?
+  public let validationSource: CityValidationSource?
 
   public var isFinished: Bool { ending != nil }
+}
+
+public struct CityHint: Sendable, Equatable {
+  public let maskedName: String
+  public let startingLetter: Character?
+}
+
+public enum CityValidationSource: Sendable, Equatable {
+  case noul
+  case localCatalogFallback
 }
 
 public enum CityGameEnding: Sendable, Equatable {
@@ -28,6 +41,7 @@ public enum ComputerSelection: Sendable, Equatable {
   case onlyAvailableCity
   case acceptedByDecision(confidence: Double)
   case fallbackByDecision(confidence: Double, reason: String)
+  case randomFallback
 }
 
 /// The outcome of one player submission. Decision abstention and fallback remain explicit.
@@ -48,15 +62,31 @@ public enum CityGameTurnResult: Sendable, Equatable {
 public actor CityChainGame {
   private let decisions: DecisionEngine
   private let catalog: USCityCatalog
+  /// Chooses from the deterministic reply candidates if Choice inference fails.
+  private let randomCandidateIndex: @Sendable (Range<Int>) -> Int
   private var usedCities: [USCity] = []
   private var usedCityIDs = Set<String>()
   private var requiredStartingLetter: Character?
   private var ending: CityGameEnding?
   private var isSubmissionInProgress = false
+  private var consecutiveMistakes = 0
+  private var cityHint: CityHint?
+  private var validationSource: CityValidationSource?
 
-  public init(decisions: DecisionEngine, catalog: USCityCatalog = .standard) {
+  /// Creates a game. Choice failures fall back to a random candidate from the ordered first five.
+  ///
+  /// - Parameters:
+  ///   - decisions: The engine used to validate the player's city and rank computer replies.
+  ///   - catalog: Ordered cities eligible as computer replies.
+  ///   - randomCandidateIndex: An index selector used only when Choice inference throws.
+  public init(
+    decisions: DecisionEngine,
+    catalog: USCityCatalog = .standard,
+    randomCandidateIndex: @escaping @Sendable (Range<Int>) -> Int = { Int.random(in: $0) }
+  ) {
     self.decisions = decisions
     self.catalog = catalog
+    self.randomCandidateIndex = randomCandidateIndex
   }
 
   public func snapshot() -> CityGameSnapshot {
@@ -64,7 +94,10 @@ public actor CityChainGame {
       usedCities: usedCities,
       requiredStartingLetter: requiredStartingLetter,
       ending: ending,
-      isSubmissionInProgress: isSubmissionInProgress
+      isSubmissionInProgress: isSubmissionInProgress,
+      consecutiveMistakes: consecutiveMistakes,
+      cityHint: cityHint,
+      validationSource: validationSource
     )
   }
 
@@ -75,7 +108,7 @@ public actor CityChainGame {
     isSubmissionInProgress = true
     defer { isSubmissionInProgress = false }
 
-    let playerCity = USCity(rawCity)
+    var playerCity = USCity(rawCity)
     let context = PlayerSubmissionContext(
       city: playerCity,
       requiredStartingLetter: requiredStartingLetter,
@@ -84,17 +117,18 @@ public actor CityChainGame {
     let preflight = try await Self.preflightRouter().decide(context)
     switch preflight {
     case .rejected(let rejection):
-      return .rejected(rejection)
+      return try await recordMistake(.rejected(rejection))
     case .noChainableLetters:
-      return .rejected(.cityNameHasNoLatinLetters)
+      return try await recordMistake(.rejected(.cityNameHasNoLatinLetters))
     case .wrongStartingLetter:
       guard let expected = context.requiredStartingLetter else {
         assertionFailure("A wrong-letter route requires a current letter.")
         return .rejected(.emptyInput)
       }
-      return .rejected(.wrongStartingLetter(expected: expected, actual: playerCity.firstLetter))
+      return try await recordMistake(
+        .rejected(.wrongStartingLetter(expected: expected, actual: playerCity.firstLetter)))
     case .alreadyUsed:
-      return .rejected(.alreadyUsed(playerCity))
+      return try await recordMistake(.rejected(.alreadyUsed(playerCity)))
     case .ready:
       break
     case nil:
@@ -102,30 +136,52 @@ public actor CityChainGame {
       return .rejected(.emptyInput)
     }
 
-    let validation = try await decisions.noul(
-      statement:
-        "Is the named place a real city located in the United States? Answer true only when the place is a US city.",
-      context: "City name entered by the player: \(playerCity.name)"
-    )
-    switch validation.outcome {
-    case .accepted(true):
-      break
-    case .accepted(false):
-      return .cityNotRecognized(playerCity)
-    case .abstained(let reason):
-      return .cityVerificationAbstained(playerCity, reason: reason)
-    case .fallback(_, let reason):
-      return .cityVerificationFallback(playerCity, reason: reason)
+    var validationSource = CityValidationSource.noul
+    let validation: DecisionResult<Bool>?
+    do {
+      validation = try await decisions.noul(
+        statement:
+          "Is the named place a real city located in the United States? Answer true only when the place is a US city.",
+        context: "City name entered by the player: \(playerCity.name)"
+      )
+    } catch {
+      if error is CancellationError { throw error }
+      try Task.checkCancellation()
+      guard let catalogCity = try await catalogMatch(for: playerCity) else { throw error }
+      playerCity = catalogCity
+      validation = nil
+      validationSource = .localCatalogFallback
+    }
+
+    if let validation {
+      switch validation.outcome {
+      case .accepted(true):
+        break
+      case .accepted(false):
+        return try await recordMistake(.cityNotRecognized(playerCity))
+      case .abstained(let reason):
+        guard let catalogCity = try await catalogMatch(for: playerCity) else {
+          return .cityVerificationAbstained(playerCity, reason: reason)
+        }
+        playerCity = catalogCity
+        validationSource = .localCatalogFallback
+      case .fallback(_, let reason):
+        guard let catalogCity = try await catalogMatch(for: playerCity) else {
+          return .cityVerificationFallback(playerCity, reason: reason)
+        }
+        playerCity = catalogCity
+        validationSource = .localCatalogFallback
+      }
     }
 
     guard let nextLetter = playerCity.lastLetter else {
       return .rejected(.emptyInput)
     }
-    let candidateContext = ReplyCandidateContext(
-      requiredStartingLetter: nextLetter,
-      usedCityIDs: usedCityIDs.union([playerCity.id])
-    )
-    let candidates = try await replyCandidates(for: candidateContext)
+    let candidates = Array(
+      try await orderedAvailableCities(
+        requiredStartingLetter: nextLetter,
+        usedCityIDs: usedCityIDs.union([playerCity.id])
+      ).prefix(5))
     let plan = try await Self.replyPlanRouter().decide(
       ReplyPlanContext(
         candidates: candidates,
@@ -134,7 +190,7 @@ public actor CityChainGame {
 
     switch plan {
     case .noAvailableReply:
-      commit(playerCity)
+      commitPlayer(playerCity, source: validationSource)
       ending = .noAvailableReply(startingLetter: nextLetter)
       requiredStartingLetter = nextLetter
       return .playerWonNoAvailableReply(playerCity: playerCity, startingLetter: nextLetter)
@@ -144,7 +200,7 @@ public actor CityChainGame {
         assertionFailure("The single-city route requires a candidate.")
         return .playerWonNoAvailableReply(playerCity: playerCity, startingLetter: nextLetter)
       }
-      commit(playerCity)
+      commitPlayer(playerCity, source: validationSource)
       commit(computerCity)
       requiredStartingLetter = computerCity.lastLetter
       return .computerReplied(
@@ -155,17 +211,40 @@ public actor CityChainGame {
 
     case .askModel:
       let options = Array(candidates.prefix(5))
-      let result = try await decisions.choice(
-        instructions:
-          "Choose the strongest legal next US city for a city-chain game. Select only from the provided options. Prefer a familiar, unambiguous city name.",
-        context:
-          "The previous city was \(playerCity.name). Your city must start with \(nextLetter). Already-used cities are excluded.",
-        options: options.map { ChoiceOption(label: $0, description: $0.name) }
-      )
+      let result: DecisionResult<USCity>
+      do {
+        result = try await decisions.choice(
+          instructions:
+            "Choose the strongest legal next US city for a city-chain game. Select only from the provided options. Prefer a familiar, unambiguous city name.",
+          context:
+            "The previous city was \(playerCity.name). Your city must start with \(nextLetter). Already-used cities are excluded.",
+          options: options.map { ChoiceOption(label: $0, description: $0.name) }
+        )
+      } catch {
+        if error is CancellationError {
+          throw error
+        }
+        try Task.checkCancellation()
+
+        let requestedIndex = randomCandidateIndex(options.indices)
+        let selectedIndex =
+          options.indices.contains(requestedIndex)
+          ? requestedIndex
+          : options.startIndex
+        let computerCity = options[selectedIndex]
+        commitPlayer(playerCity, source: validationSource)
+        commit(computerCity)
+        requiredStartingLetter = computerCity.lastLetter
+        return .computerReplied(
+          playerCity: playerCity,
+          computerCity: computerCity,
+          selection: .randomFallback
+        )
+      }
 
       switch result.outcome {
       case .accepted(let computerCity):
-        commit(playerCity)
+        commitPlayer(playerCity, source: validationSource)
         commit(computerCity)
         requiredStartingLetter = computerCity.lastLetter
         return .computerReplied(
@@ -175,7 +254,7 @@ public actor CityChainGame {
         )
 
       case .fallback(let computerCity, let reason):
-        commit(playerCity)
+        commitPlayer(playerCity, source: validationSource)
         commit(computerCity)
         requiredStartingLetter = computerCity.lastLetter
         return .computerReplied(
@@ -196,33 +275,110 @@ public actor CityChainGame {
     }
   }
 
+  private func commitPlayer(_ city: USCity, source: CityValidationSource) {
+    consecutiveMistakes = 0
+    cityHint = nil
+    validationSource = source
+    commit(city)
+  }
+
   private func commit(_ city: USCity) {
     usedCityIDs.insert(city.id)
     usedCities.append(city)
   }
 
-  private func replyCandidates(for context: ReplyCandidateContext) async throws -> [USCity] {
+  private func recordMistake(_ result: CityGameTurnResult) async throws -> CityGameTurnResult {
+    consecutiveMistakes += 1
+    if consecutiveMistakes >= 2 {
+      let available = try await orderedAvailableCities(
+        requiredStartingLetter: requiredStartingLetter,
+        usedCityIDs: usedCityIDs
+      )
+      cityHint = available.first.map(Self.makeHint)
+    }
+    return result
+  }
+
+  private func catalogMatch(for city: USCity) async throws -> USCity? {
+    let matchesCity = AnyAsyncSpecification<CatalogMatchContext> { context in
+      context.candidate.id == context.city.id
+    }
+    for catalogCity in catalog.cities {
+      if try await matchesCity.isSatisfiedBy(
+        CatalogMatchContext(city: city, candidate: catalogCity))
+      {
+        return catalogCity
+      }
+    }
+    return nil
+  }
+
+  private func orderedAvailableCities(
+    requiredStartingLetter: Character?,
+    usedCityIDs: Set<String>
+  ) async throws -> [USCity] {
     let startsWithRequiredLetter = AnyAsyncSpecification<ReplyCandidate> { candidate in
-      candidate.city.firstLetter == candidate.requiredStartingLetter
+      guard let required = candidate.requiredStartingLetter else { return true }
+      return candidate.city.firstLetter == required
     }
     let hasNotBeenUsed = AnyAsyncSpecification<ReplyCandidate> { candidate in
       !candidate.usedCityIDs.contains(candidate.city.id)
     }
     let isEligible = startsWithRequiredLetter.andAsync(hasNotBeenUsed)
+    let appearsEarlierInCatalog = AnyAsyncSpecification<CandidateOrderContext> { pair in
+      pair.left.catalogIndex < pair.right.catalogIndex
+    }
 
-    var candidates: [USCity] = []
-    for city in catalog.cities {
+    var eligible: [ReplyCandidate] = []
+    for (catalogIndex, city) in catalog.cities.enumerated() {
       let candidate = ReplyCandidate(
         city: city,
-        requiredStartingLetter: context.requiredStartingLetter,
-        usedCityIDs: context.usedCityIDs
+        catalogIndex: catalogIndex,
+        requiredStartingLetter: requiredStartingLetter,
+        usedCityIDs: usedCityIDs
       )
       if try await isEligible.isSatisfiedBy(candidate) {
-        candidates.append(city)
-        if candidates.count == 5 { break }
+        eligible.append(candidate)
       }
     }
-    return candidates
+
+    var ordered: [ReplyCandidate] = []
+    for candidate in eligible {
+      var insertionIndex = ordered.endIndex
+      while insertionIndex > ordered.startIndex {
+        let previous = ordered[insertionIndex - 1]
+        if try await appearsEarlierInCatalog.isSatisfiedBy(
+          CandidateOrderContext(left: previous, right: candidate))
+        {
+          break
+        }
+        insertionIndex -= 1
+      }
+      ordered.insert(candidate, at: insertionIndex)
+    }
+    return ordered.map(\.city)
+  }
+
+  private static func makeHint(_ city: USCity) -> CityHint {
+    let characters = Array(city.name)
+    let letterCount = characters.reduce(into: 0) { count, character in
+      if character.isLetter { count += 1 }
+    }
+    let reveal = AnySpecification<HintCharacterContext> { context in
+      context.letterIndex < 2 || context.letterIndex >= context.letterCount - 2
+    }
+    var letterIndex = 0
+    var maskedName = ""
+    for character in characters {
+      guard character.isLetter else {
+        maskedName.append(character)
+        continue
+      }
+      let context = HintCharacterContext(letterIndex: letterIndex, letterCount: letterCount)
+      maskedName.append(reveal.isSatisfiedBy(context) ? character : "•")
+      letterIndex += 1
+    }
+    return CityHint(maskedName: maskedName, startingLetter: city.firstLetter)
   }
 
   private static func preflightRouter() -> AsyncFirstMatchSpec<
@@ -271,15 +427,26 @@ private enum PreflightResult: Sendable {
   case ready
 }
 
-private struct ReplyCandidateContext: Sendable {
-  let requiredStartingLetter: Character
+private struct ReplyCandidate: Sendable {
+  let city: USCity
+  let catalogIndex: Int
+  let requiredStartingLetter: Character?
   let usedCityIDs: Set<String>
 }
 
-private struct ReplyCandidate: Sendable {
+private struct CandidateOrderContext: Sendable {
+  let left: ReplyCandidate
+  let right: ReplyCandidate
+}
+
+private struct CatalogMatchContext: Sendable {
   let city: USCity
-  let requiredStartingLetter: Character
-  let usedCityIDs: Set<String>
+  let candidate: USCity
+}
+
+private struct HintCharacterContext: Sendable {
+  let letterIndex: Int
+  let letterCount: Int
 }
 
 private struct ReplyPlanContext: Sendable {
