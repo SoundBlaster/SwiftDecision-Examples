@@ -127,6 +127,102 @@ struct CityChainGameTests {
     #expect(await game.snapshot().usedCities.isEmpty)
   }
 
+  @Test("An unavailable Noul accepts a canonical city from the local catalog")
+  func noulFailureFallsBackToCatalogCity() async throws {
+    let backend = UnavailableBackend()
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: backend),
+      catalog: catalog("St. Louis", "Seattle")
+    )
+
+    let result = try await game.submit("ST Louis")
+
+    #expect(
+      result
+        == .computerReplied(
+          playerCity: USCity("St. Louis"),
+          computerCity: USCity("Seattle"),
+          selection: .onlyAvailableCity
+        ))
+    let snapshot = await game.snapshot()
+    #expect(snapshot.usedCities == [USCity("St. Louis"), USCity("Seattle")])
+    #expect(snapshot.validationSource == .localCatalogFallback)
+    #expect(await backend.receivedPrompts().map(\.kind) == [.noul])
+  }
+
+  @Test("A Noul abstention accepts a city when the local catalog can verify it")
+  func noulAbstentionFallsBackToCatalogCity() async throws {
+    let backend = FixtureBackend(abstainNoul: true)
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: backend),
+      catalog: catalog("St. Louis", "Seattle")
+    )
+
+    let result = try await game.submit("ST Louis")
+
+    #expect(
+      result
+        == .computerReplied(
+          playerCity: USCity("St. Louis"),
+          computerCity: USCity("Seattle"),
+          selection: .onlyAvailableCity
+        ))
+    #expect(await game.snapshot().validationSource == .localCatalogFallback)
+  }
+
+  @Test("A Noul rejection is not overridden by local catalog membership")
+  func noulRejectionTakesPrecedenceOverCatalogFallback() async throws {
+    let backend = FixtureBackend(noulAnswer: false)
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: backend), catalog: catalog("St. Louis", "Seattle"))
+
+    let result = try await game.submit("ST Louis")
+
+    #expect(result == .cityNotRecognized(USCity("ST Louis")))
+    let snapshot = await game.snapshot()
+    #expect(snapshot.usedCities.isEmpty)
+    #expect(snapshot.validationSource == nil)
+  }
+
+  @Test("After two mistakes the game hints an available city and clears it on a valid turn")
+  func twoMistakesShowAndThenClearCityHint() async throws {
+    let backend = FixtureBackend()
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: backend),
+      catalog: catalog("Dover", "Riverside", "Richmond")
+    )
+
+    let firstTurn = try await game.submit("Bend")
+    guard case .computerReplied = firstTurn else {
+      Issue.record("Expected Dover to reply and set the next letter to R.")
+      return
+    }
+
+    #expect(
+      try await game.submit("Boston")
+        == .rejected(.wrongStartingLetter(expected: "R", actual: "B")))
+    let afterFirstMistake = await game.snapshot()
+    #expect(afterFirstMistake.consecutiveMistakes == 1)
+    #expect(afterFirstMistake.cityHint == nil)
+
+    #expect(
+      try await game.submit("Austin")
+        == .rejected(.wrongStartingLetter(expected: "R", actual: "A")))
+    let afterSecondMistake = await game.snapshot()
+    #expect(afterSecondMistake.consecutiveMistakes == 2)
+    #expect(afterSecondMistake.cityHint?.maskedName == "Ri•••••de")
+    #expect(afterSecondMistake.cityHint?.startingLetter == "R")
+
+    let validTurn = try await game.submit("Richmond")
+    #expect(
+      validTurn
+        == .playerWonNoAvailableReply(playerCity: USCity("Richmond"), startingLetter: "D"))
+    let afterValidTurn = await game.snapshot()
+    #expect(afterValidTurn.consecutiveMistakes == 0)
+    #expect(afterValidTurn.cityHint == nil)
+    #expect(afterValidTurn.validationSource == .noul)
+  }
+
   @Test("Choice abstention ends the game without inventing a fallback city")
   func uncertainComputerChoiceFinishesWithoutFallback() async throws {
     let backend = FixtureBackend(abstainChoice: true)
@@ -275,6 +371,19 @@ private actor FixtureBackend: DecisionBackend {
 }
 
 private struct ChoiceFailure: Error, Sendable {}
+
+private struct BackendUnavailable: Error, Sendable {}
+
+private actor UnavailableBackend: DecisionBackend {
+  private var prompts: [DecisionPrompt] = []
+
+  func predict(for prompt: DecisionPrompt) async throws -> DecisionPrediction {
+    prompts.append(prompt)
+    throw BackendUnavailable()
+  }
+
+  func receivedPrompts() -> [DecisionPrompt] { prompts }
+}
 
 private actor SuspendedNoulBackend: DecisionBackend {
   private var predictionContinuation: CheckedContinuation<DecisionPrediction, Never>?
