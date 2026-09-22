@@ -93,7 +93,7 @@ struct OraclePage: View {
         apiKey: model.configuredAPIKey,
         providerDescription: model.providerDescription,
         historyEntries: model.historyEntries,
-        isExpanded: infoSheetDetent == .large,
+        selectedDetent: $infoSheetDetent,
         onSave: model.saveAPIKey,
         onDeleteHistoryEntry: model.deleteHistoryEntry,
         onClearHistory: model.clearHistory)
@@ -168,7 +168,7 @@ private struct OracleInfoSheet: View {
 
   let providerDescription: String
   let historyEntries: [OracleHistoryEntry]
-  let isExpanded: Bool
+  @Binding var selectedDetent: PresentationDetent
   let onSave: (String) -> Bool
   let onDeleteHistoryEntry: (OracleHistoryEntry.ID) -> Void
   let onClearHistory: () -> Void
@@ -177,7 +177,7 @@ private struct OracleInfoSheet: View {
     apiKey: String,
     providerDescription: String,
     historyEntries: [OracleHistoryEntry],
-    isExpanded: Bool,
+    selectedDetent: Binding<PresentationDetent>,
     onSave: @escaping (String) -> Bool,
     onDeleteHistoryEntry: @escaping (OracleHistoryEntry.ID) -> Void,
     onClearHistory: @escaping () -> Void
@@ -186,7 +186,7 @@ private struct OracleInfoSheet: View {
     _isConfigured = State(initialValue: !apiKey.isEmpty)
     self.providerDescription = providerDescription
     self.historyEntries = historyEntries
-    self.isExpanded = isExpanded
+    self._selectedDetent = selectedDetent
     self.onSave = onSave
     self.onDeleteHistoryEntry = onDeleteHistoryEntry
     self.onClearHistory = onClearHistory
@@ -279,7 +279,7 @@ private struct OracleInfoSheet: View {
       }
       .textCase(nil)
 
-      if isExpanded {
+      if selectedDetent == .large {
         Section {
           if historyEntries.isEmpty {
             Text("No questions yet")
