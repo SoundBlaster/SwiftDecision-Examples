@@ -2,8 +2,9 @@ import Foundation
 import SpecificationCore
 import SwiftDecision
 
-/// The three typed decisions exposed by the Oracle Ball demo.
+/// The typed decisions exposed by the Oracle Ball demo and its automatic router.
 public enum OracleMode: String, CaseIterable, Hashable, Sendable, Identifiable {
+  case automatic = "Automatic"
   case noul = "Noul"
   case choice = "Choice"
   case score = "Score"
@@ -16,7 +17,7 @@ public struct OracleRequest: Hashable, Sendable {
   public let question: String
   public let mode: OracleMode
 
-  public init(question: String, mode: OracleMode) {
+  public init(question: String, mode: OracleMode = .automatic) {
     self.question = question
     self.mode = mode
   }
@@ -76,7 +77,13 @@ public struct OfflineOracleBackend: OracleBackendMetadata {
     case .noul:
       probabilities = [0.13, 0.87]
     case .choice:
-      probabilities = [0.12, 0.76, 0.12]
+      if prompt.options.count == 3 {
+        probabilities = [0.12, 0.76, 0.12]
+      } else {
+        let remaining = max(prompt.options.count - 1, 1)
+        let secondary = 0.24 / Double(remaining)
+        probabilities = prompt.options.indices.map { $0 == 0 ? 0.76 : secondary }
+      }
     case .score:
       probabilities = [0.03, 0.08, 0.14, 0.75]
     }
@@ -84,25 +91,52 @@ public struct OfflineOracleBackend: OracleBackendMetadata {
   }
 }
 
-private enum OracleOperation: Sendable {
+private enum OracleOperation: Sendable, Equatable {
   case noul
   case choice
   case score
 }
 
+private struct OracleOperationSelection: Sendable {
+  let operation: OracleOperation
+  let choicePlan: OracleChoicePlan
+
+  init(_ operation: OracleOperation, choicePlan: OracleChoicePlan = OracleChoicePlan(options: [])) {
+    self.operation = operation
+    self.choicePlan = choicePlan
+  }
+}
+
 private struct OracleRequestPolicy {
   let eligibility: AnyAsyncSpecification<OracleRequest>
-  let operation: AsyncFirstMatchSpec<OracleMode, OracleOperation>
+  let operation: AsyncFirstMatchSpec<OracleRoutingContext, OracleOperationSelection>
 
   init() {
     eligibility = AnyAsyncSpecification { request in
       let question = request.question.trimmingCharacters(in: .whitespacesAndNewlines)
       return !question.isEmpty && question.count <= 500
     }
-    operation = AsyncFirstMatchSpec<OracleMode, OracleOperation>.builder()
-      .addPredicate({ $0 == .noul }, result: .noul)
-      .addPredicate({ $0 == .choice }, result: .choice)
-      .addPredicate({ $0 == .score }, result: .score)
+    let choicePlanIsValid = AnyAsyncSpecification<OracleChoicePlan> { plan in
+      guard (2 ... 5).contains(plan.options.count) else { return false }
+      return plan.options.allSatisfy { option in
+        let trimmed = option.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (1 ... 80).contains(trimmed.count)
+      } && Set(plan.options.map { $0.lowercased() }).count == plan.options.count
+    }
+    operation = AsyncFirstMatchSpec<OracleRoutingContext, OracleOperationSelection>.builder()
+      .addPredicate({ $0.mode == .noul }, result: OracleOperationSelection(.noul))
+      .addPredicate({ $0.mode == .choice }, result: OracleOperationSelection(.choice))
+      .addPredicate({ $0.mode == .score }, result: OracleOperationSelection(.score))
+      .addPredicate(
+        { context in
+          guard context.mode == .automatic else { return false }
+          return try await choicePlanIsValid.isSatisfiedBy(context.choicePlan)
+        },
+        result: OracleOperationSelection(.choice))
+      .addPredicate(
+        { context in context.mode == .automatic && context.asksForProbability },
+        result: OracleOperationSelection(.score))
+      .fallback(OracleOperationSelection(.noul))
       .build()
   }
 }
@@ -173,11 +207,20 @@ public final class OracleGameEngine: @unchecked Sendable {
     guard try await requestPolicy.eligibility.isSatisfiedBy(request) else {
       throw OracleGameError.invalidQuestion
     }
-    guard let operation = try await requestPolicy.operation.decide(request.mode) else {
+    let question = request.question.trimmingCharacters(in: .whitespacesAndNewlines)
+    let choicePlan = OracleChoicePlanner.plan(for: question)
+    let routingContext = OracleRoutingContext(
+      mode: request.mode,
+      choicePlan: choicePlan,
+      asksForProbability: OracleChoicePlanner.asksForProbability(question))
+    guard var selection = try await requestPolicy.operation.decide(routingContext) else {
       throw OracleGameError.noPolicy
     }
+    if selection.operation == .choice {
+      selection = OracleOperationSelection(.choice, choicePlan: choicePlan)
+    }
 
-    let evaluation = try await evaluate(request, operation: operation)
+    let evaluation = try await evaluate(request, selection: selection)
     guard let routed = try await resolutionPolicy.decide(evaluation) else {
       throw OracleGameError.noPolicy
     }
@@ -195,10 +238,10 @@ public final class OracleGameEngine: @unchecked Sendable {
 
   private func evaluate(
     _ request: OracleRequest,
-    operation: OracleOperation
+    selection: OracleOperationSelection
   ) async throws -> OracleEvaluation {
     let question = request.question.trimmingCharacters(in: .whitespacesAndNewlines)
-    switch operation {
+    switch selection.operation {
     case .noul:
       let result = try await decisionEngine.noul(
         statement: question,
@@ -207,27 +250,35 @@ public final class OracleGameEngine: @unchecked Sendable {
       )
       return try await makeEvaluation(
         request: request,
+        mode: .noul,
         displayText: result.value.map { $0 ? "Definitely\nyes" : "Probably\nno" },
         result: result
       )
     case .choice:
+      let options = selection.choicePlan.options.isEmpty
+        ? ["yes", "later", "no"]
+        : selection.choicePlan.options
+      let choiceFallback = fallbackEnabled
+        ? (options.contains("later") ? "later" : options.first)
+        : nil
       let result = try await decisionEngine.choice(
         instructions: question,
         context: question,
-        options: [
-          ChoiceOption(label: "yes", description: "Definitely yes"),
-          ChoiceOption(label: "later", description: "Ask again later"),
-          ChoiceOption(label: "no", description: "Probably no"),
-        ],
-        fallback: fallbackEnabled ? "later" : nil
+        options: options.map { option in
+          ChoiceOption(label: option, description: option)
+        },
+        fallback: choiceFallback
       )
+      let isDynamicChoice = !selection.choicePlan.options.isEmpty
       return try await makeEvaluation(
         request: request,
+        mode: .choice,
         displayText: result.value.map {
+          if isDynamicChoice { return $0 }
           switch $0 {
-          case "yes": "Definitely\nyes"
-          case "no": "Probably\nno"
-          default: "Ask again\nlater"
+          case "yes": return "Definitely\nyes"
+          case "no": return "Probably\nno"
+          default: return "Ask again\nlater"
           }
         },
         result: result
@@ -245,12 +296,13 @@ public final class OracleGameEngine: @unchecked Sendable {
         fallback: fallbackEnabled ? ScoreValue(level: 1, expectedValue: 0.50) : nil
       )
       let text = result.value.map { "\(Int(($0.expectedValue * 100).rounded()))%" }
-      return try await makeEvaluation(request: request, displayText: text, result: result)
+      return try await makeEvaluation(request: request, mode: .score, displayText: text, result: result)
     }
   }
 
   private func makeEvaluation<Value: Sendable>(
     request: OracleRequest,
+    mode: OracleMode? = nil,
     displayText: String?,
     result: DecisionResult<Value>
   ) async throws -> OracleEvaluation {
@@ -270,7 +322,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       ? .offlineFixture
       : .model(identifier: backendIdentifier)
     let answer = OracleAnswer(
-      mode: request.mode,
+      mode: mode ?? request.mode,
       displayText: displayText,
       confidence: result.confidence,
       source: source)

@@ -40,7 +40,7 @@ struct AskOracleField: View {
       }
       .buttonStyle(.plain)
       .accessibilityLabel("Reveal answer")
-      .accessibilityHint("Shows the deterministic demo answer for the selected mode")
+      .accessibilityHint("The oracle chooses the answer format automatically")
     }
     .padding(.leading, 18)
     .padding(.trailing, 7)
