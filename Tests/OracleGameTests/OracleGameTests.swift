@@ -5,6 +5,44 @@ import SwiftDecision
 import SwiftJev
 
 final class OracleGameTests: XCTestCase {
+  func testAutomaticRoutingChoosesNoulForBooleanQuestion() async throws {
+    let engine = OracleGameEngine()
+    let outcome = try await engine.answer(for: OracleRequest(question: "Will it work?"))
+
+    guard case let .accepted(answer) = outcome else {
+      return XCTFail("expected accepted answer")
+    }
+    XCTAssertEqual(answer.mode, .noul)
+  }
+
+  func testAutomaticRoutingChoosesScoreForProbabilityQuestion() async throws {
+    let engine = OracleGameEngine()
+    let outcome = try await engine.answer(for: OracleRequest(question: "How likely is success?"))
+
+    guard case let .accepted(answer) = outcome else {
+      return XCTFail("expected accepted answer")
+    }
+    XCTAssertEqual(answer.mode, .score)
+    XCTAssertEqual(answer.displayText, "83%")
+  }
+
+  func testAutomaticRoutingBuildsChoiceOptionsFromQuestion() async throws {
+    let engine = OracleGameEngine()
+    let outcome = try await engine.answer(for: OracleRequest(question: "Which is better: tea or coffee?"))
+
+    guard case let .accepted(answer) = outcome else {
+      return XCTFail("expected accepted answer")
+    }
+    XCTAssertEqual(answer.mode, .choice)
+    XCTAssertEqual(answer.displayText, "tea")
+  }
+
+  func testChoicePlannerAcceptsUpToFiveCommaSeparatedOptions() {
+    let plan = OracleChoicePlanner.plan(for: "Which should I choose: tea, coffee, juice, water, or soda?")
+
+    XCTAssertEqual(plan.options, ["tea", "coffee", "juice", "water", "soda"])
+  }
+
   func testOfflineNoulUsesAcceptedSpecRoute() async throws {
     let engine = OracleGameEngine()
     let outcome = try await engine.answer(for: OracleRequest(question: "Will it work?", mode: .noul))

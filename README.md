@@ -15,8 +15,9 @@ run instructions, lifecycle, geometry, material limits, and validation record.
 <img src="DOCS/Images/oracle-demo.png" alt="Oracle graphics demo running in iPhone Simulator" width="320">
 
 Open `CityChainApp.xcodeproj`, select the **OracleBallApp** scheme, and run on
-an iOS 26+ simulator or device. Use the arrow to replay; select Noul, Choice or
-Score to preview different answer textures. No API key is needed.
+an iOS 26+ simulator or device. Use the arrow to replay; the engine infers
+whether the question needs a Noul, Choice, or Score answer. No API key is needed
+for the offline fixture.
 
 ## City Chain
 
@@ -46,6 +47,12 @@ let game = CityChainGame(decisions: DecisionEngine(backend: backend))
 OracleBallApp exposes the same opt-in path through `JevOracleBackend` while keeping
 the `OracleGameEngine` API unchanged:
 
+With the default `.automatic` mode, `OracleGameEngine` routes boolean questions
+to Noul, probability questions to Score, and comparison questions to Choice.
+Choice options are extracted from explicit alternatives such as “tea or coffee”
+or “tea, coffee, or juice”, then validated through Core specifications before
+the model selects one.
+
 ```swift
 let backend = try JevOracleBackend(
     apiKey: ProcessInfo.processInfo.environment["TYPESAFE_API_KEY"],
@@ -53,7 +60,7 @@ let backend = try JevOracleBackend(
 )
 let oracle = OracleGameEngine(backend: backend)
 let outcome = try await oracle.answer(
-    for: OracleRequest(question: "Will it work?", mode: .noul)
+    for: OracleRequest(question: "Will it work?")
 )
 ```
 

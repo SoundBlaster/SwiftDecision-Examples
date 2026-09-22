@@ -10,7 +10,7 @@ final class OraclePageModel {
   private let credentialsStore: OracleCredentialsStore
 
   var question = ""
-  var mode: OracleMode = .noul
+  var mode: OracleMode = .automatic
   var answer = OracleAnswer(
     mode: .noul,
     displayText: "Definitely\nyes",
@@ -62,6 +62,10 @@ final class OraclePageModel {
     case let .jev(model):
       "Jev configured · live \(model)"
     }
+  }
+
+  var answerStatus: String {
+    "\(answer.mode.rawValue) · \(providerDescription)"
   }
 
   @discardableResult

@@ -57,13 +57,12 @@ struct OraclePage: View {
 
             VStack(spacing: 12) {
               AskOracleField(text: $model.question, onSubmit: model.submit)
-              OracleModeSelector(selection: $model.mode)
-              Text(model.statusMessage ?? model.providerDescription)
+              Text(model.statusMessage ?? model.answerStatus)
                 .font(.caption2.weight(.medium))
                 .tracking(0.5)
                 .foregroundStyle(.white.opacity(0.34))
                 .multilineTextAlignment(.center)
-                .accessibilityLabel(model.statusMessage ?? model.providerDescription)
+                .accessibilityLabel(model.statusMessage ?? model.answerStatus)
             }
             .frame(maxWidth: 420)
             .frame(maxWidth: .infinity)
