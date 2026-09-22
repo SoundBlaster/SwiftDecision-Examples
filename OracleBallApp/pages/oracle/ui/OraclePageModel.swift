@@ -10,6 +10,7 @@ final class OraclePageModel {
   private(set) var engine: OracleGameEngine
   private let credentialsStore: OracleCredentialsStore
   private let historyStore: OracleHistoryStore
+  private let haptics: any OracleHapticFeedback
 
   var question = ""
   private(set) var historyEntries: [OracleHistoryEntry]
@@ -36,10 +37,12 @@ final class OraclePageModel {
   init(
     engine: OracleGameEngine? = nil,
     credentialsStore: OracleCredentialsStore = OracleCredentialsStore(),
-    historyStore: OracleHistoryStore = OracleHistoryStore())
+    historyStore: OracleHistoryStore = OracleHistoryStore(),
+    haptics: (any OracleHapticFeedback)? = nil)
   {
     self.credentialsStore = credentialsStore
     self.historyStore = historyStore
+    self.haptics = haptics ?? OracleHaptics()
     historyEntries = historyStore.entries
     if let engine {
       self.engine = engine
@@ -109,6 +112,7 @@ final class OraclePageModel {
     let engine = engine
     isSubmitting = true
     statusMessage = nil
+    haptics.play(.submit)
 
     requestTask = Task { [weak self, engine] in
       do {
@@ -125,6 +129,9 @@ final class OraclePageModel {
           self.answerRequestID = requestID
           self.terminalRequestID = 0
           self.statusMessage = nil
+          self.haptics.play(
+            answer.mode == .unsupported || answer.noulValue == false
+              ? .negativeResult : .positiveResult)
         case let .abstained(reason):
           self.terminalRequestID = requestID
           self.statusMessage = reason

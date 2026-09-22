@@ -41,17 +41,21 @@ public protocol OracleBackendMetadata: DecisionBackend {
 public struct OracleAnswer: Hashable, Sendable {
   public let mode: OracleMode
   public let displayText: String
+  /// The underlying yes/no decision, when this answer was produced by Noul.
+  public let noulValue: Bool?
   public let confidence: Double?
   public let source: OracleAnswerSource
 
   public init(
     mode: OracleMode,
     displayText: String,
+    noulValue: Bool? = nil,
     confidence: Double? = nil,
     source: OracleAnswerSource
   ) {
     self.mode = mode
     self.displayText = displayText
+    self.noulValue = noulValue
     self.confidence = confidence
     self.source = source
   }
@@ -439,6 +443,7 @@ public final class OracleGameEngine: @unchecked Sendable {
         request: request,
         mode: .noul,
         displayText: result.value.map { $0 ? "Definitely\nyes" : "Probably\nno" },
+        noulValue: result.value,
         result: result
       )
     case .choice:
@@ -493,6 +498,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     request: OracleRequest,
     mode: OracleMode? = nil,
     displayText: String?,
+    noulValue: Bool? = nil,
     result: DecisionResult<Value>
   ) async throws -> OracleEvaluation {
     switch result.outcome {
@@ -513,6 +519,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     let answer = OracleAnswer(
       mode: mode ?? request.mode,
       displayText: displayText,
+      noulValue: noulValue,
       confidence: result.confidence,
       source: source)
     guard try await answerValidation.isSatisfiedBy(answer) else {
