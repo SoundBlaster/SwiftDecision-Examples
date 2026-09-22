@@ -12,6 +12,10 @@ open the Xcode project that contains this target, select the **OracleBallApp**
 scheme, choose an iOS 26 simulator, and run. The app registers
 `OracleRevealComponent` and `OracleRevealSystem` at launch.
 
+The shader requires the optional Metal Toolchain component. If Xcode reports
+that `metal` cannot run, install it with `xcodebuild -downloadComponent MetalToolchain`.
+The CI workflow installs this component before compiling the applications.
+
 The current viewport uses a deterministic sample answer. `OracleBallViewport`
 starts a short local delay and calls `OracleScene.present`; this is presentation
 demo plumbing, not an inference request. A future SwiftDecision integration can
