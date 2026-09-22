@@ -271,19 +271,25 @@ private struct OracleInfoSheet: View {
             .buttonStyle(.borderedProminent)
           }
         }
-        .padding(24)
+        .padding(.vertical, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .listRowInsets(EdgeInsets())
-        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20))
         .listRowSeparator(.hidden)
       }
       .textCase(nil)
 
       Section {
         HStack {
-          Text(historyEntries.isEmpty ? "History" : "History • \(historyEntries.count)")
-            .font(.headline)
-            .foregroundStyle(.primary)
+          HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text("History")
+              .font(.headline)
+
+            if !historyEntries.isEmpty {
+              Text("• \(historyEntries.count)")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+          }
 
           Spacer()
 
@@ -299,8 +305,7 @@ private struct OracleInfoSheet: View {
           .disabled(historyEntries.isEmpty)
           .accessibilityLabel("Delete all history")
         }
-        .listRowBackground(Color.clear)
-        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 8))
 
         if selectedDetent == .large {
           if historyEntries.isEmpty {
@@ -308,19 +313,11 @@ private struct OracleInfoSheet: View {
               .font(.subheadline)
               .foregroundStyle(.secondary)
               .frame(maxWidth: .infinity, alignment: .leading)
-              .listRowBackground(Color.clear)
-              .listRowSeparator(.hidden)
+              .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
           } else {
             ForEach(historyEntries) { entry in
               OracleHistoryRow(entry: entry)
-                .overlay(alignment: .bottom) {
-                  if entry.id != historyEntries.last?.id {
-                    Divider()
-                      .padding(.leading, 16)
-                  }
-                }
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                   Button(role: .destructive) {
                     onDeleteHistoryEntry(entry.id)
@@ -334,7 +331,8 @@ private struct OracleInfoSheet: View {
       }
       .textCase(nil)
     }
-    .listStyle(.plain)
+    .listStyle(.insetGrouped)
+    .listSectionSpacing(.compact)
     .scrollContentBackground(.hidden)
     .background(Color.clear)
     .confirmationDialog(
@@ -370,7 +368,6 @@ private struct OracleHistoryRow: View {
       .font(.caption2)
       .foregroundStyle(.secondary)
     }
-    .padding(.vertical, 6)
     .frame(maxWidth: .infinity, alignment: .leading)
     .contentShape(Rectangle())
   }
