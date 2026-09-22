@@ -2,11 +2,13 @@ import SwiftUI
 
 struct AskOracleField: View {
   @Binding var text: String
+  let isSubmitting: Bool
   let onSubmit: () -> Void
 
   @FocusState private var isFocused: Bool
 
   private func submit() {
+    guard !isSubmitting else { return }
     isFocused = false
     onSubmit()
   }
@@ -25,31 +27,44 @@ struct AskOracleField: View {
         .accessibilityHint("Type a question, or submit an empty field to replay the demo")
 
       Button(action: submit) {
-        Image(systemName: "arrow.up")
-          .font(.headline.weight(.bold))
-          .frame(width: 44, height: 44)
-          .foregroundStyle(.white)
-          .background(
-            LinearGradient(
-              colors: [.oraclePurple, .purple.opacity(0.7)],
-              startPoint: .topLeading,
-              endPoint: .bottomTrailing
-            ), in: Circle()
-          )
-          .shadow(color: .oraclePurple.opacity(0.35), radius: 12, y: 4)
+        ZStack {
+          if isSubmitting {
+            ProgressView()
+              .progressViewStyle(.circular)
+              .tint(.white)
+              .transition(.opacity.combined(with: .scale(scale: 0.8)))
+          } else {
+            Image(systemName: "arrow.up")
+              .font(.headline.weight(.bold))
+              .transition(.opacity.combined(with: .scale(scale: 0.8)))
+          }
+        }
+        .frame(width: 44, height: 44)
+        .foregroundStyle(.white)
+        .background(
+          LinearGradient(
+            colors: [.oraclePurple, .purple.opacity(0.7)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          ), in: Circle()
+        )
+        .shadow(color: .oraclePurple.opacity(0.35), radius: 12, y: 4)
+        .animation(.easeInOut(duration: 0.2), value: isSubmitting)
       }
       .buttonStyle(.plain)
-      .accessibilityLabel("Reveal answer")
-      .accessibilityHint("The oracle chooses the answer format automatically")
+      .disabled(isSubmitting)
+      .accessibilityLabel(isSubmitting ? "Waiting for answer" : "Reveal answer")
+      .accessibilityHint(
+        isSubmitting
+          ? "The oracle is preparing an answer"
+          : "The oracle chooses the answer format automatically")
     }
     .padding(.leading, 18)
     .padding(.trailing, 7)
     .padding(.vertical, 7)
-    .background(
-      Color.oraclePanel.opacity(0.88), in: RoundedRectangle(cornerRadius: 22, style: .continuous)
-    )
+    .background(Color.oraclePanel.opacity(0.88), in: Capsule())
     .overlay {
-      RoundedRectangle(cornerRadius: 22, style: .continuous)
+      Capsule()
         .strokeBorder(.white.opacity(isFocused ? 0.26 : 0.12), lineWidth: 1)
     }
     .shadow(color: .black.opacity(0.28), radius: 18, y: 8)
