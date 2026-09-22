@@ -11,7 +11,10 @@ struct OracleRoutingContext: Sendable {
 }
 
 enum OracleChoicePlanner {
-  private static let separators = [" versus ", " vs. ", " vs ", " or ", " and "]
+  private static let separators = [
+    " versus ", " vs. ", " vs ", " or ", " and ",
+    " или ", " и ",
+  ]
   private static let choiceCues = [
     "which ",
     "choose ",
@@ -23,6 +26,11 @@ enum OracleChoicePlanner {
     "options",
     "should i ",
     "should we ",
+    "какой ",
+    "выбери ",
+    "выбрать ",
+    "между ",
+    "вариант",
   ]
 
   static func plan(for question: String) -> OracleChoicePlan {
@@ -93,6 +101,12 @@ enum OracleChoicePlanner {
       "should we ",
       "choose ",
       "pick ",
+      "что мне выбрать ",
+      "что нам выбрать ",
+      "что выбрать ",
+      "какой вариант выбрать ",
+      "выбери ",
+      "выбрать ",
     ]
     var didRemove = true
     while didRemove {
@@ -113,18 +127,20 @@ enum OracleChoicePlanner {
         .split(separator: ",")
         .flatMap { part in
           let value = String(part)
-          if value.range(of: " or ", options: .caseInsensitive) != nil {
-            return splitCaseInsensitive(value, separator: " or ")
-          }
-          if value.range(of: " and ", options: .caseInsensitive) != nil {
-            return splitCaseInsensitive(value, separator: " and ")
+          for separator in [" or ", " and ", " или ", " и "] {
+            if value.range(of: separator, options: .caseInsensitive) != nil {
+              return splitCaseInsensitive(value, separator: separator)
+            }
           }
           return [value]
         }
     }
-    if body.lowercased().hasPrefix("between "),
-       body.range(of: " and ", options: .caseInsensitive) != nil
+    if (body.lowercased().hasPrefix("between ") && body.range(of: " and ", options: .caseInsensitive) != nil)
+      || (body.lowercased().hasPrefix("между ") && body.range(of: " и ", options: .caseInsensitive) != nil)
     {
+      if body.lowercased().hasPrefix("между ") {
+        return splitCaseInsensitive(String(body.dropFirst("между ".count)), separator: " и ")
+      }
       return splitCaseInsensitive(String(body.dropFirst("between ".count)), separator: " and ")
     }
     for separator in separators where separator != " and " {

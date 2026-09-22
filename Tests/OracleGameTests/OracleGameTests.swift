@@ -120,6 +120,12 @@ final class OracleGameTests: XCTestCase {
     XCTAssertEqual(plan.options, ["SwiftUI", "UIKit"])
   }
 
+  func testChoicePlannerRecognizesRussianAlternatives() {
+    let plan = OracleChoicePlanner.plan(for: "Чай или кофе?")
+
+    XCTAssertEqual(plan.options, ["Чай", "кофе"])
+  }
+
   func testOfflineNoulUsesAcceptedSpecRoute() async throws {
     let engine = OracleGameEngine()
     let outcome = try await engine.answer(for: OracleRequest(question: "Will it work?", mode: .noul))
