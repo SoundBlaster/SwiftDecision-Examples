@@ -195,7 +195,7 @@ private struct OracleInfoSheet: View {
   var body: some View {
     List {
       Section {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: selectedDetent == .large ? 16 : 8) {
           HStack {
             Text("Oracle settings")
               .font(.title3.weight(.semibold))
@@ -321,7 +321,6 @@ private struct OracleInfoSheet: View {
             in: RoundedRectangle(cornerRadius: 22, style: .continuous))
           .padding(.horizontal, 16)
           .padding(.top, 8)
-          .padding(.bottom, 12)
       }
     }
     .confirmationDialog(
