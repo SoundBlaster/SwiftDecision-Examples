@@ -152,6 +152,12 @@ final class OracleGameTests: XCTestCase {
     XCTAssertEqual(plan.options, ["Чай", "кофе"])
   }
 
+  func testChoicePlannerRemovesInterrogativePrefixBeforeAlternatives() {
+    let plan = OracleChoicePlanner.plan(for: "Who is president of US trump or Putin?")
+
+    XCTAssertEqual(plan.options, ["trump", "Putin"])
+  }
+
   func testOfflineNoulUsesAcceptedSpecRoute() async throws {
     let engine = OracleGameEngine()
     let outcome = try await engine.answer(for: OracleRequest(question: "Will it work?", mode: .noul))

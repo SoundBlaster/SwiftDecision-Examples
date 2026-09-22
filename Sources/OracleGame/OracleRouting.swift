@@ -53,7 +53,9 @@ enum OracleChoicePlanner {
     }
     body = removeLeadingPhrases(from: body)
 
-    let candidates = splitCandidates(body)
+    let candidates = normalizeInterrogativeCandidates(
+      splitCandidates(body),
+      body: body)
       .map(cleanCandidate)
       .filter { !$0.isEmpty }
     var unique: [String] = []
@@ -149,6 +151,28 @@ enum OracleChoicePlanner {
       }
     }
     return []
+  }
+
+  private static func normalizeInterrogativeCandidates(
+    _ candidates: [String],
+    body: String
+  ) -> [String] {
+    guard candidates.count >= 2 else { return candidates }
+    let normalized = body.lowercased()
+    let interrogativePrefixes = [
+      "who ", "what ", "which ", "where ", "when ",
+      "кто ", "что ", "какой ", "какая ", "где ", "когда ",
+    ]
+    guard interrogativePrefixes.contains(where: normalized.hasPrefix) else {
+      return candidates
+    }
+
+    var result = candidates
+    let first = candidates[0].trimmingCharacters(in: .whitespacesAndNewlines)
+    let words = first.split(separator: " ")
+    guard words.count > 1, let last = words.last else { return candidates }
+    result[0] = String(last)
+    return result
   }
 
   private static func splitCaseInsensitive(_ value: String, separator: String) -> [String] {
