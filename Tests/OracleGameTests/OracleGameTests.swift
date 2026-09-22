@@ -52,4 +52,67 @@ final class OracleGameTests: XCTestCase {
       XCTFail("unexpected error: \(error)")
     }
   }
+
+  func testAbstentionKeepsTheDecisionReason() async throws {
+    let backend = ClosureDecisionBackend { prompt in
+      DecisionPrediction(
+        probabilities: Array(repeating: 0.5, count: prompt.options.count),
+        modelIdentifier: "low-confidence")
+    }
+    let engine = OracleGameEngine(
+      backend: backend,
+      configuration: .init(
+        policies: .init(
+          noul: .init(minimumProbability: 0.9, minimumConfidence: 0),
+          choice: .init(minimumProbability: 0.9, minimumConfidence: 0),
+          score: .init(minimumProbability: 0.9, minimumConfidence: 0))),
+      fallbackEnabled: false)
+
+    let outcome = try await engine.answer(for: OracleRequest(question: "Maybe?", mode: .noul))
+    guard case let .abstained(reason) = outcome else {
+      return XCTFail("expected abstention")
+    }
+    XCTAssertTrue(reason.contains("confidence"))
+  }
+
+  func testFallbackRemainsDistinctFromAcceptance() async throws {
+    let backend = ClosureDecisionBackend { prompt in
+      DecisionPrediction(
+        probabilities: Array(repeating: 0.5, count: prompt.options.count),
+        modelIdentifier: "low-confidence")
+    }
+    let engine = OracleGameEngine(
+      backend: backend,
+      configuration: .init(
+        policies: .init(
+          noul: .init(minimumProbability: 0.9, minimumConfidence: 0),
+          choice: .init(minimumProbability: 0.9, minimumConfidence: 0),
+          score: .init(minimumProbability: 0.9, minimumConfidence: 0))))
+
+    let outcome = try await engine.answer(for: OracleRequest(question: "Fallback?", mode: .noul))
+    guard case let .fallback(answer, reason) = outcome else {
+      return XCTFail("expected fallback")
+    }
+    XCTAssertEqual(answer.displayText, "Definitely\nyes")
+    XCTAssertTrue(reason.contains("confidence"))
+  }
+
+  func testBackendProvenanceSurvivesDisabledTracing() async throws {
+    struct NamedBackend: OracleBackendMetadata {
+      let modelIdentifier = "jev-audit-model"
+
+      func predict(for prompt: DecisionPrompt) async throws -> DecisionPrediction {
+        DecisionPrediction(
+          probabilities: prompt.kind == .noul ? [0.1, 0.9] : [0.1, 0.9, 0],
+          modelIdentifier: modelIdentifier)
+      }
+    }
+    let engine = OracleGameEngine(
+      backend: NamedBackend(),
+      configuration: .init(traceMode: .disabled))
+
+    let outcome = try await engine.answer(for: OracleRequest(question: "Who?", mode: .noul))
+    guard case let .accepted(answer) = outcome else { return XCTFail("expected accepted answer") }
+    XCTAssertEqual(answer.source, .model(identifier: "jev-audit-model"))
+  }
 }

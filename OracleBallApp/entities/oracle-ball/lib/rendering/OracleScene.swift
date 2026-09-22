@@ -129,4 +129,14 @@ final class OracleScene {
     state.answerReady = true
     plate.components.set(state)
   }
+
+  /// Restores the previously displayed answer after a terminal failure or abstention.
+  func cancelWaiting(request: Int) {
+    guard request == lastRequest else { return }
+    guard var state = plate.components[OracleRevealComponent.self] else { return }
+    state.answerReady = false
+    state.phase = .revealing
+    state.elapsed = 0
+    plate.components.set(state)
+  }
 }

@@ -4,7 +4,8 @@ import SwiftUI
 struct OracleBallViewport: View {
   let answer: String
   let requestID: Int
-  let answerRevision: Int
+  let answerRequestID: Int
+  let terminalRequestID: Int
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.scenePhase) private var scenePhase
   @State private var renderer: OracleScene?
@@ -27,14 +28,28 @@ struct OracleBallViewport: View {
     .task(id: "\(requestID)-\(renderer != nil)") {
       guard let renderer, requestID > 0 else { return }
       renderer.beginWaiting(request: requestID)
+      if terminalRequestID == requestID {
+        renderer.cancelWaiting(request: requestID)
+      } else if answerRequestID == requestID {
+        do {
+          try renderer.present(answer: answer, request: requestID)
+        } catch {
+          renderFailed = true
+        }
+      }
     }
-    .onChange(of: answerRevision) { _, _ in
+    .onChange(of: answerRequestID) { _, _ in
       guard let renderer, requestID > 0 else { return }
+      guard answerRequestID == requestID else { return }
       do {
         try renderer.present(answer: answer, request: requestID)
       } catch {
         renderFailed = true
       }
+    }
+    .onChange(of: terminalRequestID) { _, _ in
+      guard let renderer, requestID > 0, terminalRequestID == requestID else { return }
+      renderer.cancelWaiting(request: requestID)
     }
     .onAppear { renderer?.setEnvironment(reduceMotion: reduceMotion, paused: scenePhase != .active) }
     .onDisappear { renderer?.setEnvironment(reduceMotion: reduceMotion, paused: true) }

@@ -42,7 +42,8 @@ struct OraclePage: View {
               OracleBallViewport(
                 answer: model.answer.displayText,
                 requestID: model.requestID,
-                answerRevision: model.answerRevision)
+                answerRequestID: model.answerRequestID,
+                terminalRequestID: model.terminalRequestID)
                 .frame(width: viewportSide, height: viewportSide)
                 .id("oracle-ball-viewport")
                 .accessibilityLabel(

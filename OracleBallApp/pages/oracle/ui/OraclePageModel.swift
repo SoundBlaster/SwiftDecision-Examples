@@ -16,7 +16,8 @@ final class OraclePageModel {
     confidence: 0.87,
     source: .offlineFixture)
   var requestID = 0
-  var answerRevision = 0
+  var answerRequestID = 0
+  var terminalRequestID = 0
   var isSubmitting = false
   var statusMessage: String?
   private var requestTask: Task<Void, Never>?
@@ -42,9 +43,11 @@ final class OraclePageModel {
         switch outcome {
         case let .accepted(answer), let .fallback(answer, _):
           self.answer = answer
-          self.answerRevision += 1
+          self.answerRequestID = requestID
+          self.terminalRequestID = 0
           self.statusMessage = nil
         case let .abstained(reason):
+          self.terminalRequestID = requestID
           self.statusMessage = reason
         }
         self.isSubmitting = false
@@ -53,6 +56,7 @@ final class OraclePageModel {
         self.isSubmitting = false
       } catch {
         guard let self, self.requestID == requestID else { return }
+        self.terminalRequestID = requestID
         self.statusMessage = error.localizedDescription
         self.isSubmitting = false
       }

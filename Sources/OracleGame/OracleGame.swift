@@ -27,6 +27,11 @@ public enum OracleAnswerSource: Hashable, Sendable {
   case offlineFixture
 }
 
+/// Optional metadata a backend can expose without relying on SwiftDecision traces.
+public protocol OracleBackendMetadata: DecisionBackend {
+  var modelIdentifier: String { get }
+}
+
 /// A display-ready answer. The UI does not need to understand DecisionResult.
 public struct OracleAnswer: Hashable, Sendable {
   public let mode: OracleMode
@@ -60,7 +65,9 @@ public enum OracleGameError: Error, Equatable, Sendable {
 }
 
 /// An offline deterministic backend used by previews, tests, and the demo app.
-public struct OfflineOracleBackend: DecisionBackend {
+public struct OfflineOracleBackend: OracleBackendMetadata {
+  public let modelIdentifier = "offline-fixture"
+
   public init() {}
 
   public func predict(for prompt: DecisionPrompt) async throws -> DecisionPrediction {
@@ -73,7 +80,7 @@ public struct OfflineOracleBackend: DecisionBackend {
     case .score:
       probabilities = [0.03, 0.08, 0.14, 0.75]
     }
-    return DecisionPrediction(probabilities: probabilities, modelIdentifier: "offline-fixture")
+    return DecisionPrediction(probabilities: probabilities, modelIdentifier: modelIdentifier)
   }
 }
 
@@ -121,12 +128,24 @@ public final class OracleGameEngine: @unchecked Sendable {
   private let requestPolicy = OracleRequestPolicy()
   private let answerValidation: AnyAsyncSpecification<OracleAnswer>
   private let resolutionPolicy: AsyncFirstMatchSpec<OracleEvaluation, OracleResolution>
+  private let backendIdentifier: String
+  private let fallbackEnabled: Bool
 
   public init(
     backend: some DecisionBackend = OfflineOracleBackend(),
-    configuration: DecisionEngine.Configuration = .init()
+    configuration: DecisionEngine.Configuration = .init(),
+    backendIdentifier: String? = nil,
+    fallbackEnabled: Bool = true
   ) {
     decisionEngine = DecisionEngine(backend: backend, configuration: configuration)
+    self.fallbackEnabled = fallbackEnabled
+    if let backendIdentifier {
+      self.backendIdentifier = backendIdentifier
+    } else if let metadata = backend as? any OracleBackendMetadata {
+      self.backendIdentifier = metadata.modelIdentifier
+    } else {
+      self.backendIdentifier = String(describing: type(of: backend))
+    }
     answerValidation = AnyAsyncSpecification { answer in
       guard !answer.displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
         return false
@@ -184,7 +203,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       let result = try await decisionEngine.noul(
         statement: question,
         context: question,
-        fallback: true
+        fallback: fallbackEnabled ? true : nil
       )
       return try await makeEvaluation(
         request: request,
@@ -200,7 +219,7 @@ public final class OracleGameEngine: @unchecked Sendable {
           ChoiceOption(label: "later", description: "Ask again later"),
           ChoiceOption(label: "no", description: "Probably no"),
         ],
-        fallback: "later"
+        fallback: fallbackEnabled ? "later" : nil
       )
       return try await makeEvaluation(
         request: request,
@@ -223,7 +242,7 @@ public final class OracleGameEngine: @unchecked Sendable {
           (description: "Likely", value: 0.75),
           (description: "Very likely", value: 0.90),
         ],
-        fallback: ScoreValue(level: 1, expectedValue: 0.50)
+        fallback: fallbackEnabled ? ScoreValue(level: 1, expectedValue: 0.50) : nil
       )
       let text = result.value.map { "\(Int(($0.expectedValue * 100).rounded()))%" }
       return try await makeEvaluation(request: request, displayText: text, result: result)
@@ -235,22 +254,32 @@ public final class OracleGameEngine: @unchecked Sendable {
     displayText: String?,
     result: DecisionResult<Value>
   ) async throws -> OracleEvaluation {
-    let source: OracleAnswerSource = result.trace.contains {
-      $0.detail == "offline-fixture"
-    } ? .offlineFixture : .model(identifier: "SwiftDecision")
-    let answer = displayText.map {
-      OracleAnswer(mode: request.mode, displayText: $0, confidence: result.confidence, source: source)
+    switch result.outcome {
+    case let .abstained(reason):
+      return OracleEvaluation(answer: nil, confidence: result.confidence, reason: reason, isFallback: false)
+    case .accepted:
+      break
+    case .fallback:
+      break
     }
-    if let answer, try await answerValidation.isSatisfiedBy(answer) {
-      switch result.outcome {
-      case .accepted:
-        return OracleEvaluation(answer: answer, confidence: result.confidence, reason: nil, isFallback: false)
-      case let .fallback(_, reason):
-        return OracleEvaluation(answer: answer, confidence: result.confidence, reason: reason, isFallback: true)
-      case let .abstained(reason):
-        return OracleEvaluation(answer: nil, confidence: result.confidence, reason: reason, isFallback: false)
-      }
+
+    guard let displayText else {
+      return OracleEvaluation(answer: nil, confidence: result.confidence, reason: "answer validation failed", isFallback: false)
     }
-    return OracleEvaluation(answer: nil, confidence: result.confidence, reason: "answer validation failed", isFallback: false)
+    let source: OracleAnswerSource = backendIdentifier == "offline-fixture"
+      ? .offlineFixture
+      : .model(identifier: backendIdentifier)
+    let answer = OracleAnswer(
+      mode: request.mode,
+      displayText: displayText,
+      confidence: result.confidence,
+      source: source)
+    guard try await answerValidation.isSatisfiedBy(answer) else {
+      return OracleEvaluation(answer: nil, confidence: result.confidence, reason: "answer validation failed", isFallback: false)
+    }
+    if case let .fallback(_, reason) = result.outcome {
+      return OracleEvaluation(answer: answer, confidence: result.confidence, reason: reason, isFallback: true)
+    }
+    return OracleEvaluation(answer: answer, confidence: result.confidence, reason: nil, isFallback: false)
   }
 }
