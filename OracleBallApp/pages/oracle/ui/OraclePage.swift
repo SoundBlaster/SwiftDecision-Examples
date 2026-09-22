@@ -88,7 +88,7 @@ struct OraclePage: View {
         apiKey: model.configuredAPIKey,
         providerDescription: model.providerDescription,
         onSave: model.saveAPIKey)
-        .presentationDetents([.height(380)])
+        .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
   }
@@ -184,6 +184,9 @@ private struct OracleInfoSheet: View {
       )
       .font(.subheadline)
       .foregroundStyle(.secondary)
+      .lineLimit(nil)
+      .fixedSize(horizontal: false, vertical: true)
+      .layoutPriority(1)
 
       Link(destination: URL(string: "https://typesafe.ai")!) {
         Label("Learn more at TypeSafe.ai", systemImage: "arrow.up.right.square")
