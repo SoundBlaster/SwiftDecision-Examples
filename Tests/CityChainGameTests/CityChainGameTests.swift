@@ -5,6 +5,13 @@ import Testing
 
 @Suite("City-chain rules")
 struct CityChainGameTests {
+  @Test("The Jev backend factory validates configuration without making a request")
+  func jevFactoryValidatesConfiguration() {
+    #expect(throws: Error.self) {
+      _ = try CityChainBackendFactory.makeJev(apiKey: "")
+    }
+  }
+
   @Test("The player may enter a valid city outside the computer reply catalog")
   func playerCityIsNotRestrictedToReplyCatalog() async throws {
     let backend = FixtureBackend(choiceIndex: 2)

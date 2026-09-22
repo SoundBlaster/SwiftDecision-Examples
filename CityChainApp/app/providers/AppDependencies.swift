@@ -3,8 +3,18 @@ import Foundation
 import SwiftDecision
 
 struct AppDependencies {
+  private let backend: any DecisionBackend
+
+  init(backend: any DecisionBackend = BackendNotConfigured()) {
+    self.backend = backend
+  }
+
+  static func liveJev(apiKey: String? = nil) throws -> AppDependencies {
+    AppDependencies(backend: try CityChainBackendFactory.makeJev(apiKey: apiKey))
+  }
+
   func makeGame() -> CityChainGame {
-    CityChainGame(decisions: DecisionEngine(backend: BackendNotConfigured()))
+    CityChainGame(decisions: DecisionEngine(backend: backend))
   }
 
   @MainActor

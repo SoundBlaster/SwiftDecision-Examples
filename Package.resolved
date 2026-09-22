@@ -1,5 +1,5 @@
 {
-  "originHash" : "296e7bb884f398a1692602ecc085816962593a507214b3d45ffe1ab0134e6612",
+  "originHash" : "df2644f94199761fd5f863cbfa78e0926af43d9f8ab3034e4ece29352986b913",
   "pins" : [
     {
       "identity" : "specificationcore",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "16679a03dad9183137bfa461cbacbaceee750d17",
         "version" : "0.2.0"
+      }
+    },
+    {
+      "identity" : "swiftjev",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SoundBlaster/SwiftJev.git",
+      "state" : {
+        "revision" : "b0a21fda123cd7bcc3bb795290f11dcd70da100d",
+        "version" : "0.1.0"
       }
     }
   ],
