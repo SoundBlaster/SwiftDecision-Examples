@@ -278,36 +278,11 @@ private struct OracleInfoSheet: View {
       }
       .textCase(nil)
 
-      Section {
-        HStack {
-          HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text("History")
-              .font(.headline)
+      if selectedDetent == .large {
+        Section {
+          historyHeader
+            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 8))
 
-            if !historyEntries.isEmpty {
-              Text("• \(historyEntries.count)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            }
-          }
-
-          Spacer()
-
-          Button {
-            isConfirmingHistoryClear = true
-          } label: {
-            Image(systemName: "trash")
-              .foregroundColor(historyEntries.isEmpty ? Color.secondary : Color.red)
-              .frame(width: 40, height: 36)
-              .contentShape(Rectangle())
-          }
-          .buttonStyle(.plain)
-          .disabled(historyEntries.isEmpty)
-          .accessibilityLabel("Delete all history")
-        }
-        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 8))
-
-        if selectedDetent == .large {
           if historyEntries.isEmpty {
             Text("No questions yet")
               .font(.subheadline)
@@ -328,13 +303,27 @@ private struct OracleInfoSheet: View {
             }
           }
         }
+        .textCase(nil)
       }
-      .textCase(nil)
     }
     .listStyle(.insetGrouped)
     .listSectionSpacing(.compact)
     .scrollContentBackground(.hidden)
     .background(Color.clear)
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      if selectedDetent != .large {
+        historyHeader
+          .padding(.leading, 20)
+          .padding(.trailing, 8)
+          .padding(.vertical, 8)
+          .background(
+            Color(uiColor: .secondarySystemGroupedBackground),
+            in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+          .padding(.horizontal, 16)
+          .padding(.top, 8)
+          .padding(.bottom, 12)
+      }
+    }
     .confirmationDialog(
       "Delete all question history?",
       isPresented: $isConfirmingHistoryClear,
@@ -342,6 +331,35 @@ private struct OracleInfoSheet: View {
     ) {
       Button("Delete All", role: .destructive, action: onClearHistory)
       Button("Cancel", role: .cancel) {}
+    }
+  }
+
+  private var historyHeader: some View {
+    HStack {
+      HStack(alignment: .firstTextBaseline, spacing: 6) {
+        Text("History")
+          .font(.headline)
+
+        if !historyEntries.isEmpty {
+          Text("• \(historyEntries.count)")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+      }
+
+      Spacer()
+
+      Button {
+        isConfirmingHistoryClear = true
+      } label: {
+        Image(systemName: "trash")
+          .foregroundColor(historyEntries.isEmpty ? Color.secondary : Color.red)
+          .frame(width: 40, height: 36)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .disabled(historyEntries.isEmpty)
+      .accessibilityLabel("Delete all history")
     }
   }
 }
