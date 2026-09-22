@@ -15,8 +15,9 @@ run instructions, lifecycle, geometry, material limits, and validation record.
 <img src="DOCS/Images/oracle-demo.png" alt="Oracle graphics demo running in iPhone Simulator" width="320">
 
 Open `CityChainApp.xcodeproj`, select the **OracleBallApp** scheme, and run on
-an iOS 26+ simulator or device. Use the arrow to replay; select Noul, Choice or
-Score to preview different answer textures. No API key is needed.
+an iOS 26+ simulator or device. Use the arrow to replay; the engine infers
+whether the question needs a Noul, Choice, or Score answer. No API key is needed
+for the offline fixture.
 
 ## City Chain
 
@@ -42,3 +43,34 @@ let game = CityChainGame(decisions: DecisionEngine(backend: backend))
 ```
 
 `makeJev` performs configuration validation and does not send a request during initialization. Keep the API key outside source control and inject it from the app's development or deployment secret configuration. The existing SwiftUI app uses the offline backend until its `AppDependencies` is constructed with a live backend.
+
+OracleBallApp exposes the same opt-in path through `JevOracleBackend` while keeping
+the `OracleGameEngine` API unchanged:
+
+With the default `.automatic` mode, `OracleGameEngine` routes boolean questions
+through a Jev-backed intent classifier. The classifier selects Noul for yes/no
+questions, Score for likelihood questions, and Choice only when the question
+contains explicit alternatives. Choice options are extracted from alternatives
+such as “tea or coffee” or “tea, coffee, or juice”, then validated through Core
+specifications before the model selects one. The classifier is instructed never
+to invent options. Factual, open-ended, malformed, or absurd questions (for
+example, “What is the capital of Paris?”) use the distinct Unsupported fallback
+with a short varied phrase such as `Who knows?` or `The stars are silent.`;
+they do not trigger a fabricated Choice request. Classifier
+abstention remains an abstention when fallbacks are disabled, and provider
+errors still propagate as errors.
+
+```swift
+let backend = try JevOracleBackend(
+    apiKey: ProcessInfo.processInfo.environment["TYPESAFE_API_KEY"],
+    model: "jev-latest"
+)
+let oracle = OracleGameEngine(backend: backend)
+let outcome = try await oracle.answer(
+    for: OracleRequest(question: "Will it work?")
+)
+```
+
+Initialization only validates configuration. Use an injected `JevHTTPTransport`
+for deterministic tests; live calls remain caller opt-in and are never required
+by the default build or test suite.

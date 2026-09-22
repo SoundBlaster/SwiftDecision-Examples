@@ -3,17 +3,21 @@ import OracleGame
 extension OracleMode {
   var icon: String {
     switch self {
+    case .automatic: "wand.and.stars"
     case .noul: "checkmark.circle.fill"
     case .choice: "list.bullet"
     case .score: "percent"
+    case .unsupported: "questionmark"
     }
   }
 
   var descriptor: String {
     switch self {
+    case .automatic: "Auto"
     case .noul: "Yes / No"
     case .choice: "Phrase"
     case .score: "Confidence"
+    case .unsupported: "No answer"
     }
   }
 
