@@ -15,59 +15,65 @@ struct OraclePage: View {
       ZStack {
         OracleCosmicBackground()
 
-        VStack(spacing: 0) {
-          OracleHeader { isShowingInfo = true }
-            .padding(.top, 10)
+        ScrollView {
+          VStack(spacing: 0) {
+            OracleHeader { isShowingInfo = true }
+              .padding(.top, 10)
 
-          Spacer(minLength: 4)
+            Spacer(minLength: 4)
 
-          ZStack(alignment: .bottom) {
-            Ellipse()
-              .fill(Color.oraclePurple.opacity(0.25))
-              .frame(width: viewportSide * 0.9, height: viewportSide * 0.16)
-              .blur(radius: viewportSide * 0.08)
-              .offset(y: -viewportSide * 0.03)
-              .accessibilityHidden(true)
+            ZStack(alignment: .bottom) {
+              Ellipse()
+                .fill(Color.oraclePurple.opacity(0.25))
+                .frame(width: viewportSide * 0.9, height: viewportSide * 0.16)
+                .blur(radius: viewportSide * 0.08)
+                .offset(y: -viewportSide * 0.03)
+                .accessibilityHidden(true)
 
-            Ellipse()
-              .stroke(Color.oracleLavender.opacity(0.7), lineWidth: 1)
-              .frame(width: viewportSide * 0.72, height: viewportSide * 0.085)
-              .shadow(color: .oraclePurple, radius: 7)
-              .offset(y: -viewportSide * 0.058)
-              .accessibilityHidden(true)
+              Ellipse()
+                .stroke(Color.oracleLavender.opacity(0.7), lineWidth: 1)
+                .frame(width: viewportSide * 0.72, height: viewportSide * 0.085)
+                .shadow(color: .oraclePurple, radius: 7)
+                .offset(y: -viewportSide * 0.058)
+                .accessibilityHidden(true)
 
-            OracleBallViewport(answer: answer, revealID: revealID)
-              .frame(width: viewportSide, height: viewportSide)
-              .id("oracle-ball-viewport")
-              .accessibilityLabel(
-                "Oracle answer: \(answer.replacingOccurrences(of: "\n", with: " "))")
+              OracleBallViewport(answer: answer, revealID: revealID)
+                .frame(width: viewportSide, height: viewportSide)
+                .id("oracle-ball-viewport")
+                .accessibilityLabel(
+                  "Oracle answer: \(answer.replacingOccurrences(of: "\n", with: " "))")
+            }
+            .frame(width: viewportSide, height: viewportSide)
+            .frame(maxWidth: .infinity)
+
+            Spacer(minLength: 4)
+
+            VStack(spacing: 12) {
+              AskOracleField(text: $question, onSubmit: reveal)
+              OracleModeSelector(selection: $mode)
+              Text("Demo answers are deterministic and run locally")
+                .font(.caption2.weight(.medium))
+                .tracking(0.5)
+                .foregroundStyle(.white.opacity(0.34))
+                .multilineTextAlignment(.center)
+                .accessibilityLabel("Demo answers are deterministic and run locally")
+            }
+            .frame(maxWidth: 420)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
+
+            Text("AI MAGIC 8-BALL  ·  ASK WITH INTENT")
+              .font(.system(size: 9, weight: .medium, design: .rounded))
+              .tracking(1.4)
+              .foregroundStyle(.white.opacity(0.3))
+              .padding(.top, 12)
+              .padding(.bottom, 8)
           }
-          .frame(width: viewportSide, height: viewportSide)
-          .frame(maxWidth: .infinity)
-
-          Spacer(minLength: 4)
-
-          VStack(spacing: 12) {
-            AskOracleField(text: $question, onSubmit: reveal)
-            OracleModeSelector(selection: $mode)
-            Text("Demo answers are deterministic and run locally")
-              .font(.caption2.weight(.medium))
-              .tracking(0.5)
-              .foregroundStyle(.white.opacity(0.34))
-              .multilineTextAlignment(.center)
-              .accessibilityLabel("Demo answers are deterministic and run locally")
-          }
-          .frame(maxWidth: 420)
-          .frame(maxWidth: .infinity)
-          .padding(.horizontal, 16)
-
-          Text("AI MAGIC 8-BALL  ·  ASK WITH INTENT")
-            .font(.system(size: 9, weight: .medium, design: .rounded))
-            .tracking(1.4)
-            .foregroundStyle(.white.opacity(0.3))
-            .padding(.top, 12)
-            .padding(.bottom, 8)
+          .frame(minHeight: availableHeight)
         }
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollDismissesKeyboard(.interactively)
       }
     }
     .preferredColorScheme(.dark)

@@ -103,6 +103,7 @@ The tests cover monotonic approach, staying behind the glass, clarity, reduced
 motion and negative elapsed time in addition to the existing City Chain suite.
 On the iPhone 18 Pro / iOS 27 simulator, visual inspection confirmed the 3D
 scene and legible face. Interaction checks covered Score (`87%`), Choice,
-keyboard input, viewport resizing and background/foreground restoration.
+keyboard input, viewport resizing, portrait/landscape layout, keyboard dismissal
+on submit, and background/foreground restoration.
 The checked-in screenshot is from that simulator, not a design mockup.
 Rendering performance and visual quality on physical hardware remain to be checked.
