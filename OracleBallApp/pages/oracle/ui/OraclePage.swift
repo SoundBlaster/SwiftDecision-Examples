@@ -61,7 +61,10 @@ struct OraclePage: View {
             Spacer(minLength: 4)
 
             VStack(spacing: 12) {
-              AskOracleField(text: $model.question, onSubmit: model.submit)
+              AskOracleField(
+                text: $model.question,
+                isSubmitting: model.isSubmitting,
+                onSubmit: model.submit)
               Text(model.statusMessage ?? model.answerStatus)
                 .font(.caption2.weight(.medium))
                 .tracking(0.5)
