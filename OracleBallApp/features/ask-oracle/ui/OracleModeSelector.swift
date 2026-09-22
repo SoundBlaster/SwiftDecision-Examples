@@ -7,6 +7,7 @@ extension OracleMode {
     case .noul: "checkmark.circle.fill"
     case .choice: "list.bullet"
     case .score: "percent"
+    case .unsupported: "questionmark"
     }
   }
 
@@ -16,6 +17,7 @@ extension OracleMode {
     case .noul: "Yes / No"
     case .choice: "Phrase"
     case .score: "Confidence"
+    case .unsupported: "No answer"
     }
   }
 

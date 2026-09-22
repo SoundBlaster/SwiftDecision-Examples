@@ -8,6 +8,7 @@ public enum OracleMode: String, CaseIterable, Hashable, Sendable, Identifiable {
   case noul = "Noul"
   case choice = "Choice"
   case score = "Score"
+  case unsupported = "Unsupported"
 
   public var id: Self { self }
 }
@@ -77,7 +78,22 @@ public struct OfflineOracleBackend: OracleBackendMetadata {
     case .noul:
       probabilities = [0.13, 0.87]
     case .choice:
-      if prompt.options.count == 3 {
+      if prompt.instructions == OracleIntentClassifier.instructions,
+         prompt.options.count == OracleIntentClassifier.optionCount
+      {
+        let plan = OracleChoicePlanner.plan(for: prompt.context)
+        let index: Int
+        if plan.options.count >= 2 {
+          index = OracleOperation.choice.classifierIndex
+        } else if OracleChoicePlanner.asksForProbability(prompt.context) {
+          index = OracleOperation.score.classifierIndex
+        } else if OracleQuestionHeuristics.isUnsupported(prompt.context) {
+          index = OracleOperation.unsupported.classifierIndex
+        } else {
+          index = OracleOperation.noul.classifierIndex
+        }
+        probabilities = (0 ..< OracleIntentClassifier.optionCount).map { $0 == index ? 0.92 : 0.08 / 3 }
+      } else if prompt.options.count == 3 {
         probabilities = [0.12, 0.76, 0.12]
       } else {
         let remaining = max(prompt.options.count - 1, 1)
@@ -95,6 +111,63 @@ private enum OracleOperation: Sendable, Equatable {
   case noul
   case choice
   case score
+  case unsupported
+  case automatic
+
+  var classifierIndex: Int {
+    switch self {
+    case .noul: 0
+    case .choice: 1
+    case .score: 2
+    case .unsupported: 3
+    case .automatic: 0
+    }
+  }
+}
+
+enum OracleQuestionHeuristics {
+  static func isUnsupported(_ question: String) -> Bool {
+    let normalized = question.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    let factualCues = [
+      "what is ",
+      "what's ",
+      "who is ",
+      "where is ",
+      "when is ",
+      "capital of ",
+      "define ",
+      "how many ",
+    ]
+    return factualCues.contains(where: normalized.contains)
+  }
+}
+
+private struct OracleIntentClassifier {
+  static let instructions = """
+    Classify this question into exactly one intent. Use noul only for a yes/no statement, choice only when the question contains explicit alternatives that can be selected, and score only when it asks for likelihood or probability. Use unsupported for factual, open-ended, malformed, absurd, or otherwise non-Magic-8-Ball questions. Never invent Choice options.
+    """
+  static let optionCount = 4
+
+  private let engine: DecisionEngine
+  private let fallbackEnabled: Bool
+
+  init(engine: DecisionEngine, fallbackEnabled: Bool) {
+    self.engine = engine
+    self.fallbackEnabled = fallbackEnabled
+  }
+
+  fileprivate func classify(_ question: String) async throws -> DecisionResult<OracleOperation> {
+    try await engine.choice(
+      instructions: Self.instructions,
+      context: question,
+      options: [
+        ChoiceOption(label: .noul, description: "noul: a question that can be answered yes or no"),
+        ChoiceOption(label: .choice, description: "choice: select one of the explicit alternatives in the question"),
+        ChoiceOption(label: .score, description: "score: estimate likelihood, probability, or confidence"),
+        ChoiceOption(label: .unsupported, description: "unsupported: factual, open-ended, malformed, absurd, or not a Magic 8-Ball question"),
+      ],
+      fallback: fallbackEnabled ? .unsupported : nil)
+  }
 }
 
 private struct OracleOperationSelection: Sendable {
@@ -109,6 +182,7 @@ private struct OracleOperationSelection: Sendable {
 
 private struct OracleRequestPolicy {
   let eligibility: AnyAsyncSpecification<OracleRequest>
+  let choicePlanIsValid: AnyAsyncSpecification<OracleChoicePlan>
   let operation: AsyncFirstMatchSpec<OracleRoutingContext, OracleOperationSelection>
 
   init() {
@@ -116,7 +190,7 @@ private struct OracleRequestPolicy {
       let question = request.question.trimmingCharacters(in: .whitespacesAndNewlines)
       return !question.isEmpty && question.count <= 500
     }
-    let choicePlanIsValid = AnyAsyncSpecification<OracleChoicePlan> { plan in
+    choicePlanIsValid = AnyAsyncSpecification<OracleChoicePlan> { plan in
       guard (2 ... 5).contains(plan.options.count) else { return false }
       return plan.options.allSatisfy { option in
         let trimmed = option.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -127,16 +201,8 @@ private struct OracleRequestPolicy {
       .addPredicate({ $0.mode == .noul }, result: OracleOperationSelection(.noul))
       .addPredicate({ $0.mode == .choice }, result: OracleOperationSelection(.choice))
       .addPredicate({ $0.mode == .score }, result: OracleOperationSelection(.score))
-      .addPredicate(
-        { context in
-          guard context.mode == .automatic else { return false }
-          return try await choicePlanIsValid.isSatisfiedBy(context.choicePlan)
-        },
-        result: OracleOperationSelection(.choice))
-      .addPredicate(
-        { context in context.mode == .automatic && context.asksForProbability },
-        result: OracleOperationSelection(.score))
-      .fallback(OracleOperationSelection(.noul))
+      .addPredicate({ $0.mode == .automatic }, result: OracleOperationSelection(.automatic))
+      .fallback(OracleOperationSelection(.automatic))
       .build()
   }
 }
@@ -159,6 +225,7 @@ private enum OracleResolution: Sendable {
 /// conformance is intentional: specifications are immutable after initialization.
 public final class OracleGameEngine: @unchecked Sendable {
   private let decisionEngine: DecisionEngine
+  private let intentClassifier: OracleIntentClassifier
   private let requestPolicy = OracleRequestPolicy()
   private let answerValidation: AnyAsyncSpecification<OracleAnswer>
   private let resolutionPolicy: AsyncFirstMatchSpec<OracleEvaluation, OracleResolution>
@@ -173,6 +240,9 @@ public final class OracleGameEngine: @unchecked Sendable {
   ) {
     decisionEngine = DecisionEngine(backend: backend, configuration: configuration)
     self.fallbackEnabled = fallbackEnabled
+    intentClassifier = OracleIntentClassifier(
+      engine: decisionEngine,
+      fallbackEnabled: fallbackEnabled)
     if let backendIdentifier {
       self.backendIdentifier = backendIdentifier
     } else if let metadata = backend as? any OracleBackendMetadata {
@@ -216,11 +286,49 @@ public final class OracleGameEngine: @unchecked Sendable {
     guard var selection = try await requestPolicy.operation.decide(routingContext) else {
       throw OracleGameError.noPolicy
     }
-    if selection.operation == .choice {
-      selection = OracleOperationSelection(.choice, choicePlan: choicePlan)
+    let evaluation: OracleEvaluation
+    if selection.operation == .automatic {
+      let intent = try await intentClassifier.classify(question)
+      guard let operation = intent.value else {
+        let reason: String
+        if case let .abstained(abstentionReason) = intent.outcome {
+          reason = abstentionReason
+        } else {
+          reason = "intent classifier abstained"
+        }
+        return .abstained(reason: reason)
+      }
+
+      if operation == .unsupported {
+        evaluation = try await makeUnsupportedEvaluation(
+          classifierResult: intent,
+          reason: "question is outside the supported answer types")
+      } else if operation == .choice {
+        if try await requestPolicy.choicePlanIsValid.isSatisfiedBy(choicePlan) {
+          evaluation = try await evaluate(
+            request,
+            selection: OracleOperationSelection(.choice, choicePlan: choicePlan))
+        } else {
+          evaluation = try await makeUnsupportedEvaluation(
+            classifierResult: intent,
+            reason: "choice alternatives could not be extracted")
+        }
+      } else {
+        evaluation = try await evaluate(
+          request,
+          selection: OracleOperationSelection(operation, choicePlan: choicePlan))
+      }
+    } else {
+      if selection.operation == .choice {
+        selection = OracleOperationSelection(.choice, choicePlan: choicePlan)
+      }
+      evaluation = try await evaluate(request, selection: selection)
     }
 
-    let evaluation = try await evaluate(request, selection: selection)
+    return try await resolve(evaluation)
+  }
+
+  private func resolve(_ evaluation: OracleEvaluation) async throws -> OracleOutcome {
     guard let routed = try await resolutionPolicy.decide(evaluation) else {
       throw OracleGameError.noPolicy
     }
@@ -234,6 +342,32 @@ public final class OracleGameEngine: @unchecked Sendable {
     case .abstained:
       return .abstained(reason: evaluation.reason ?? "decision policy abstained")
     }
+  }
+
+  private func makeUnsupportedEvaluation(
+    classifierResult: DecisionResult<OracleOperation>,
+    reason: String
+  ) async throws -> OracleEvaluation {
+    let source: OracleAnswerSource = backendIdentifier == "offline-fixture"
+      ? .offlineFixture
+      : .model(identifier: backendIdentifier)
+    let answer = OracleAnswer(
+      mode: .unsupported,
+      displayText: "Who knows?",
+      confidence: classifierResult.confidence,
+      source: source)
+    guard try await answerValidation.isSatisfiedBy(answer) else {
+      return OracleEvaluation(
+        answer: nil,
+        confidence: classifierResult.confidence,
+        reason: "answer validation failed",
+        isFallback: false)
+    }
+    return OracleEvaluation(
+      answer: answer,
+      confidence: classifierResult.confidence,
+      reason: reason,
+      isFallback: true)
   }
 
   private func evaluate(
@@ -297,6 +431,8 @@ public final class OracleGameEngine: @unchecked Sendable {
       )
       let text = result.value.map { "\(Int(($0.expectedValue * 100).rounded()))%" }
       return try await makeEvaluation(request: request, mode: .score, displayText: text, result: result)
+    case .unsupported, .automatic:
+      throw OracleGameError.noPolicy
     }
   }
 

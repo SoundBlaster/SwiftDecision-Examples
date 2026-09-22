@@ -48,10 +48,16 @@ OracleBallApp exposes the same opt-in path through `JevOracleBackend` while keep
 the `OracleGameEngine` API unchanged:
 
 With the default `.automatic` mode, `OracleGameEngine` routes boolean questions
-to Noul, probability questions to Score, and comparison questions to Choice.
-Choice options are extracted from explicit alternatives such as “tea or coffee”
-or “tea, coffee, or juice”, then validated through Core specifications before
-the model selects one.
+through a Jev-backed intent classifier. The classifier selects Noul for yes/no
+questions, Score for likelihood questions, and Choice only when the question
+contains explicit alternatives. Choice options are extracted from alternatives
+such as “tea or coffee” or “tea, coffee, or juice”, then validated through Core
+specifications before the model selects one. The classifier is instructed never
+to invent options. Factual, open-ended, malformed, or absurd questions (for
+example, “What is the capital of Paris?”) use the distinct Unsupported fallback
+`Who knows?`; they do not trigger a fabricated Choice request. Classifier
+abstention remains an abstention when fallbacks are disabled, and provider
+errors still propagate as errors.
 
 ```swift
 let backend = try JevOracleBackend(

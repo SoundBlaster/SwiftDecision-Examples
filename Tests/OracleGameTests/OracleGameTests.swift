@@ -48,6 +48,60 @@ final class OracleGameTests: XCTestCase {
     XCTAssertEqual(answer.displayText, "Tea")
   }
 
+  func testAutomaticRoutingUsesUnsupportedFallbackForFactualQuestion() async throws {
+    let engine = OracleGameEngine()
+    let outcome = try await engine.answer(
+      for: OracleRequest(question: "What is the capital of Paris?"))
+
+    guard case let .fallback(answer, reason) = outcome else {
+      return XCTFail("expected unsupported fallback")
+    }
+    XCTAssertEqual(answer.mode, .unsupported)
+    XCTAssertEqual(answer.displayText, "Who knows?")
+    XCTAssertTrue(reason.contains("outside the supported answer types"))
+  }
+
+  func testUnsupportedRouteDoesNotInventChoiceOptionsOrMakeSecondRequest() async throws {
+    let recorder = PromptRecorder()
+    let backend = ClosureDecisionBackend { prompt in
+      await recorder.record(prompt)
+      return DecisionPrediction(
+        probabilities: [0.01, 0.01, 0.01, 0.97],
+        modelIdentifier: "intent-fixture")
+    }
+    let engine = OracleGameEngine(backend: backend)
+
+    let outcome = try await engine.answer(
+      for: OracleRequest(question: "What is the capital of Paris?"))
+
+    guard case let .fallback(answer, _) = outcome else {
+      return XCTFail("expected unsupported fallback")
+    }
+    XCTAssertEqual(answer.mode, .unsupported)
+    let prompts = await recorder.prompts
+    XCTAssertEqual(prompts.count, 1)
+    XCTAssertEqual(prompts[0].kind, .choice)
+    XCTAssertEqual(prompts[0].options.count, 4)
+    XCTAssertTrue(prompts[0].instructions.contains("Never invent Choice options"))
+  }
+
+  func testAutomaticIntentAbstentionRemainsDistinctWhenFallbackIsDisabled() async throws {
+    let backend = ClosureDecisionBackend { prompt in
+      DecisionPrediction(
+        probabilities: Array(repeating: 0.25, count: prompt.options.count),
+        modelIdentifier: "low-confidence-intent")
+    }
+    let engine = OracleGameEngine(backend: backend, fallbackEnabled: false)
+
+    let outcome = try await engine.answer(
+      for: OracleRequest(question: "What is the capital of Paris?"))
+
+    guard case let .abstained(reason) = outcome else {
+      return XCTFail("expected classifier abstention")
+    }
+    XCTAssertTrue(reason.contains("confidence"))
+  }
+
   func testChoicePlannerAcceptsUpToFiveCommaSeparatedOptions() {
     let plan = OracleChoicePlanner.plan(for: "Which should I choose: tea, coffee, juice, water, or soda?")
 
@@ -216,5 +270,13 @@ private actor FixtureJevTransport: JevHTTPTransport {
   func send(_ request: JevHTTPRequest) async throws -> JevHTTPResponse {
     requests.append(request)
     return response
+  }
+}
+
+private actor PromptRecorder {
+  private(set) var prompts: [DecisionPrompt] = []
+
+  func record(_ prompt: DecisionPrompt) {
+    prompts.append(prompt)
   }
 }
