@@ -37,6 +37,17 @@ final class OracleGameTests: XCTestCase {
     XCTAssertEqual(answer.displayText, "tea")
   }
 
+  func testAutomaticRoutingRecognizesDirectAlternatives() async throws {
+    let engine = OracleGameEngine()
+    let outcome = try await engine.answer(for: OracleRequest(question: "Tea or Coffee?"))
+
+    guard case let .accepted(answer) = outcome else {
+      return XCTFail("expected accepted answer")
+    }
+    XCTAssertEqual(answer.mode, .choice)
+    XCTAssertEqual(answer.displayText, "Tea")
+  }
+
   func testChoicePlannerAcceptsUpToFiveCommaSeparatedOptions() {
     let plan = OracleChoicePlanner.plan(for: "Which should I choose: tea, coffee, juice, water, or soda?")
 
@@ -47,6 +58,12 @@ final class OracleGameTests: XCTestCase {
     let plan = OracleChoicePlanner.plan(for: "Choose between tea and coffee")
 
     XCTAssertEqual(plan.options, ["tea", "coffee"])
+  }
+
+  func testChoicePlannerPreservesChoiceCasing() {
+    let plan = OracleChoicePlanner.plan(for: "Should I choose SwiftUI or UIKit?")
+
+    XCTAssertEqual(plan.options, ["SwiftUI", "UIKit"])
   }
 
   func testOfflineNoulUsesAcceptedSpecRoute() async throws {
