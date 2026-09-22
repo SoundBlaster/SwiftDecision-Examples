@@ -58,9 +58,9 @@ final class OraclePageModel {
   var providerDescription: String {
     switch provider {
     case .offline:
-      "Offline fixture powered by SwiftDecision"
+      "Jev not configured · offline fixture"
     case let .jev(model):
-      "Live Jev · \(model)"
+      "Jev configured · live \(model)"
     }
   }
 
