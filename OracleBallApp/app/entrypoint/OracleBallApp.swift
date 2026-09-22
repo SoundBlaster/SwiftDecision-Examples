@@ -5,6 +5,7 @@ import SwiftUI
 struct OracleBallApp: App {
   init() {
     OracleRevealComponent.registerComponent()
+    OracleMotionComponent.registerComponent()
     OracleRevealSystem.registerSystem()
   }
 

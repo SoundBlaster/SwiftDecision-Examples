@@ -37,6 +37,8 @@ struct OracleBallViewport: View {
         renderFailed = true
       }
     }
+    .onAppear { renderer?.setEnvironment(reduceMotion: reduceMotion, paused: scenePhase != .active) }
+    .onDisappear { renderer?.setEnvironment(reduceMotion: reduceMotion, paused: true) }
     .overlay {
       if renderFailed {
         ContentUnavailableView(

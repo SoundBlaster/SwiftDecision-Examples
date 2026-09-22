@@ -23,15 +23,14 @@ enum OracleAnswerTexture {
       cg.fill(CGRect(origin: .zero, size: size))
       let colors =
         [
-          UIColor(red: 0.17, green: 0.055, blue: 0.94, alpha: 1).cgColor,
-          UIColor(red: 0.035, green: 0.014, blue: 0.26, alpha: 1).cgColor,
+          UIColor(red: 0.12, green: 0.045, blue: 0.72, alpha: 1).cgColor,
+          UIColor(red: 0.10, green: 0.035, blue: 0.62, alpha: 1).cgColor,
         ] as CFArray
       if let gradient = CGGradient(
         colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1])
       {
-        cg.drawRadialGradient(
-          gradient, startCenter: CGPoint(x: 384, y: 170), startRadius: 0,
-          endCenter: CGPoint(x: 384, y: 250), endRadius: 570, options: .drawsAfterEndLocation)
+        cg.drawLinearGradient(
+          gradient, start: CGPoint(x: 384, y: 0), end: CGPoint(x: 384, y: 768), options: [])
       }
       // Fixed flecks give the translucent blue face a subtle mineral texture.
       for index in 0..<140 {

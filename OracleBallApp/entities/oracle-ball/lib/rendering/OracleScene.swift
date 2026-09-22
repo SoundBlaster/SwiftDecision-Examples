@@ -6,6 +6,7 @@ import UIKit
 final class OracleScene {
   let root = Entity()
   private let plate = Entity()
+  private let motion = OracleMotionInput()
   private let incoming: ModelEntity
   private var lastRequest = -1
 
@@ -74,10 +75,20 @@ final class OracleScene {
     glass.position.z = 0.874
     glass.name = "WindowGlass"
     ball.addChild(glass)
-    try await OracleLighting.install(on: ball)
+    let lighting = try await OracleLighting.install(on: ball)
+    root.components.set(OracleMotionComponent(
+      input: motion, camera: camera, lighting: lighting, contour: contour,
+      reduceMotion: reduceMotion, isPaused: paused))
+    motion.setActive(!paused && !reduceMotion)
   }
 
   func setEnvironment(reduceMotion: Bool, paused: Bool) {
+    motion.setActive(!paused && !reduceMotion)
+    if var state = root.components[OracleMotionComponent.self] {
+      state.reduceMotion = reduceMotion
+      state.isPaused = paused
+      root.components.set(state)
+    }
     guard var state = plate.components[OracleRevealComponent.self] else { return }
     state.reduceMotion = reduceMotion
     state.isPaused = paused

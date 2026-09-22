@@ -1,13 +1,16 @@
 import OraclePresentation
 import RealityKit
+import simd
 
-/// The only owner of the plate transform and absorption controls.
+/// Owns camera parallax, lighting, and the plate transform and absorption controls.
 @MainActor
 final class OracleRevealSystem: System {
   private static let query = EntityQuery(where: .has(OracleRevealComponent.self))
+  private static let motionQuery = EntityQuery(where: .has(OracleMotionComponent.self))
   required init(scene: RealityKit.Scene) {}
 
   func update(context: SceneUpdateContext) {
+    updateMotion(context: context)
     for entity in context.entities(matching: Self.query, updatingSystemWhen: .rendering) {
       guard var state = entity.components[OracleRevealComponent.self], !state.isPaused else {
         continue
@@ -45,7 +48,11 @@ final class OracleRevealSystem: System {
       }
       let frame = TriangleReveal.sample(elapsed: sampleTime, reduceMotion: state.reduceMotion)
       entity.position = frame.position
-      entity.orientation = frame.orientation
+      let tilt = state.reduceMotion ? .zero
+        : entity.parent?.parent?.components[OracleMotionComponent.self]?.tilt ?? SIMD2<Float>.zero
+      let response = frame.clarity * 0.28
+      entity.orientation = simd_quatf(angle: -tilt.y * response, axis: [1, 0, 0])
+        * simd_quatf(angle: tilt.x * response, axis: [0, 1, 0]) * frame.orientation
       for child in entity.children {
         guard var model = child.components[ModelComponent.self] else { continue }
         for index in model.materials.indices {
@@ -56,6 +63,32 @@ final class OracleRevealSystem: System {
         child.components.set(model)
       }
       entity.components.set(state)
+    }
+  }
+
+  private func updateMotion(context: SceneUpdateContext) {
+    for root in context.entities(matching: Self.motionQuery, updatingSystemWhen: .rendering) {
+      guard var state = root.components[OracleMotionComponent.self], !state.isPaused else {
+        continue
+      }
+      let dt = max(0, min(context.deltaTime, 0.1))
+      state.elapsed += dt
+      state.tilt = state.reduceMotion ? .zero : OracleParallax.smooth(
+        current: state.tilt, target: state.input.sample(), deltaTime: dt)
+      let tilt = state.tilt
+      // A moving viewpoint reveals the rim, glass and plate at different depths.
+      let position = SIMD3<Float>(tilt.x * 0.8, tilt.y * 0.6, 3.55)
+      state.camera.look(at: .zero, from: position, relativeTo: root)
+      let time = Float(state.elapsed)
+      let drift: SIMD2<Float> = state.reduceMotion ? .zero
+        : [0.10 * sin(time * 0.23), 0.045 * sin(time * 0.3)]
+      state.lighting.orientation = simd_quatf(angle: tilt.x * 0.9 + drift.x, axis: [0, 1, 0])
+        * simd_quatf(angle: tilt.y * 0.6 + drift.y, axis: [1, 0, 0])
+      // Keep the decorative silhouette ring tangent to the sphere as the camera moves.
+      let direction = simd_normalize(position)
+      state.contour.position = direction * 0.282
+      state.contour.orientation = simd_quatf(from: [0, 0, 1], to: direction)
+      root.components.set(state)
     }
   }
 }

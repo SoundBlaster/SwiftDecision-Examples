@@ -10,9 +10,14 @@ using namespace metal;
     half3 sharp = params.textures().base_color().sample(s, uv).rgb;
     half3 blurred = params.textures().custom().sample(s, uv).rgb;
     half3 surface = mix(blurred, sharp, half(saturate(controls.w)));
-    // A restrained grazing highlight reveals the upper bevel without a bloom pass.
-    float topGlow = exp(-pow((uv.y - 0.035) / 0.025, 2.0));
-    surface += half3(0.12, 0.065, 0.35) * half(topGlow);
+    // A broad planar gradient, never an edge highlight: the face stays visually flat.
+    // World-space normal and view direction respond to both plate float and phone tilt.
+    float3 normal = normalize((params.uniforms().model_to_world() * float4(0, 0, 1, 0)).xyz);
+    float3 view = normalize(params.geometry().view_direction());
+    float slope = clamp(0.10 + 0.65 * normal.y + 0.45 * (view.y - normal.y), -0.18, 0.18);
+    float lateral = clamp(0.35 * (view.x - normal.x), -0.08, 0.08);
+    float shading = 1.0 + (0.5 - uv.y) * 2.0 * slope + (uv.x - 0.5) * lateral;
+    surface *= half(shading);
     half transmission = half(exp(-max(controls.x, 0.0) * max(controls.y, 0.0)));
     half3 fluid = half3(0.001, 0.0015, 0.007);
     params.surface().set_emissive_color(mix(fluid, surface * half(controls.z), transmission));

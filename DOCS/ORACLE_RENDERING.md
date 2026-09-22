@@ -10,7 +10,7 @@ The target is declared in `project.yml` as `OracleBallApp`, with an iOS 26.0
 deployment target and the `OraclePresentation` package product. Generate or
 open the Xcode project that contains this target, select the **OracleBallApp**
 scheme, choose an iOS 26 simulator, and run. The app registers
-`OracleRevealComponent` and `OracleRevealSystem` at launch.
+`OracleRevealComponent`, `OracleMotionComponent`, and `OracleRevealSystem` at launch.
 
 The shader requires the optional Metal Toolchain component. If Xcode reports
 that `metal` cannot run, install it with `xcodebuild -downloadComponent MetalToolchain`.
@@ -29,12 +29,13 @@ when its decision result is available.
 | `OracleBallApp/app/entrypoint` | System registration and app entry point |
 | `OracleBallApp/pages/oracle/ui` | Screen composition and cosmic backdrop |
 | `OracleBallApp/features/ask-oracle/ui` | Question field and sample mode selector |
-| `OracleBallApp/entities/oracle-ball/model` | Render phase component |
+| `OracleBallApp/entities/oracle-ball/model` | Reveal and motion components |
+| `OracleBallApp/entities/oracle-ball/lib/motion` | Core Motion lifecycle and neutral attitude |
 | `OracleBallApp/entities/oracle-ball/lib/geometry` | Procedural mesh generation |
 | `OracleBallApp/entities/oracle-ball/lib/rendering` | Scene, light, texture, materials and Metal shader |
 | `OracleBallApp/entities/oracle-ball/ui` | Stable RealityView viewport |
 | `OracleBallApp/shared/assets` | Bundled generated nebula |
-| `Sources/OraclePresentation` | Pure animation math, tested without a renderer |
+| `Sources/OraclePresentation` | Pure reveal and parallax math, tested without a renderer |
 
 ## Scene ownership
 
@@ -57,8 +58,27 @@ package.
 The SwiftUI viewport passes `scenePhase` into the scene. Rendering time pauses
 when the scene is not active. The environment also passes
 `accessibilityReduceMotion`, which keeps the plate at the window, animates only clarity/absorption,
-and removes the bob and roll. The reveal task uses an identity containing the request ID and renderer
+and removes plate rotation, camera parallax, and lighting drift. The reveal task uses an identity containing the request ID and renderer
 presence so a newer request cancels the previous staged demo result.
+
+## Motion and depth cues
+
+`OracleMotionInput` reads fused Core Motion device attitude at 60 Hz, using the
+first sample as neutral. A new neutral pose is captured after resuming motion
+or changing portrait/landscape orientation. The renderer polls the latest sample;
+sensor updates do not trigger SwiftUI view updates.
+
+`OracleParallax` computes a relative quaternion, bounds each tilt axis to
+±0.35 radians, and smooths it with a 0.18-second exponential response. The
+render system then moves the perspective camera, rotates the studio image light
+and key/rim rig, and adds a small tilt to the floating plate. The silhouette ring
+tracks the camera so it stays tangent to the sphere. Lighting also drifts slowly
+at rest, including on simulators without motion sensors.
+
+Plate bob and roll are 1.8× the initial prototype amplitudes (`0.0108` units and
+`0.027` radians). Gentle pitch and yaw make its thickness and depth visible.
+Reduce Motion disables all of these movements and stops sensor updates; the
+viewport also stops sensors while inactive or offscreen.
 
 ## Geometry and materials
 
@@ -73,7 +93,10 @@ presence so a newer request cancels the previous staged demo result.
 
 The front texture is rasterized once per answer by `OracleAnswerTexture`. The
 `oracleFace` Metal shader blends a blurred and sharp texture according to the
-sampled clarity and applies exponential artistic absorption. `oracleEdge`
+sampled clarity and applies exponential artistic absorption. A subtle linear
+base gradient spans the entire face. The shader modulates that gradient using
+the plate's world-space normal and the viewing direction, so both floating and
+phone tilt affect it. There is no localized bright band along the upper edge. `oracleEdge`
 applies the same absorption controls to the plate edge. This is an artistic
 approximation: there is no fluid simulation, true refraction, or bloom pass.
 The transparent window, cavity wall, and layered plate positions provide the
@@ -105,5 +128,11 @@ On the iPhone 18 Pro / iOS 27 simulator, visual inspection confirmed the 3D
 scene and legible face. Interaction checks covered Score (`87%`), Choice,
 keyboard input, viewport resizing, portrait/landscape layout, keyboard dismissal
 on submit, and background/foreground restoration.
-The checked-in screenshot is from that simulator, not a design mockup.
-Rendering performance and visual quality on physical hardware remain to be checked.
+The checked-in screenshot shows the initial simulator appearance before the
+motion update; it is not a design mockup.
+The motion update passes a signed iPhone Air build, device installation and launch,
+and `swift test`
+(25 tests: 16 City Chain, 3 reveal, 6 parallax). Parallax checks cover relative
+attitude, limits, quaternion normalization, antipodal equivalence, smoothing,
+and invalid inputs. Physical hand-tilt feel and rendering performance still
+require a hands-on assessment; automated math checks do not establish those.
