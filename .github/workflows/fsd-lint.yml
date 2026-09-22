@@ -18,3 +18,5 @@ jobs:
           path: .fsd-ios-tooling
       - name: Run FSD architecture lint
         run: swift .fsd-ios-tooling/tools/fsd-ios.swift lint --config .fsd-ios.yml --format text
+      - name: Lint Oracle architecture
+        run: swift .fsd-ios-tooling/tools/fsd-ios.swift lint --config .fsd-oracle.yml --format text

@@ -10,12 +10,23 @@ jobs:
     runs-on: xcode-27
     steps:
       - uses: actions/checkout@v4
+      - name: Install Metal compiler for the Oracle shader
+        run: xcodebuild -downloadComponent MetalToolchain
       - name: Build iOS simulator app
         run: >-
           xcodebuild
           -skipMacroValidation
           -project CityChainApp.xcodeproj
           -scheme CityChainApp
+          -destination 'generic/platform=iOS Simulator'
+          build
+          CODE_SIGNING_ALLOWED=NO
+      - name: Build Oracle graphics demo
+        run: >-
+          xcodebuild
+          -skipMacroValidation
+          -project CityChainApp.xcodeproj
+          -scheme OracleBallApp
           -destination 'generic/platform=iOS Simulator'
           build
           CODE_SIGNING_ALLOWED=NO
