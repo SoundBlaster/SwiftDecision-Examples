@@ -3,7 +3,9 @@ import SwiftUI
 
 struct OracleBallViewport: View {
   let answer: String
-  let revealID: Int
+  let requestID: Int
+  let answerRequestID: Int
+  let terminalRequestID: Int
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.scenePhase) private var scenePhase
   @State private var renderer: OracleScene?
@@ -23,19 +25,31 @@ struct OracleBallViewport: View {
     } update: { _ in
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: scenePhase != .active)
     }
-    .task(id: "\(revealID)-\(renderer != nil)") {
-      guard let renderer, revealID > 0 else { return }
-      renderer.beginWaiting(request: revealID)
+    .task(id: "\(requestID)-\(renderer != nil)") {
+      guard let renderer, requestID > 0 else { return }
+      renderer.beginWaiting(request: requestID)
+      if terminalRequestID == requestID {
+        renderer.cancelWaiting(request: requestID)
+      } else if answerRequestID == requestID {
+        do {
+          try renderer.present(answer: answer, request: requestID)
+        } catch {
+          renderFailed = true
+        }
+      }
+    }
+    .onChange(of: answerRequestID) { _, _ in
+      guard let renderer, requestID > 0 else { return }
+      guard answerRequestID == requestID else { return }
       do {
-        // Presentation demo only. A future provider calls present when its result arrives.
-        try await Task.sleep(for: .milliseconds(750))
-        try Task.checkCancellation()
-        try renderer.present(answer: answer, request: revealID)
-      } catch is CancellationError {
-        // A newer request owns the scene now.
+        try renderer.present(answer: answer, request: requestID)
       } catch {
         renderFailed = true
       }
+    }
+    .onChange(of: terminalRequestID) { _, _ in
+      guard let renderer, requestID > 0, terminalRequestID == requestID else { return }
+      renderer.cancelWaiting(request: requestID)
     }
     .onAppear { renderer?.setEnvironment(reduceMotion: reduceMotion, paused: scenePhase != .active) }
     .onDisappear { renderer?.setEnvironment(reduceMotion: reduceMotion, paused: true) }

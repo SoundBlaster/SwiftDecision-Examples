@@ -1,11 +1,13 @@
 import SwiftUI
+import OracleGame
 
 struct OraclePage: View {
-  @State private var question = ""
-  @State private var answer = "Definitely\nyes"
-  @State private var revealID = 0
-  @State private var mode: OracleMode = .noul
+  @State private var model: OraclePageModel
   @State private var isShowingInfo = false
+
+  init(model: OraclePageModel = OraclePageModel()) {
+    _model = State(initialValue: model)
+  }
 
   var body: some View {
     GeometryReader { proxy in
@@ -37,11 +39,15 @@ struct OraclePage: View {
                 .offset(y: -viewportSide * 0.058)
                 .accessibilityHidden(true)
 
-              OracleBallViewport(answer: answer, revealID: revealID)
+              OracleBallViewport(
+                answer: model.answer.displayText,
+                requestID: model.requestID,
+                answerRequestID: model.answerRequestID,
+                terminalRequestID: model.terminalRequestID)
                 .frame(width: viewportSide, height: viewportSide)
                 .id("oracle-ball-viewport")
                 .accessibilityLabel(
-                  "Oracle answer: \(answer.replacingOccurrences(of: "\n", with: " "))")
+                  "Oracle answer: \(model.answer.displayText.replacingOccurrences(of: "\n", with: " "))")
             }
             .frame(width: viewportSide, height: viewportSide)
             .frame(maxWidth: .infinity)
@@ -49,9 +55,9 @@ struct OraclePage: View {
             Spacer(minLength: 4)
 
             VStack(spacing: 12) {
-              AskOracleField(text: $question, onSubmit: reveal)
-              OracleModeSelector(selection: $mode)
-              Text("Demo answers are deterministic and run locally")
+              AskOracleField(text: $model.question, onSubmit: model.submit)
+              OracleModeSelector(selection: $model.mode)
+              Text(model.statusMessage ?? "Offline fixture powered by SwiftDecision")
                 .font(.caption2.weight(.medium))
                 .tracking(0.5)
                 .foregroundStyle(.white.opacity(0.34))
@@ -84,10 +90,6 @@ struct OraclePage: View {
     }
   }
 
-  private func reveal() {
-    answer = mode.sampleAnswer
-    revealID += 1
-  }
 }
 
 private struct OracleHeader: View {
@@ -154,7 +156,7 @@ private struct OracleInfoSheet: View {
       Text("About the oracle")
         .font(.title3.weight(.semibold))
       Text(
-        "This screen is a visual demo. Each reveal selects a deterministic local sample; no model or network call is made."
+        "This screen uses SwiftDecision and SpecificationCore with a deterministic offline backend. A Jev provider can be injected later without changing the scene."
       )
       .font(.body)
       .foregroundStyle(.secondary)

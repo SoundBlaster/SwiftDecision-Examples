@@ -33,6 +33,8 @@ targets:
     dependencies:
       - package: SwiftDecisionExamples
         product: OraclePresentation
+      - package: SwiftDecisionExamples
+        product: OracleGame
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
