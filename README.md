@@ -2,6 +2,22 @@
 
 Small applications that demonstrate model decisions composed with `SpecificationCore` rules.
 
+## OracleBallApp
+
+OracleBallApp is an iOS 26 SwiftUI and RealityKit Magic 8 Ball rendering demo.
+It uses a deterministic local answer for the presentation flow and keeps the
+rendering boundary ready for a future SwiftDecision provider. The scene uses
+procedural geometry, a depth-layered open shell, a textured triangular answer
+plate, and a custom Metal absorption effect. See
+[`DOCS/ORACLE_RENDERING.md`](DOCS/ORACLE_RENDERING.md) for the scene ownership,
+run instructions, lifecycle, geometry, material limits, and validation record.
+
+<img src="DOCS/Images/oracle-demo.png" alt="Oracle graphics demo running in iPhone Simulator" width="320">
+
+Open `CityChainApp.xcodeproj`, select the **OracleBallApp** scheme, and run on
+an iOS 26+ simulator or device. Use the arrow to replay; select Noul, Choice or
+Score to preview different answer textures. No API key is needed.
+
 ## City Chain
 
 City Chain is an offline-testable game engine for a US cities word chain. The player may enter any city name; Noul checks whether it is a US city. The built-in catalog is only used for computer replies and contains the 50 state capitals plus 50 additional large cities.

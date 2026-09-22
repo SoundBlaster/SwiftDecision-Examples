@@ -9,7 +9,8 @@ let package = Package(
     .macOS(.v10_15),
   ],
   products: [
-    .library(name: "CityChainGame", targets: ["CityChainGame"])
+    .library(name: "CityChainGame", targets: ["CityChainGame"]),
+    .library(name: "OraclePresentation", targets: ["OraclePresentation"])
   ],
   dependencies: [
     .package(url: "https://github.com/SoundBlaster/SwiftDecision.git", exact: "0.2.0"),
@@ -17,6 +18,8 @@ let package = Package(
     .package(url: "https://github.com/SoundBlaster/SwiftJev.git", exact: "0.1.0"),
   ],
   targets: [
+    .target(name: "OraclePresentation"),
+    .testTarget(name: "OraclePresentationTests", dependencies: ["OraclePresentation"]),
     .target(
       name: "CityChainGame",
       dependencies: [
