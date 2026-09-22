@@ -35,6 +35,8 @@ targets:
         product: OraclePresentation
       - package: SwiftDecisionExamples
         product: OracleGame
+      - package: SwiftDecisionExamples
+        product: OracleHistory
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES

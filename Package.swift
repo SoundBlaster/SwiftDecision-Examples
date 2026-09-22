@@ -34,7 +34,11 @@ let package = Package(
       name: "OracleGameTests",
       dependencies: ["OracleGame", .product(name: "SwiftJev", package: "SwiftJev")]
     ),
-    .target(name: "OracleHistory", dependencies: ["OracleGame"]),
+    .target(
+      name: "OracleHistory",
+      dependencies: ["OracleGame"],
+      resources: [.process("PrivacyInfo.xcprivacy")]
+    ),
     .testTarget(name: "OracleHistoryTests", dependencies: ["OracleHistory"]),
     .target(
       name: "CityChainGame",
