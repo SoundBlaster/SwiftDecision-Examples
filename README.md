@@ -42,3 +42,21 @@ let game = CityChainGame(decisions: DecisionEngine(backend: backend))
 ```
 
 `makeJev` performs configuration validation and does not send a request during initialization. Keep the API key outside source control and inject it from the app's development or deployment secret configuration. The existing SwiftUI app uses the offline backend until its `AppDependencies` is constructed with a live backend.
+
+OracleBallApp exposes the same opt-in path through `JevOracleBackend` while keeping
+the `OracleGameEngine` API unchanged:
+
+```swift
+let backend = try JevOracleBackend(
+    apiKey: ProcessInfo.processInfo.environment["TYPESAFE_API_KEY"],
+    model: "jev-latest"
+)
+let oracle = OracleGameEngine(backend: backend)
+let outcome = try await oracle.answer(
+    for: OracleRequest(question: "Will it work?", mode: .noul)
+)
+```
+
+Initialization only validates configuration. Use an injected `JevHTTPTransport`
+for deterministic tests; live calls remain caller opt-in and are never required
+by the default build or test suite.

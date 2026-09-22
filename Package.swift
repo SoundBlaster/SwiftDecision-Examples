@@ -26,9 +26,13 @@ let package = Package(
       dependencies: [
         .product(name: "SwiftDecision", package: "SwiftDecision"),
         .product(name: "SpecificationCore", package: "SpecificationCore"),
+        .product(name: "SwiftJev", package: "SwiftJev"),
       ]
     ),
-    .testTarget(name: "OracleGameTests", dependencies: ["OracleGame"]),
+    .testTarget(
+      name: "OracleGameTests",
+      dependencies: ["OracleGame", .product(name: "SwiftJev", package: "SwiftJev")]
+    ),
     .target(
       name: "CityChainGame",
       dependencies: [

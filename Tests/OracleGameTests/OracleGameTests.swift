@@ -1,6 +1,8 @@
+import Foundation
 import XCTest
 @testable import OracleGame
 import SwiftDecision
+import SwiftJev
 
 final class OracleGameTests: XCTestCase {
   func testOfflineNoulUsesAcceptedSpecRoute() async throws {
@@ -114,5 +116,44 @@ final class OracleGameTests: XCTestCase {
     let outcome = try await engine.answer(for: OracleRequest(question: "Who?", mode: .noul))
     guard case let .accepted(answer) = outcome else { return XCTFail("expected accepted answer") }
     XCTAssertEqual(answer.source, .model(identifier: "jev-audit-model"))
+  }
+
+  func testJevAdapterUsesInjectedTransportWithoutLiveNetworking() async throws {
+    let responseBody = try JSONSerialization.data(withJSONObject: [
+      "model": "jev-fixture",
+      "answers": [
+        "swiftdecision": [
+          "type": "noul",
+          "noul": 0.9,
+        ]
+      ]
+    ])
+    let transport = FixtureJevTransport(response: JevHTTPResponse(statusCode: 200, body: responseBody))
+    let backend = try JevOracleBackend(
+      apiKey: "fixture-key",
+      model: "jev-test",
+      transport: transport)
+    let engine = OracleGameEngine(backend: backend)
+
+    let outcome = try await engine.answer(for: OracleRequest(question: "Is this a fixture?", mode: .noul))
+    guard case let .accepted(answer) = outcome else { return XCTFail("expected accepted Jev answer") }
+    XCTAssertEqual(answer.source, .model(identifier: "jev-test"))
+    let requests = await transport.requests
+    XCTAssertEqual(requests.count, 1)
+    XCTAssertEqual(requests[0].headers["Authorization"], "Bearer fixture-key")
+  }
+}
+
+private actor FixtureJevTransport: JevHTTPTransport {
+  let response: JevHTTPResponse
+  var requests: [JevHTTPRequest] = []
+
+  init(response: JevHTTPResponse) {
+    self.response = response
+  }
+
+  func send(_ request: JevHTTPRequest) async throws -> JevHTTPResponse {
+    requests.append(request)
+    return response
   }
 }
