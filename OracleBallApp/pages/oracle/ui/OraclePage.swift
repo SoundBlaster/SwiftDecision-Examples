@@ -30,31 +30,15 @@ struct OraclePage: View {
 
             Spacer(minLength: 4)
 
-            ZStack(alignment: .bottom) {
-              Ellipse()
-                .fill(Color.oraclePurple.opacity(0.25))
-                .frame(width: viewportSide * 0.9, height: viewportSide * 0.16)
-                .blur(radius: viewportSide * 0.08)
-                .offset(y: -viewportSide * 0.03)
-                .accessibilityHidden(true)
-
-              Ellipse()
-                .stroke(Color.oracleLavender.opacity(0.7), lineWidth: 1)
-                .frame(width: viewportSide * 0.72, height: viewportSide * 0.085)
-                .shadow(color: .oraclePurple, radius: 7)
-                .offset(y: -viewportSide * 0.058)
-                .accessibilityHidden(true)
-
-              OracleBallViewport(
-                answer: model.answer.displayText,
-                requestID: model.requestID,
-                answerRequestID: model.answerRequestID,
-                terminalRequestID: model.terminalRequestID)
-                .frame(width: viewportSide, height: viewportSide)
-                .id("oracle-ball-viewport")
-                .accessibilityLabel(
-                  "Oracle answer: \(model.answer.displayText.replacingOccurrences(of: "\n", with: " "))")
-            }
+            OracleBallViewport(
+              answer: model.answer.displayText,
+              requestID: model.requestID,
+              answerRequestID: model.answerRequestID,
+              terminalRequestID: model.terminalRequestID)
+              .frame(width: viewportSide, height: viewportSide)
+              .id("oracle-ball-viewport")
+              .accessibilityLabel(
+                "Oracle answer: \(model.answer.displayText.replacingOccurrences(of: "\n", with: " "))")
             .frame(width: viewportSide, height: viewportSide)
             .frame(maxWidth: .infinity)
 

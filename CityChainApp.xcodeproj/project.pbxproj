@@ -29,6 +29,11 @@
 		82E6986B7DF9835BC0DFA101 /* OracleMotionInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = D28DFCC17C6D03DE5A7A7D1A /* OracleMotionInput.swift */; };
 		85139911433978FEDC77673D /* OracleFace.metal in Sources */ = {isa = PBXBuildFile; fileRef = EC4B8F1131B0DF0B3975D1D3 /* OracleFace.metal */; };
 		A3EE2CC47B4CB15DD7A30F73 /* OracleMaterials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 173D0B5C45B582AFDB6217F4 /* OracleMaterials.swift */; };
+		A9F100000000000000000001 /* OracleFieldMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F100000000000000000002 /* OracleFieldMesh.swift */; };
+		A9F100000000000000000003 /* OracleFieldComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F100000000000000000004 /* OracleFieldComponent.swift */; };
+		A9F100000000000000000005 /* OracleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F100000000000000000006 /* OracleField.swift */; };
+		A9F100000000000000000007 /* OracleFieldSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F100000000000000000008 /* OracleFieldSystem.swift */; };
+		A9F100000000000000000009 /* OracleField.metal in Sources */ = {isa = PBXBuildFile; fileRef = A9F10000000000000000000A /* OracleField.metal */; };
 		AF6617E50ED31DA57800D22C /* OracleMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57250EFE799C3061E9C2760F /* OracleMesh.swift */; };
 		B8487555A70BD40DA8F7B8F0 /* AskOracleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A1AE4194E83ECDCE129A0C /* AskOracleField.swift */; };
 		BEEB7D3D5DEE34E208AFB5DF /* OracleCosmicBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6D0F2E9F233D95523F6AADE /* OracleCosmicBackground.swift */; };
@@ -65,6 +70,11 @@
 		A4EA5F6E5CAB64FE4C85581F /* CityChainPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainPage.swift; sourceTree = "<group>"; };
 		A67E1F11F5D3410963D22099 /* AppDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencies.swift; sourceTree = "<group>"; };
 		A9E8AA3D45A8DA72E5C9C6AE /* OracleBallApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleBallApp.swift; sourceTree = "<group>"; };
+		A9F100000000000000000002 /* OracleFieldMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldMesh.swift; sourceTree = "<group>"; };
+		A9F100000000000000000004 /* OracleFieldComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldComponent.swift; sourceTree = "<group>"; };
+		A9F100000000000000000006 /* OracleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleField.swift; sourceTree = "<group>"; };
+		A9F100000000000000000008 /* OracleFieldSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldSystem.swift; sourceTree = "<group>"; };
+		A9F10000000000000000000A /* OracleField.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleField.metal; sourceTree = "<group>"; };
 		B4FEBB2DA601F4435F8A4D24 /* OracleAnswerTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleAnswerTexture.swift; sourceTree = "<group>"; };
 		BABBD1A12DA4DC7CDD5E30DA /* CityChainAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainAppApp.swift; sourceTree = "<group>"; };
 		BD88EDB4A07A20B61CED052A /* OracleLighting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleLighting.swift; sourceTree = "<group>"; };
@@ -168,6 +178,7 @@
 		23391980C59A7DB43B369234 /* model */ = {
 			isa = PBXGroup;
 			children = (
+				A9F100000000000000000004 /* OracleFieldComponent.swift */,
 				2083F00EA6DAE97338B46E3A /* OracleMotionComponent.swift */,
 				445C45A6D202E3AB95183E34 /* OracleRevealComponent.swift */,
 			);
@@ -179,6 +190,9 @@
 			children = (
 				B4FEBB2DA601F4435F8A4D24 /* OracleAnswerTexture.swift */,
 				EC4B8F1131B0DF0B3975D1D3 /* OracleFace.metal */,
+				A9F100000000000000000006 /* OracleField.swift */,
+				A9F10000000000000000000A /* OracleField.metal */,
+				A9F100000000000000000008 /* OracleFieldSystem.swift */,
 				BD88EDB4A07A20B61CED052A /* OracleLighting.swift */,
 				173D0B5C45B582AFDB6217F4 /* OracleMaterials.swift */,
 				C12F66D65B6726987E960904 /* OracleRevealSystem.swift */,
@@ -375,6 +389,7 @@
 		C9014AB88BFBAFE6445429B0 /* geometry */ = {
 			isa = PBXGroup;
 			children = (
+				A9F100000000000000000002 /* OracleFieldMesh.swift */,
 				57250EFE799C3061E9C2760F /* OracleMesh.swift */,
 			);
 			path = geometry;
@@ -559,6 +574,11 @@
 				85139911433978FEDC77673D /* OracleFace.metal in Sources */,
 				08750526D5EF2E6AEEE23BD3 /* OracleLighting.swift in Sources */,
 				A3EE2CC47B4CB15DD7A30F73 /* OracleMaterials.swift in Sources */,
+				A9F100000000000000000001 /* OracleFieldMesh.swift in Sources */,
+				A9F100000000000000000003 /* OracleFieldComponent.swift in Sources */,
+				A9F100000000000000000005 /* OracleField.swift in Sources */,
+				A9F100000000000000000009 /* OracleField.metal in Sources */,
+				A9F100000000000000000007 /* OracleFieldSystem.swift in Sources */,
 				AF6617E50ED31DA57800D22C /* OracleMesh.swift in Sources */,
 				FD2EA813D1694B02FD07768F /* OracleModeSelector.swift in Sources */,
 				EC6595AF675A41B6667771EE /* OracleMotionComponent.swift in Sources */,

@@ -6,6 +6,7 @@ import UIKit
 final class OracleScene {
   let root = Entity()
   private let plate = Entity()
+  private let field: Entity
   private let motion = OracleMotionInput()
   private let incoming: ModelEntity
   private var lastRequest = -1
@@ -16,6 +17,9 @@ final class OracleScene {
     camera.camera.fieldOfViewInDegrees = 40
     camera.position = [0, 0, 3.55]
     root.addChild(camera)
+
+    field = try OracleField.make(reduceMotion: reduceMotion, paused: paused)
+    root.addChild(field)
 
     let ball = Entity()
     ball.name = "BallRoot"
@@ -91,6 +95,11 @@ final class OracleScene {
 
   func setEnvironment(reduceMotion: Bool, paused: Bool) {
     motion.setActive(!paused && !reduceMotion)
+    if var state = field.components[OracleFieldComponent.self] {
+      state.reduceMotion = reduceMotion
+      state.isPaused = paused
+      field.components.set(state)
+    }
     if var state = root.components[OracleMotionComponent.self] {
       state.reduceMotion = reduceMotion
       state.isPaused = paused
