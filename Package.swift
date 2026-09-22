@@ -12,7 +12,7 @@ let package = Package(
     .library(name: "CityChainGame", targets: ["CityChainGame"])
   ],
   dependencies: [
-    .package(url: "https://github.com/SoundBlaster/SwiftDecision.git", exact: "0.1.0"),
+    .package(url: "https://github.com/SoundBlaster/SwiftDecision.git", exact: "0.2.0"),
     .package(url: "https://github.com/SoundBlaster/SpecificationCore.git", exact: "1.1.0"),
   ],
   targets: [

@@ -1,5 +1,5 @@
 {
-  "originHash" : "b7c56272a57e09d957d1ada6ed80d00cd498e69487e95891c5098e9694d66e5b",
+  "originHash" : "296e7bb884f398a1692602ecc085816962593a507214b3d45ffe1ab0134e6612",
   "pins" : [
     {
       "identity" : "specificationcore",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SoundBlaster/SwiftDecision.git",
       "state" : {
-        "revision" : "7af9416e1ac486ae63ae545db753b1b34b46500f",
-        "version" : "0.1.0"
+        "revision" : "16679a03dad9183137bfa461cbacbaceee750d17",
+        "version" : "0.2.0"
       }
     }
   ],
