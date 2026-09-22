@@ -69,6 +69,13 @@ final class OracleScene {
     plate.components.set(OracleRevealComponent(reduceMotion: reduceMotion, isPaused: paused))
     ball.addChild(plate)
 
+    let windowShadow = ModelEntity(
+      mesh: try OracleMesh.windowDisk(radius: 0.497),
+      materials: [try OracleMaterials.windowShadow()])
+    windowShadow.position.z = 0.853
+    windowShadow.name = "Soft window shadow"
+    ball.addChild(windowShadow)
+
     let glass = ModelEntity(
       mesh: .generateSphere(radius: 0.492), materials: [OracleMaterials.glass()])
     glass.scale = [1, 1, 0.025]

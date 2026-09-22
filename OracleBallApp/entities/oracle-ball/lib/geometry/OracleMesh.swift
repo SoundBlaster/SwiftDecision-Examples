@@ -85,6 +85,24 @@ enum OracleMesh {
     return try mesh(positions: positions, normals: normals, uvs: uvs, indices: indices)
   }
 
+  /// A camera-facing disk for the soft shadow just beneath the window glass.
+  static func windowDisk(radius: Float) throws -> MeshResource {
+    let segments = 128
+    var positions: [SIMD3<Float>] = [.zero]
+    var uvs: [SIMD2<Float>] = [[0.5, 0.5]]
+    var indices: [UInt32] = []
+    for index in 0..<segments {
+      let angle = Float(index) / Float(segments) * 2 * pi
+      let point = SIMD2<Float>(cos(angle), sin(angle))
+      positions.append([point.x * radius, point.y * radius, 0])
+      uvs.append(point * 0.5 + SIMD2<Float>(repeating: 0.5))
+      indices.append(contentsOf: [0, UInt32(index + 1), UInt32((index + 1) % segments + 1)])
+    }
+    return try mesh(
+      positions: positions, normals: Array(repeating: [0, 0, 1], count: positions.count),
+      uvs: uvs, indices: indices)
+  }
+
   /// The front plate. Its UVs keep labels upright: the top edge is v == 0.
   static func triangle() throws -> MeshResource {
     let outline = roundedTriangleOutline()

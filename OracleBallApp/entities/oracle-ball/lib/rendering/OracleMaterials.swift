@@ -31,6 +31,15 @@ enum OracleMaterials {
     return material
   }
 
+  static func windowShadow() throws -> CustomMaterial {
+    var material = try custom(named: "oracleWindowShadow")
+    material.blending = .transparent(opacity: .init(floatLiteral: 1))
+    material.faceCulling = .back
+    // Clear central radius, outer radius, maximum edge opacity.
+    material.custom.value = [0.42, 1, 0.92, 0]
+    return material
+  }
+
   static func face(textures: OracleAnswerTexture.Pair) throws -> CustomMaterial {
     var material = try custom(named: "oracleFace")
     material.baseColor = .init(texture: .init(textures.sharp))

@@ -44,7 +44,7 @@ when its decision result is available.
 - a perspective camera at positive Z;
 - a procedural unit sphere with a positive-Z circular opening of radius `0.52`;
 - procedural torus meshes for the metallic rim and inner ring;
-- a dark cavity wall and a thin transparent window disk;
+- a dark cavity wall, a soft circular aperture shadow, and a thin transparent window disk;
 - the floating answer plate, its textured front, and separate perimeter/back geometry;
 - a deterministic image-based-light environment and key/rim lights.
 
@@ -102,6 +102,16 @@ approximation: there is no fluid simulation, true refraction, or bloom pass.
 The transparent window, cavity wall, and layered plate positions provide the
 depth and occlusion cues.
 
+### Soft window shadow
+
+`OracleWindow.metal` shades a separate circular mesh just under the glass.
+Its radial opacity is zero through the central 42% of the radius, then increases
+smoothly to 92% at the rim. The shadow is fixed to the window, so the plate moves
+behind it with correct perspective and occlusion. Both the face and cavity are
+shaded by the same layer. This is an aperture vignette; it does not blur the
+answer or simulate optical bokeh. The parameters live in
+`OracleMaterials.windowShadow()` and require no per-frame textures.
+
 ## Background asset provenance
 
 `OracleNebula.png` is a checked-in 1024×1536 generated raster used by
@@ -128,8 +138,10 @@ On the iPhone 18 Pro / iOS 27 simulator, visual inspection confirmed the 3D
 scene and legible face. Interaction checks covered Score (`87%`), Choice,
 keyboard input, viewport resizing, portrait/landscape layout, keyboard dismissal
 on submit, and background/foreground restoration.
-The checked-in screenshot shows the initial simulator appearance before the
-motion update; it is not a design mockup.
+The checked-in screenshot includes the motion and soft window shadow updates;
+it is a simulator capture, not a design mockup. The shadow update passed both
+simulator and signed device builds. Simulator inspection confirmed readable
+answer text, smooth circular shading, and no opaque disk or glass-ordering artifact.
 The motion update passes a signed iPhone Air build, device installation and launch,
 and `swift test`
 (25 tests: 16 City Chain, 3 reveal, 6 parallax). Parallax checks cover relative
