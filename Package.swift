@@ -27,7 +27,7 @@ let package = Package(
     ),
     .testTarget(
       name: "CityChainGameTests",
-      dependencies: ["CityChainGame", "SwiftDecision", "SpecificationCore"]
+      dependencies: ["CityChainGame", "SwiftDecision", "SpecificationCore", .product(name: "SwiftJev", package: "SwiftJev")]
     ),
   ]
 )

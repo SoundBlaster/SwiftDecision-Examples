@@ -10,7 +10,10 @@ public enum CityChainBackendFactory {
   ///
   /// Pass `apiKey` explicitly for app-owned secret injection, or omit it to read
   /// `TYPESAFE_API_KEY` from the process environment during local development.
-  public static func makeJev(apiKey: String? = nil) throws -> any DecisionBackend {
-    try SwiftJev.JevDecisionBackend(apiKey: apiKey)
+  public static func makeJev(
+    apiKey: String? = nil,
+    transport: any SwiftJev.JevHTTPTransport = SwiftJev.URLSessionJevHTTPTransport()
+  ) throws -> any DecisionBackend {
+    try SwiftJev.JevDecisionBackend(apiKey: apiKey, transport: transport)
   }
 }
