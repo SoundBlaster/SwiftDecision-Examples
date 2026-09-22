@@ -1,10 +1,12 @@
 import Foundation
 import SwiftUI
 import OracleGame
+import OracleHistory
 
 struct OraclePage: View {
   @State private var model: OraclePageModel
   @State private var isShowingInfo = false
+  @State private var infoSheetDetent: PresentationDetent = .medium
 
   init(model: OraclePageModel = OraclePageModel()) {
     _model = State(initialValue: model)
@@ -20,7 +22,10 @@ struct OraclePage: View {
 
         ScrollView {
           VStack(spacing: 0) {
-            OracleHeader { isShowingInfo = true }
+            OracleHeader {
+              infoSheetDetent = .medium
+              isShowingInfo = true
+            }
               .padding(.top, 10)
 
             Spacer(minLength: 4)
@@ -87,8 +92,12 @@ struct OraclePage: View {
       OracleInfoSheet(
         apiKey: model.configuredAPIKey,
         providerDescription: model.providerDescription,
-        onSave: model.saveAPIKey)
-        .presentationDetents([.medium, .large])
+        historyEntries: model.historyEntries,
+        isExpanded: infoSheetDetent == .large,
+        onSave: model.saveAPIKey,
+        onDeleteHistoryEntry: model.deleteHistoryEntry,
+        onClearHistory: model.clearHistory)
+        .presentationDetents([.medium, .large], selection: $infoSheetDetent)
         .presentationDragIndicator(.visible)
     }
   }
@@ -155,95 +164,208 @@ private struct OracleInfoSheet: View {
   @Environment(\.dismiss) private var dismiss
   @State private var apiKey: String
   @State private var isConfigured: Bool
+  @State private var isConfirmingHistoryClear = false
 
   let providerDescription: String
+  let historyEntries: [OracleHistoryEntry]
+  let isExpanded: Bool
   let onSave: (String) -> Bool
+  let onDeleteHistoryEntry: (OracleHistoryEntry.ID) -> Void
+  let onClearHistory: () -> Void
 
-  init(apiKey: String, providerDescription: String, onSave: @escaping (String) -> Bool) {
+  init(
+    apiKey: String,
+    providerDescription: String,
+    historyEntries: [OracleHistoryEntry],
+    isExpanded: Bool,
+    onSave: @escaping (String) -> Bool,
+    onDeleteHistoryEntry: @escaping (OracleHistoryEntry.ID) -> Void,
+    onClearHistory: @escaping () -> Void
+  ) {
     _apiKey = State(initialValue: apiKey)
     _isConfigured = State(initialValue: !apiKey.isEmpty)
     self.providerDescription = providerDescription
+    self.historyEntries = historyEntries
+    self.isExpanded = isExpanded
     self.onSave = onSave
+    self.onDeleteHistoryEntry = onDeleteHistoryEntry
+    self.onClearHistory = onClearHistory
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      HStack {
-        Text("Oracle settings")
-          .font(.title3.weight(.semibold))
-        Spacer()
-        Image(systemName: "lock.shield")
+    List {
+      Section {
+        VStack(alignment: .leading, spacing: 16) {
+          HStack {
+            Text("Oracle settings")
+              .font(.title3.weight(.semibold))
+            Spacer()
+            Image(systemName: "lock.shield")
+              .foregroundStyle(.secondary)
+              .accessibilityHidden(true)
+          }
+
+          Text("TypeSafe Jev")
+            .font(.headline)
+          Text(
+            "Add a TypeSafe.ai API key to ask Jev for structured Noul, Choice, and Score answers. The key is stored securely in this device's Keychain."
+          )
+          .font(.subheadline)
           .foregroundStyle(.secondary)
-          .accessibilityHidden(true)
-      }
+          .lineLimit(nil)
+          .fixedSize(horizontal: false, vertical: true)
+          .layoutPriority(1)
 
-      Text("TypeSafe Jev")
-        .font(.headline)
-      Text(
-        "Add a TypeSafe.ai API key to ask Jev for structured Noul, Choice, and Score answers. The key is stored securely in this device's Keychain."
-      )
-      .font(.subheadline)
-      .foregroundStyle(.secondary)
-      .lineLimit(nil)
-      .fixedSize(horizontal: false, vertical: true)
-      .layoutPriority(1)
+          Link(destination: URL(string: "https://typesafe.ai")!) {
+            Label("Learn more at TypeSafe.ai", systemImage: "arrow.up.right.square")
+              .font(.subheadline.weight(.medium))
+          }
 
-      Link(destination: URL(string: "https://typesafe.ai")!) {
-        Label("Learn more at TypeSafe.ai", systemImage: "arrow.up.right.square")
-          .font(.subheadline.weight(.medium))
-      }
+          HStack(spacing: 10) {
+            Image(systemName: "key.fill")
+              .foregroundStyle(.secondary)
+              .accessibilityHidden(true)
+            SecureField("TYPESAFE_API_KEY", text: $apiKey)
+              .textInputAutocapitalization(.never)
+              .autocorrectionDisabled()
+              .keyboardType(.asciiCapable)
+              .textFieldStyle(.plain)
+              .accessibilityLabel("TypeSafe API key")
+          }
+          .padding(.horizontal, 16)
+          .frame(minHeight: 48)
+          .background(.white.opacity(0.08), in: Capsule())
+          .overlay {
+            Capsule()
+              .stroke(.white.opacity(0.18), lineWidth: 1)
+          }
 
-      HStack(spacing: 10) {
-        Image(systemName: "key.fill")
-          .foregroundStyle(.secondary)
-          .accessibilityHidden(true)
-        SecureField("TYPESAFE_API_KEY", text: $apiKey)
-          .textInputAutocapitalization(.never)
-          .autocorrectionDisabled()
-          .keyboardType(.asciiCapable)
-          .textFieldStyle(.plain)
-          .accessibilityLabel("TypeSafe API key")
-      }
-      .padding(.horizontal, 16)
-      .frame(minHeight: 48)
-      .background(.white.opacity(0.08), in: Capsule())
-      .overlay {
-        Capsule()
-          .stroke(.white.opacity(0.18), lineWidth: 1)
-      }
+          Label(
+            isConfigured ? "Jev key configured" : "Offline fixture active",
+            systemImage: isConfigured ? "checkmark.circle.fill" : "circle.dashed")
+            .font(.caption)
+            .foregroundStyle(isConfigured ? .green : .secondary)
 
-      Label(
-        isConfigured ? "Jev key configured" : "Offline fixture active",
-        systemImage: isConfigured ? "checkmark.circle.fill" : "circle.dashed")
-        .font(.caption)
-        .foregroundStyle(isConfigured ? .green : .secondary)
+          Text(providerDescription)
+            .font(.caption2)
+            .foregroundStyle(.secondary)
 
-      Text(providerDescription)
-        .font(.caption2)
-        .foregroundStyle(.secondary)
+          HStack {
+            Button("Clear key") {
+              apiKey = ""
+              if onSave("") {
+                isConfigured = false
+                dismiss()
+              }
+            }
+            .buttonStyle(.bordered)
 
-      HStack {
-        Button("Clear key") {
-          apiKey = ""
-          if onSave("") {
-            isConfigured = false
-            dismiss()
+            Spacer()
+
+            Button("Save") {
+              if onSave(apiKey) {
+                isConfigured = true
+                dismiss()
+              }
+            }
+            .buttonStyle(.borderedProminent)
           }
         }
-        .buttonStyle(.bordered)
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+      }
+      .textCase(nil)
 
-        Spacer()
-
-        Button("Save") {
-          if onSave(apiKey) {
-            isConfigured = true
-            dismiss()
+      if isExpanded {
+        Section {
+          if historyEntries.isEmpty {
+            Text("No questions yet")
+              .font(.subheadline)
+              .foregroundStyle(.secondary)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .listRowBackground(Color.clear)
+              .listRowSeparator(.hidden)
+          } else {
+            ForEach(historyEntries) { entry in
+              OracleHistoryRow(entry: entry)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                  Button(role: .destructive) {
+                    onDeleteHistoryEntry(entry.id)
+                  } label: {
+                    Label("Delete", systemImage: "trash")
+                  }
+                }
+            }
           }
+        } header: {
+          HStack {
+            Text("History")
+              .font(.headline)
+              .foregroundStyle(.primary)
+
+            Spacer()
+
+            Button {
+              isConfirmingHistoryClear = true
+            } label: {
+              Image(systemName: "trash")
+                .foregroundColor(historyEntries.isEmpty ? Color.secondary : Color.red)
+                .frame(width: 40, height: 36)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(historyEntries.isEmpty)
+            .accessibilityLabel("Delete all history")
+          }
+          .textCase(nil)
         }
-        .buttonStyle(.borderedProminent)
+        .textCase(nil)
       }
     }
-    .padding(24)
+    .listStyle(.plain)
+    .scrollContentBackground(.hidden)
+    .background(Color.clear)
+    .confirmationDialog(
+      "Delete all question history?",
+      isPresented: $isConfirmingHistoryClear,
+      titleVisibility: .visible
+    ) {
+      Button("Delete All", role: .destructive, action: onClearHistory)
+      Button("Cancel", role: .cancel) {}
+    }
+  }
+}
+
+private struct OracleHistoryRow: View {
+  let entry: OracleHistoryEntry
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text(entry.question)
+        .font(.subheadline.weight(.medium))
+        .foregroundStyle(.primary)
+        .fixedSize(horizontal: false, vertical: true)
+
+      Text(entry.answer)
+        .font(.subheadline)
+        .foregroundStyle(Color.oracleLavender)
+        .fixedSize(horizontal: false, vertical: true)
+
+      HStack(spacing: 8) {
+        Text(entry.mode)
+        Text(entry.createdAt, format: .dateTime.month(.abbreviated).day().hour().minute())
+      }
+      .font(.caption2)
+      .foregroundStyle(.secondary)
+    }
+    .padding(.vertical, 6)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .contentShape(Rectangle())
   }
 }
 
