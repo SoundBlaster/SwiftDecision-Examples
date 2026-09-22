@@ -57,7 +57,7 @@ final class OracleGameTests: XCTestCase {
       return XCTFail("expected unsupported fallback")
     }
     XCTAssertEqual(answer.mode, .unsupported)
-    XCTAssertEqual(answer.displayText, "Who knows?")
+    XCTAssertTrue(OracleUnsupportedResponses.messages.contains(answer.displayText))
     XCTAssertTrue(reason.contains("outside the supported answer types"))
   }
 
@@ -111,7 +111,7 @@ final class OracleGameTests: XCTestCase {
         return XCTFail("expected unsupported fallback for \(question)")
       }
       XCTAssertEqual(answer.mode, .unsupported)
-      XCTAssertEqual(answer.displayText, "Who knows?")
+      XCTAssertTrue(OracleUnsupportedResponses.messages.contains(answer.displayText))
     }
   }
 
@@ -124,8 +124,15 @@ final class OracleGameTests: XCTestCase {
       return XCTFail("expected explicit unsupported fallback")
     }
     XCTAssertEqual(answer.mode, .unsupported)
-    XCTAssertEqual(answer.displayText, "Who knows?")
+    XCTAssertTrue(OracleUnsupportedResponses.messages.contains(answer.displayText))
     XCTAssertTrue(reason.contains("unsupported answer mode requested"))
+  }
+
+  func testUnsupportedResponsesOfferSeveralDistinctPhrases() {
+    XCTAssertGreaterThanOrEqual(OracleUnsupportedResponses.messages.count, 5)
+    XCTAssertEqual(
+      Set(OracleUnsupportedResponses.messages).count,
+      OracleUnsupportedResponses.messages.count)
   }
 
   func testChoicePlannerAcceptsUpToFiveCommaSeparatedOptions() {

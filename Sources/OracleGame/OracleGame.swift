@@ -174,6 +174,22 @@ enum OracleQuestionHeuristics {
   }
 }
 
+enum OracleUnsupportedResponses {
+  static let messages = [
+    "Who knows?",
+    "Who can say?",
+    "The stars are silent.",
+    "The future is unclear.",
+    "No clear sign yet.",
+    "The answer is hiding.",
+    "The universe is undecided.",
+  ]
+
+  static func random() -> String {
+    messages.randomElement() ?? messages[0]
+  }
+}
+
 private struct OracleIntentClassifier {
   static let instructions = """
     Classify this question into exactly one intent. Use noul only for a yes/no statement, choice only when the question contains explicit alternatives that can be selected, and score only when it asks for likelihood or probability. Use unsupported for factual, open-ended, malformed, absurd, or otherwise non-Magic-8-Ball questions. Never invent Choice options.
@@ -390,7 +406,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       : .model(identifier: backendIdentifier)
     let answer = OracleAnswer(
       mode: .unsupported,
-      displayText: "Who knows?",
+      displayText: OracleUnsupportedResponses.random(),
       confidence: confidence,
       source: source)
     guard try await answerValidation.isSatisfiedBy(answer) else {
