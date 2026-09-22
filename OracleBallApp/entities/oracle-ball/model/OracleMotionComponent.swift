@@ -2,6 +2,7 @@ import RealityKit
 
 struct OracleMotionComponent: Component {
   let input: OracleMotionInput
+  let ball: Entity
   let camera: PerspectiveCamera
   let lighting: Entity
   let contour: Entity

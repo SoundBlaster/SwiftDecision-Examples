@@ -80,12 +80,14 @@ final class OracleRevealSystem: System {
       let position = SIMD3<Float>(tilt.x * 0.8, tilt.y * 0.6, 3.55)
       state.camera.look(at: .zero, from: position, relativeTo: root)
       let time = Float(state.elapsed)
+      // Move the complete ball together; the camera and ground halo stay fixed.
+      state.ball.position.y = state.reduceMotion ? 0 : 0.025 * sin(time * 0.9)
       let drift: SIMD2<Float> = state.reduceMotion ? .zero
         : [0.10 * sin(time * 0.23), 0.045 * sin(time * 0.3)]
       state.lighting.orientation = simd_quatf(angle: tilt.x * 0.9 + drift.x, axis: [0, 1, 0])
         * simd_quatf(angle: tilt.y * 0.6 + drift.y, axis: [1, 0, 0])
       // Keep the decorative silhouette ring tangent to the sphere as the camera moves.
-      let direction = simd_normalize(position)
+      let direction = simd_normalize(position - state.ball.position)
       state.contour.position = direction * 0.282
       state.contour.orientation = simd_quatf(from: [0, 0, 1], to: direction)
       root.components.set(state)

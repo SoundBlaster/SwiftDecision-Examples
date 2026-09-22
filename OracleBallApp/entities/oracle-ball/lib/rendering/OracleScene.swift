@@ -84,7 +84,7 @@ final class OracleScene {
     ball.addChild(glass)
     let lighting = try await OracleLighting.install(on: ball)
     root.components.set(OracleMotionComponent(
-      input: motion, camera: camera, lighting: lighting, contour: contour,
+      input: motion, ball: ball, camera: camera, lighting: lighting, contour: contour,
       reduceMotion: reduceMotion, isPaused: paused))
     motion.setActive(!paused && !reduceMotion)
   }

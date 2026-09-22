@@ -75,6 +75,11 @@ and key/rim rig, and adds a small tilt to the floating plate. The silhouette rin
 tracks the camera so it stays tangent to the sphere. Lighting also drifts slowly
 at rest, including on simulators without motion sensors.
 
+The whole ball also hovers vertically with a `0.025`-unit amplitude and an
+approximately seven-second period. The camera and ground halo stay fixed while
+the shell, window, shadow, and plate travel together. This hover pauses in the
+background and is disabled by Reduce Motion.
+
 Plate bob and roll are 1.8× the initial prototype amplitudes (`0.0108` units and
 `0.027` radians). Gentle pitch and yaw make its thickness and depth visible.
 Reduce Motion disables all of these movements and stops sensor updates; the
