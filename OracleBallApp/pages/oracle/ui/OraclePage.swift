@@ -281,28 +281,6 @@ private struct OracleInfoSheet: View {
 
       if selectedDetent == .large {
         Section {
-          if historyEntries.isEmpty {
-            Text("No questions yet")
-              .font(.subheadline)
-              .foregroundStyle(.secondary)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .listRowBackground(Color.clear)
-              .listRowSeparator(.hidden)
-          } else {
-            ForEach(historyEntries) { entry in
-              OracleHistoryRow(entry: entry)
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                  Button(role: .destructive) {
-                    onDeleteHistoryEntry(entry.id)
-                  } label: {
-                    Label("Delete", systemImage: "trash")
-                  }
-                }
-            }
-          }
-        } header: {
           HStack {
             Text("History")
               .font(.headline)
@@ -322,7 +300,30 @@ private struct OracleInfoSheet: View {
             .disabled(historyEntries.isEmpty)
             .accessibilityLabel("Delete all history")
           }
-          .textCase(nil)
+          .listRowBackground(Color.clear)
+          .listRowSeparator(.hidden)
+
+          if historyEntries.isEmpty {
+            Text("No questions yet")
+              .font(.subheadline)
+              .foregroundStyle(.secondary)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .listRowBackground(Color.clear)
+              .listRowSeparator(.hidden)
+          } else {
+            ForEach(historyEntries) { entry in
+              OracleHistoryRow(entry: entry)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                  Button(role: .destructive) {
+                    onDeleteHistoryEntry(entry.id)
+                  } label: {
+                    Label("Delete", systemImage: "trash")
+                  }
+              }
+            }
+          }
         }
         .textCase(nil)
       }
