@@ -56,7 +56,11 @@ protocol OracleHapticFeedback {
 
 @MainActor
 final class OracleHaptics: OracleHapticFeedback {
+  private static let submissionCueDuration: TimeInterval = 0.25
+
   private let engine: CHHapticEngine?
+  private var submissionCueEndTime: TimeInterval = 0
+  private var deferredResultTask: Task<Void, Never>?
 
   init() {
     guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else {
@@ -67,6 +71,31 @@ final class OracleHaptics: OracleHapticFeedback {
   }
 
   func play(_ cue: OracleHapticCue) {
+    let now = ProcessInfo.processInfo.systemUptime
+    switch cue {
+    case .submit:
+      deferredResultTask?.cancel()
+      deferredResultTask = nil
+      submissionCueEndTime = now + Self.submissionCueDuration
+      playImmediately(cue)
+    case .positiveResult, .negativeResult:
+      let delay = submissionCueEndTime - now
+      guard delay > 0 else {
+        playImmediately(cue)
+        return
+      }
+
+      deferredResultTask?.cancel()
+      deferredResultTask = Task { @MainActor [weak self] in
+        try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        guard let self, !Task.isCancelled else { return }
+        self.deferredResultTask = nil
+        self.playImmediately(cue)
+      }
+    }
+  }
+
+  private func playImmediately(_ cue: OracleHapticCue) {
     guard let engine else { return }
     do {
       let pattern = try CHHapticPattern(events: cue.events, parameters: [])
