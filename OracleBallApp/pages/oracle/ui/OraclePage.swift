@@ -166,6 +166,7 @@ private struct OracleInfoSheet: View {
   @State private var isConfigured: Bool
   @State private var isConfirmingHistoryClear = false
 
+  private let savedAPIKey: String
   let providerDescription: String
   let historyEntries: [OracleHistoryEntry]
   @Binding var selectedDetent: PresentationDetent
@@ -184,6 +185,7 @@ private struct OracleInfoSheet: View {
   ) {
     _apiKey = State(initialValue: apiKey)
     _isConfigured = State(initialValue: !apiKey.isEmpty)
+    savedAPIKey = apiKey
     self.providerDescription = providerDescription
     self.historyEntries = historyEntries
     self._selectedDetent = selectedDetent
@@ -269,6 +271,7 @@ private struct OracleInfoSheet: View {
               }
             }
             .buttonStyle(.borderedProminent)
+            .disabled(!canSaveAPIKey)
           }
         }
         .padding(.vertical, 4)
@@ -331,6 +334,11 @@ private struct OracleInfoSheet: View {
       Button("Delete All", role: .destructive, action: onClearHistory)
       Button("Cancel", role: .cancel) {}
     }
+  }
+
+  private var canSaveAPIKey: Bool {
+    let candidate = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+    return !candidate.isEmpty && candidate != savedAPIKey
   }
 
   private var historyHeader: some View {
