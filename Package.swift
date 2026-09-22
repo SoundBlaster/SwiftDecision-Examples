@@ -12,8 +12,9 @@ let package = Package(
     .library(name: "CityChainGame", targets: ["CityChainGame"])
   ],
   dependencies: [
-    .package(url: "https://github.com/SoundBlaster/SwiftDecision.git", exact: "0.1.0"),
+    .package(url: "https://github.com/SoundBlaster/SwiftDecision.git", exact: "0.2.0"),
     .package(url: "https://github.com/SoundBlaster/SpecificationCore.git", exact: "1.1.0"),
+    .package(url: "https://github.com/SoundBlaster/SwiftJev.git", exact: "0.1.0"),
   ],
   targets: [
     .target(
@@ -21,11 +22,12 @@ let package = Package(
       dependencies: [
         .product(name: "SwiftDecision", package: "SwiftDecision"),
         .product(name: "SpecificationCore", package: "SpecificationCore"),
+        .product(name: "SwiftJev", package: "SwiftJev"),
       ]
     ),
     .testTarget(
       name: "CityChainGameTests",
-      dependencies: ["CityChainGame", "SwiftDecision", "SpecificationCore"]
+      dependencies: ["CityChainGame", "SwiftDecision", "SpecificationCore", .product(name: "SwiftJev", package: "SwiftJev")]
     ),
   ]
 )

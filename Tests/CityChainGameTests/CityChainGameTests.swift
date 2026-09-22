@@ -1,10 +1,28 @@
+import Foundation
 import SwiftDecision
+import SwiftJev
 import Testing
 
 @testable import CityChainGame
 
 @Suite("City-chain rules")
 struct CityChainGameTests {
+  @Test("The Jev backend factory validates configuration without making a request")
+  func jevFactoryValidatesConfiguration() async throws {
+    let transport = RecordingJevTransport()
+    do {
+      _ = try CityChainBackendFactory.makeJev(apiKey: "", transport: transport)
+      Issue.record("Expected an empty API key to be rejected.")
+    } catch let error as JevDecisionBackendError {
+      #expect(error == .missingAPIKey)
+    } catch {
+      Issue.record("Expected JevDecisionBackendError.missingAPIKey, got \(error).")
+    }
+
+    _ = try CityChainBackendFactory.makeJev(apiKey: "fixture-key", transport: transport)
+    #expect(await transport.requestCount == 0)
+  }
+
   @Test("The player may enter a valid city outside the computer reply catalog")
   func playerCityIsNotRestrictedToReplyCatalog() async throws {
     let backend = FixtureBackend(choiceIndex: 2)
@@ -415,5 +433,15 @@ private actor SuspendedNoulBackend: DecisionBackend {
         probabilities: [0.01, 0.99],
         modelIdentifier: "city-chain-suspended-fixture"
       ))
+  }
+}
+
+
+private actor RecordingJevTransport: JevHTTPTransport {
+  private(set) var requestCount = 0
+
+  func send(_ request: JevHTTPRequest) async throws -> JevHTTPResponse {
+    requestCount += 1
+    return JevHTTPResponse(statusCode: 500, body: Data())
   }
 }

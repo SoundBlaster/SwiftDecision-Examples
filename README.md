@@ -15,3 +15,14 @@ swift test
 ```
 
 The engine package supports iOS 13+ and macOS 10.15+. A SwiftUI example app can use it as its domain layer.
+
+## Optional TypeSafe Jev backend
+
+The package resolves [`SwiftJev 0.1.0`](https://github.com/SoundBlaster/SwiftJev/releases/tag/0.1.0) alongside [`SwiftDecision 0.2.0`](https://github.com/SoundBlaster/SwiftDecision/releases/tag/0.2.0). The game remains offline by default; choose the hosted provider explicitly through `CityChainBackendFactory` when a caller has configured a key:
+
+```swift
+let backend = try CityChainBackendFactory.makeJev(apiKey: apiKey)
+let game = CityChainGame(decisions: DecisionEngine(backend: backend))
+```
+
+`makeJev` performs configuration validation and does not send a request during initialization. Keep the API key outside source control and inject it from the app's development or deployment secret configuration. The existing SwiftUI app uses the offline backend until its `AppDependencies` is constructed with a live backend.
