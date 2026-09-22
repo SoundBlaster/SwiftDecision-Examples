@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import OracleGame
 
@@ -57,12 +58,12 @@ struct OraclePage: View {
             VStack(spacing: 12) {
               AskOracleField(text: $model.question, onSubmit: model.submit)
               OracleModeSelector(selection: $model.mode)
-              Text(model.statusMessage ?? "Offline fixture powered by SwiftDecision")
+              Text(model.statusMessage ?? model.providerDescription)
                 .font(.caption2.weight(.medium))
                 .tracking(0.5)
                 .foregroundStyle(.white.opacity(0.34))
                 .multilineTextAlignment(.center)
-                .accessibilityLabel("Demo answers are deterministic and run locally")
+                .accessibilityLabel(model.statusMessage ?? model.providerDescription)
             }
             .frame(maxWidth: 420)
             .frame(maxWidth: .infinity)
@@ -84,8 +85,11 @@ struct OraclePage: View {
     }
     .preferredColorScheme(.dark)
     .sheet(isPresented: $isShowingInfo) {
-      OracleInfoSheet()
-        .presentationDetents([.height(260)])
+      OracleInfoSheet(
+        apiKey: model.configuredAPIKey,
+        providerDescription: model.providerDescription,
+        onSave: model.saveAPIKey)
+        .presentationDetents([.height(380)])
         .presentationDragIndicator(.visible)
     }
   }
@@ -117,7 +121,7 @@ private struct OracleHeader: View {
           .frame(width: 44, height: 44)
       }
       .buttonStyle(.plain)
-      .accessibilityLabel("About this demo")
+      .accessibilityLabel("Oracle settings")
     }
     .padding(.horizontal, 16)
   }
@@ -150,19 +154,68 @@ private struct OracleSpark: Shape {
 
 private struct OracleInfoSheet: View {
   @Environment(\.dismiss) private var dismiss
+  @State private var apiKey: String
+
+  let providerDescription: String
+  let onSave: (String) -> Void
+
+  init(apiKey: String, providerDescription: String, onSave: @escaping (String) -> Void) {
+    _apiKey = State(initialValue: apiKey)
+    self.providerDescription = providerDescription
+    self.onSave = onSave
+  }
 
   var body: some View {
-    VStack(alignment: .leading) {
-      Text("About the oracle")
-        .font(.title3.weight(.semibold))
+    VStack(alignment: .leading, spacing: 16) {
+      HStack {
+        Text("Oracle settings")
+          .font(.title3.weight(.semibold))
+        Spacer()
+        Image(systemName: "lock.shield")
+          .foregroundStyle(.secondary)
+          .accessibilityHidden(true)
+      }
+
+      Text("TypeSafe Jev")
+        .font(.headline)
       Text(
-        "This screen uses SwiftDecision and SpecificationCore with a deterministic offline backend. A Jev provider can be injected later without changing the scene."
+        "Add a TypeSafe.ai API key to ask Jev for structured Noul, Choice, and Score answers. The key is stored securely in this device's Keychain."
       )
-      .font(.body)
+      .font(.subheadline)
       .foregroundStyle(.secondary)
-      Button("Done") { dismiss() }
+
+      Link(destination: URL(string: "https://typesafe.ai")!) {
+        Label("Learn more at TypeSafe.ai", systemImage: "arrow.up.right.square")
+          .font(.subheadline.weight(.medium))
+      }
+
+      SecureField("TYPESAFE_API_KEY", text: $apiKey)
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+        .keyboardType(.asciiCapable)
+        .textFieldStyle(.roundedBorder)
+        .accessibilityLabel("TypeSafe API key")
+
+      Text(providerDescription)
+        .font(.caption)
+        .foregroundStyle(.secondary)
+
+      HStack {
+        Button("Clear key") {
+          apiKey = ""
+          onSave("")
+          dismiss()
+        }
+        .buttonStyle(.bordered)
+
+        Spacer()
+
+        Button("Save") {
+          onSave(apiKey)
+          dismiss()
+        }
         .buttonStyle(.borderedProminent)
-        .frame(maxWidth: .infinity, alignment: .trailing)
+      }
     }
     .padding(24)
   }

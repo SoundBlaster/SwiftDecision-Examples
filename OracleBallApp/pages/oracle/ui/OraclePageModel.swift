@@ -6,7 +6,8 @@ import SwiftDecision
 @MainActor
 @Observable
 final class OraclePageModel {
-  let engine: OracleGameEngine
+  private(set) var engine: OracleGameEngine
+  private let credentialsStore: OracleCredentialsStore
 
   var question = ""
   var mode: OracleMode = .noul
@@ -22,8 +23,68 @@ final class OraclePageModel {
   var statusMessage: String?
   private var requestTask: Task<Void, Never>?
 
-  init(engine: OracleGameEngine = OracleGameEngine()) {
-    self.engine = engine
+  enum Provider: Equatable {
+    case offline
+    case jev(model: String)
+  }
+
+  private(set) var provider: Provider
+
+  init(
+    engine: OracleGameEngine? = nil,
+    credentialsStore: OracleCredentialsStore = OracleCredentialsStore())
+  {
+    self.credentialsStore = credentialsStore
+    if let engine {
+      self.engine = engine
+      provider = .offline
+      return
+    }
+    if let key = credentialsStore.readAPIKey(),
+       let backend = try? JevOracleBackend(apiKey: key)
+    {
+      self.engine = OracleGameEngine(backend: backend)
+      provider = .jev(model: backend.modelIdentifier)
+    } else {
+      self.engine = OracleGameEngine()
+      provider = .offline
+    }
+  }
+
+  var configuredAPIKey: String {
+    credentialsStore.readAPIKey() ?? ""
+  }
+
+  var providerDescription: String {
+    switch provider {
+    case .offline:
+      "Offline fixture powered by SwiftDecision"
+    case let .jev(model):
+      "Live Jev · \(model)"
+    }
+  }
+
+  func saveAPIKey(_ input: String) {
+    requestTask?.cancel()
+    requestTask = nil
+    requestID += 1
+    let key = input.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    do {
+      if key.isEmpty {
+        try credentialsStore.deleteAPIKey()
+        engine = OracleGameEngine()
+        provider = .offline
+      } else {
+        let backend = try JevOracleBackend(apiKey: key)
+        try credentialsStore.saveAPIKey(key)
+        engine = OracleGameEngine(backend: backend)
+        provider = .jev(model: backend.modelIdentifier)
+      }
+      statusMessage = nil
+    } catch {
+      statusMessage = error.localizedDescription
+    }
   }
 
   func submit() {
