@@ -1,12 +1,6 @@
 import SwiftUI
-
-enum OracleMode: String, CaseIterable, Identifiable {
-  case noul = "Noul"
-  case choice = "Choice"
-  case score = "Score"
-
-  var id: Self { self }
-
+import OracleGame
+extension OracleMode {
   var icon: String {
     switch self {
     case .noul: "checkmark.circle.fill"
@@ -23,13 +17,6 @@ enum OracleMode: String, CaseIterable, Identifiable {
     }
   }
 
-  var sampleAnswer: String {
-    switch self {
-    case .noul: "Definitely\nyes"
-    case .choice: "Ask again\nlater"
-    case .score: "87%"
-    }
-  }
 }
 
 struct OracleModeSelector: View {
