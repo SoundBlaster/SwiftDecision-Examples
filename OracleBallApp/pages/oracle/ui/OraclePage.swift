@@ -155,12 +155,14 @@ private struct OracleSpark: Shape {
 private struct OracleInfoSheet: View {
   @Environment(\.dismiss) private var dismiss
   @State private var apiKey: String
+  @State private var isConfigured: Bool
 
   let providerDescription: String
-  let onSave: (String) -> Void
+  let onSave: (String) -> Bool
 
-  init(apiKey: String, providerDescription: String, onSave: @escaping (String) -> Void) {
+  init(apiKey: String, providerDescription: String, onSave: @escaping (String) -> Bool) {
     _apiKey = State(initialValue: apiKey)
+    _isConfigured = State(initialValue: !apiKey.isEmpty)
     self.providerDescription = providerDescription
     self.onSave = onSave
   }
@@ -189,30 +191,52 @@ private struct OracleInfoSheet: View {
           .font(.subheadline.weight(.medium))
       }
 
-      SecureField("TYPESAFE_API_KEY", text: $apiKey)
-        .textInputAutocapitalization(.never)
-        .autocorrectionDisabled()
-        .keyboardType(.asciiCapable)
-        .textFieldStyle(.roundedBorder)
-        .accessibilityLabel("TypeSafe API key")
+      HStack(spacing: 10) {
+        Image(systemName: "key.fill")
+          .foregroundStyle(.secondary)
+          .accessibilityHidden(true)
+        SecureField("TYPESAFE_API_KEY", text: $apiKey)
+          .textInputAutocapitalization(.never)
+          .autocorrectionDisabled()
+          .keyboardType(.asciiCapable)
+          .textFieldStyle(.plain)
+          .accessibilityLabel("TypeSafe API key")
+      }
+      .padding(.horizontal, 16)
+      .frame(minHeight: 48)
+      .background(.white.opacity(0.08), in: Capsule())
+      .overlay {
+        Capsule()
+          .stroke(.white.opacity(0.18), lineWidth: 1)
+      }
+
+      Label(
+        isConfigured ? "Jev key configured" : "Offline fixture active",
+        systemImage: isConfigured ? "checkmark.circle.fill" : "circle.dashed")
+        .font(.caption)
+        .foregroundStyle(isConfigured ? .green : .secondary)
 
       Text(providerDescription)
-        .font(.caption)
+        .font(.caption2)
         .foregroundStyle(.secondary)
 
       HStack {
         Button("Clear key") {
           apiKey = ""
-          onSave("")
-          dismiss()
+          if onSave("") {
+            isConfigured = false
+            dismiss()
+          }
         }
         .buttonStyle(.bordered)
 
         Spacer()
 
         Button("Save") {
-          onSave(apiKey)
-          dismiss()
+          if onSave(apiKey) {
+            isConfigured = true
+            dismiss()
+          }
         }
         .buttonStyle(.borderedProminent)
       }

@@ -64,7 +64,8 @@ final class OraclePageModel {
     }
   }
 
-  func saveAPIKey(_ input: String) {
+  @discardableResult
+  func saveAPIKey(_ input: String) -> Bool {
     requestTask?.cancel()
     requestTask = nil
     requestID += 1
@@ -82,8 +83,10 @@ final class OraclePageModel {
         provider = .jev(model: backend.modelIdentifier)
       }
       statusMessage = nil
+      return true
     } catch {
       statusMessage = error.localizedDescription
+      return false
     }
   }
 
