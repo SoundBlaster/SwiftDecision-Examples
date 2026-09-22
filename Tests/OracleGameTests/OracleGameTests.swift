@@ -43,6 +43,12 @@ final class OracleGameTests: XCTestCase {
     XCTAssertEqual(plan.options, ["tea", "coffee", "juice", "water", "soda"])
   }
 
+  func testChoicePlannerAcceptsBetweenAndAlternatives() {
+    let plan = OracleChoicePlanner.plan(for: "Choose between tea and coffee")
+
+    XCTAssertEqual(plan.options, ["tea", "coffee"])
+  }
+
   func testOfflineNoulUsesAcceptedSpecRoute() async throws {
     let engine = OracleGameEngine()
     let outcome = try await engine.answer(for: OracleRequest(question: "Will it work?", mode: .noul))

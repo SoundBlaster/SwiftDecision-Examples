@@ -11,7 +11,7 @@ struct OracleRoutingContext: Sendable {
 }
 
 enum OracleChoicePlanner {
-  private static let separators = [" versus ", " vs. ", " vs ", " or "]
+  private static let separators = [" versus ", " vs. ", " vs ", " or ", " and "]
   private static let choiceCues = [
     "which ",
     "choose ",
