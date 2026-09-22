@@ -28,13 +28,17 @@ struct OracleCredentialsStore {
 
   func saveAPIKey(_ value: String) throws {
     let data = Data(value.utf8)
-    var query = baseQuery
-    query[kSecValueData as String] = data
-    query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-
-    let status = SecItemUpdate(baseQuery as CFDictionary, query as CFDictionary)
+    let updateAttributes: [String: Any] = [
+      kSecValueData as String: data,
+    ]
+    let status = SecItemUpdate(
+      baseQuery as CFDictionary,
+      updateAttributes as CFDictionary)
     if status == errSecItemNotFound {
-      let addStatus = SecItemAdd(query as CFDictionary, nil)
+      var addQuery = baseQuery
+      addQuery[kSecValueData as String] = data
+      addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+      let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
       guard addStatus == errSecSuccess else { throw OracleCredentialsError(status: addStatus) }
     } else if status != errSecSuccess {
       throw OracleCredentialsError(status: status)
