@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import OracleGame
+import OracleHistory
 import SwiftDecision
 
 @MainActor
@@ -8,8 +9,10 @@ import SwiftDecision
 final class OraclePageModel {
   private(set) var engine: OracleGameEngine
   private let credentialsStore: OracleCredentialsStore
+  private let historyStore: OracleHistoryStore
 
   var question = ""
+  private(set) var historyEntries: [OracleHistoryEntry]
   var mode: OracleMode = .automatic
   var answer = OracleAnswer(
     mode: .noul,
@@ -32,9 +35,12 @@ final class OraclePageModel {
 
   init(
     engine: OracleGameEngine? = nil,
-    credentialsStore: OracleCredentialsStore = OracleCredentialsStore())
+    credentialsStore: OracleCredentialsStore = OracleCredentialsStore(),
+    historyStore: OracleHistoryStore = OracleHistoryStore())
   {
     self.credentialsStore = credentialsStore
+    self.historyStore = historyStore
+    historyEntries = historyStore.entries
     if let engine {
       self.engine = engine
       provider = .offline
@@ -111,6 +117,10 @@ final class OraclePageModel {
         switch outcome {
         case let .accepted(answer), let .fallback(answer, _):
           self.answer = answer
+          self.historyStore.append(
+            question: request.question.trimmingCharacters(in: .whitespacesAndNewlines),
+            answer: answer)
+          self.historyEntries = self.historyStore.entries
           self.answerRequestID = requestID
           self.terminalRequestID = 0
           self.statusMessage = nil
@@ -129,5 +139,15 @@ final class OraclePageModel {
         self.isSubmitting = false
       }
     }
+  }
+
+  func deleteHistoryEntry(id: OracleHistoryEntry.ID) {
+    historyStore.remove(id: id)
+    historyEntries = historyStore.entries
+  }
+
+  func clearHistory() {
+    historyStore.removeAll()
+    historyEntries = historyStore.entries
   }
 }

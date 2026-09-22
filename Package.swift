@@ -11,7 +11,8 @@ let package = Package(
   products: [
     .library(name: "CityChainGame", targets: ["CityChainGame"]),
     .library(name: "OraclePresentation", targets: ["OraclePresentation"]),
-    .library(name: "OracleGame", targets: ["OracleGame"])
+    .library(name: "OracleGame", targets: ["OracleGame"]),
+    .library(name: "OracleHistory", targets: ["OracleHistory"])
   ],
   dependencies: [
     .package(url: "https://github.com/SoundBlaster/SwiftDecision.git", exact: "0.2.0"),
@@ -33,6 +34,12 @@ let package = Package(
       name: "OracleGameTests",
       dependencies: ["OracleGame", .product(name: "SwiftJev", package: "SwiftJev")]
     ),
+    .target(
+      name: "OracleHistory",
+      dependencies: ["OracleGame"],
+      resources: [.process("PrivacyInfo.xcprivacy")]
+    ),
+    .testTarget(name: "OracleHistoryTests", dependencies: ["OracleHistory"]),
     .target(
       name: "CityChainGame",
       dependencies: [
