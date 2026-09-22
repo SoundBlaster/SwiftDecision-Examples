@@ -102,6 +102,32 @@ final class OracleGameTests: XCTestCase {
     XCTAssertTrue(reason.contains("confidence"))
   }
 
+  func testOfflineClassifierRejectsOpenEndedAndMalformedQuestions() async throws {
+    let engine = OracleGameEngine()
+
+    for question in ["Why is the sky blue?", "Write a poem", "asdf"] {
+      let outcome = try await engine.answer(for: OracleRequest(question: question))
+      guard case let .fallback(answer, _) = outcome else {
+        return XCTFail("expected unsupported fallback for \(question)")
+      }
+      XCTAssertEqual(answer.mode, .unsupported)
+      XCTAssertEqual(answer.displayText, "Who knows?")
+    }
+  }
+
+  func testExplicitUnsupportedModeDoesNotInvokeAutomaticRouting() async throws {
+    let engine = OracleGameEngine()
+    let outcome = try await engine.answer(
+      for: OracleRequest(question: "Will this work?", mode: .unsupported))
+
+    guard case let .fallback(answer, reason) = outcome else {
+      return XCTFail("expected explicit unsupported fallback")
+    }
+    XCTAssertEqual(answer.mode, .unsupported)
+    XCTAssertEqual(answer.displayText, "Who knows?")
+    XCTAssertTrue(reason.contains("unsupported answer mode requested"))
+  }
+
   func testChoicePlannerAcceptsUpToFiveCommaSeparatedOptions() {
     let plan = OracleChoicePlanner.plan(for: "Which should I choose: tea, coffee, juice, water, or soda?")
 

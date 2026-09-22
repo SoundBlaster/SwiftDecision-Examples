@@ -10,6 +10,9 @@ public enum OracleMode: String, CaseIterable, Hashable, Sendable, Identifiable {
   case score = "Score"
   case unsupported = "Unsupported"
 
+  /// Request modes shown to users. Unsupported is an answer state, not a selectable mode.
+  public static let allCases: [OracleMode] = [.automatic, .noul, .choice, .score]
+
   public var id: Self { self }
 }
 
@@ -137,8 +140,37 @@ enum OracleQuestionHeuristics {
       "capital of ",
       "define ",
       "how many ",
+      "why ",
+      "how do ",
+      "how can ",
+      "explain ",
+      "write ",
+      "create ",
+      "describe ",
+      "что такое ",
+      "кто такой ",
+      "почему ",
+      "как ",
+      "напиши ",
+      "создай ",
+      "объясни ",
+      "столица ",
     ]
-    return factualCues.contains(where: normalized.contains)
+    guard !factualCues.contains(where: normalized.contains) else { return true }
+    guard normalized.count >= 4 else { return true }
+    return !isBoolean(normalized)
+  }
+
+  static func isBoolean(_ question: String) -> Bool {
+    let normalized = question.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    let booleanCues = [
+      "will ", "is ", "are ", "can ", "should ", "do ", "does ", "did ",
+      "could ", "would ", "has ", "have ", "may ", "might ", "shall ",
+      "am i ", "is it ", "сбудется ли ", "будет ли ", "можно ли ",
+      "нужно ли ", "стоит ли ", "правда ли ", "есть ли ", "смогу ли ",
+      "получится ли ", "является ли ",
+    ]
+    return booleanCues.contains(where: normalized.hasPrefix)
   }
 }
 
@@ -201,6 +233,7 @@ private struct OracleRequestPolicy {
       .addPredicate({ $0.mode == .noul }, result: OracleOperationSelection(.noul))
       .addPredicate({ $0.mode == .choice }, result: OracleOperationSelection(.choice))
       .addPredicate({ $0.mode == .score }, result: OracleOperationSelection(.score))
+      .addPredicate({ $0.mode == .unsupported }, result: OracleOperationSelection(.unsupported))
       .addPredicate({ $0.mode == .automatic }, result: OracleOperationSelection(.automatic))
       .fallback(OracleOperationSelection(.automatic))
       .build()
@@ -287,7 +320,11 @@ public final class OracleGameEngine: @unchecked Sendable {
       throw OracleGameError.noPolicy
     }
     let evaluation: OracleEvaluation
-    if selection.operation == .automatic {
+    if selection.operation == .unsupported {
+      evaluation = try await makeUnsupportedEvaluation(
+        confidence: 1,
+        reason: "unsupported answer mode requested")
+    } else if selection.operation == .automatic {
       let intent = try await intentClassifier.classify(question)
       guard let operation = intent.value else {
         let reason: String
@@ -301,7 +338,7 @@ public final class OracleGameEngine: @unchecked Sendable {
 
       if operation == .unsupported {
         evaluation = try await makeUnsupportedEvaluation(
-          classifierResult: intent,
+          confidence: intent.confidence,
           reason: "question is outside the supported answer types")
       } else if operation == .choice {
         if try await requestPolicy.choicePlanIsValid.isSatisfiedBy(choicePlan) {
@@ -310,7 +347,7 @@ public final class OracleGameEngine: @unchecked Sendable {
             selection: OracleOperationSelection(.choice, choicePlan: choicePlan))
         } else {
           evaluation = try await makeUnsupportedEvaluation(
-            classifierResult: intent,
+            confidence: intent.confidence,
             reason: "choice alternatives could not be extracted")
         }
       } else {
@@ -345,7 +382,7 @@ public final class OracleGameEngine: @unchecked Sendable {
   }
 
   private func makeUnsupportedEvaluation(
-    classifierResult: DecisionResult<OracleOperation>,
+    confidence: Double,
     reason: String
   ) async throws -> OracleEvaluation {
     let source: OracleAnswerSource = backendIdentifier == "offline-fixture"
@@ -354,18 +391,18 @@ public final class OracleGameEngine: @unchecked Sendable {
     let answer = OracleAnswer(
       mode: .unsupported,
       displayText: "Who knows?",
-      confidence: classifierResult.confidence,
+      confidence: confidence,
       source: source)
     guard try await answerValidation.isSatisfiedBy(answer) else {
       return OracleEvaluation(
         answer: nil,
-        confidence: classifierResult.confidence,
+        confidence: confidence,
         reason: "answer validation failed",
         isFallback: false)
     }
     return OracleEvaluation(
       answer: answer,
-      confidence: classifierResult.confidence,
+      confidence: confidence,
       reason: reason,
       isFallback: true)
   }
