@@ -281,7 +281,7 @@ private struct OracleInfoSheet: View {
 
       Section {
         HStack {
-          Text("History")
+          Text(historyEntries.isEmpty ? "History" : "History • \(historyEntries.count)")
             .font(.headline)
             .foregroundStyle(.primary)
 
@@ -313,6 +313,12 @@ private struct OracleInfoSheet: View {
           } else {
             ForEach(historyEntries) { entry in
               OracleHistoryRow(entry: entry)
+                .overlay(alignment: .bottom) {
+                  if entry.id != historyEntries.last?.id {
+                    Divider()
+                      .padding(.leading, 16)
+                  }
+                }
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
