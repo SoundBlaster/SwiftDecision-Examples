@@ -279,30 +279,30 @@ private struct OracleInfoSheet: View {
       }
       .textCase(nil)
 
-      if selectedDetent == .large {
-        Section {
-          HStack {
-            Text("History")
-              .font(.headline)
-              .foregroundStyle(.primary)
+      Section {
+        HStack {
+          Text("History")
+            .font(.headline)
+            .foregroundStyle(.primary)
 
-            Spacer()
+          Spacer()
 
-            Button {
-              isConfirmingHistoryClear = true
-            } label: {
-              Image(systemName: "trash")
-                .foregroundColor(historyEntries.isEmpty ? Color.secondary : Color.red)
-                .frame(width: 40, height: 36)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(historyEntries.isEmpty)
-            .accessibilityLabel("Delete all history")
+          Button {
+            isConfirmingHistoryClear = true
+          } label: {
+            Image(systemName: "trash")
+              .foregroundColor(historyEntries.isEmpty ? Color.secondary : Color.red)
+              .frame(width: 40, height: 36)
+              .contentShape(Rectangle())
           }
-          .listRowBackground(Color.clear)
-          .listRowSeparator(.hidden)
+          .buttonStyle(.plain)
+          .disabled(historyEntries.isEmpty)
+          .accessibilityLabel("Delete all history")
+        }
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
 
+        if selectedDetent == .large {
           if historyEntries.isEmpty {
             Text("No questions yet")
               .font(.subheadline)
@@ -325,8 +325,8 @@ private struct OracleInfoSheet: View {
             }
           }
         }
-        .textCase(nil)
       }
+      .textCase(nil)
     }
     .listStyle(.plain)
     .scrollContentBackground(.hidden)
