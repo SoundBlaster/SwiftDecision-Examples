@@ -81,6 +81,7 @@ struct OraclePage: View {
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
       }
+      .contentShape(Rectangle())
       .coordinateSpace(name: "oraclePage")
       .simultaneousGesture(
         SpatialTapGesture(coordinateSpace: .named("oraclePage"))
