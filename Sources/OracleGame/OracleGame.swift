@@ -382,6 +382,28 @@ private enum OracleAnswerResolutionRule {
   static let traceNames: Set<String> = [accepted, fallback, abstained]
 }
 
+private extension DecisionTraceEvent.Stage {
+  var pipelineLabel: String {
+    switch self {
+    case .requestValidated: "Request validated"
+    case .policySelected: "Policy selected"
+    case .inferenceStarted: "Inference started"
+    case .inferenceCompleted: "Inference completed"
+    case .outputValidated: "Output validated"
+    case .resolved: "Decision resolved"
+    }
+  }
+
+  var pipelineExplanation: String? {
+    switch self {
+    case .requestValidated:
+      "ID and instructions are present; at least two options have descriptions and unique IDs."
+    case .policySelected, .inferenceStarted, .inferenceCompleted, .outputValidated, .resolved:
+      nil
+    }
+  }
+}
+
 /// Coordinates SwiftDecision with domain policies expressed as specifications.
 /// The engine owns immutable policies and a sendable DecisionEngine. The unchecked
 /// conformance is intentional: specifications are immutable after initialization.
@@ -868,9 +890,9 @@ public final class OracleGameEngine: @unchecked Sendable {
       details: (details ?? []) + (provider.map { [traceDetail("provider", "Provider", $0)] } ?? []),
       decisionEvents: result.trace.map { event in
         OracleDecisionTraceStep(
-          stage: event.stage.rawValue,
+          stage: event.stage.pipelineLabel,
           timestamp: event.timestamp,
-          detail: event.detail)
+          detail: event.detail ?? event.stage.pipelineExplanation)
       },
       specificationEvents: OraclePipelineTraceRecorder.decisionDetails(from: result.specificationTrace))
   }
