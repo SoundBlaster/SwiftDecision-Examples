@@ -149,6 +149,11 @@ final class OraclePageModel {
     }
   }
 
+  func repeatQuestion(_ question: String) {
+    self.question = question
+    submit()
+  }
+
   func deleteHistoryEntry(id: OracleHistoryEntry.ID) {
     historyStore.remove(id: id)
     historyEntries = historyStore.entries
