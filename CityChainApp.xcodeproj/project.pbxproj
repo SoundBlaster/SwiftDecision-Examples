@@ -21,6 +21,7 @@
 		2970C361B601B3AFC3C83A8E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F85255BEFB921D1C014C1753 /* Assets.xcassets */; };
 		2CCEE2308AE20D4D17F0FDFB /* AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A67E1F11F5D3410963D22099 /* AppDependencies.swift */; };
 		2D0F7D6CD3818F07344C8A38 /* OracleBallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E8AA3D45A8DA72E5C9C6AE /* OracleBallApp.swift */; };
+		31B5C9E41397190210C3F5F7 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = DBD98CB51A2AA5E83A46C423 /* AppIcon.icon */; };
 		48C4C4E3A605725A5B907DF4 /* CityChainGame in Frameworks */ = {isa = PBXBuildFile; productRef = BCFC25CE5B72400FF274C46C /* CityChainGame */; };
 		50807669B747813DBC71B7FD /* OracleScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 357AF2B335862288246DA28C /* OracleScene.swift */; };
 		580EB72F3B3FF332583161E7 /* CityChainPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4EA5F6E5CAB64FE4C85581F /* CityChainPage.swift */; };
@@ -82,6 +83,7 @@
 		C440A94AC7B3B70E4C383882 /* OraclePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePalette.swift; sourceTree = "<group>"; };
 		D28DFCC17C6D03DE5A7A7D1A /* OracleMotionInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionInput.swift; sourceTree = "<group>"; };
 		DEC372D3239535942E74F4DC /* OracleBallApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OracleBallApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DBD98CB51A2AA5E83A46C423 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		EC4B8F1131B0DF0B3975D1D3 /* OracleFace.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleFace.metal; sourceTree = "<group>"; };
 		F6D0F2E9F233D95523F6AADE /* OracleCosmicBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCosmicBackground.swift; sourceTree = "<group>"; };
 		F85255BEFB921D1C014C1753 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -345,6 +347,7 @@
 		8CEFD12E0DDC9060C245F2B3 /* assets */ = {
 			isa = PBXGroup;
 			children = (
+				DBD98CB51A2AA5E83A46C423 /* AppIcon.icon */,
 				F85255BEFB921D1C014C1753 /* Assets.xcassets */,
 			);
 			path = assets;
@@ -555,6 +558,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				31B5C9E41397190210C3F5F7 /* AppIcon.icon in Resources */,
 				2970C361B601B3AFC3C83A8E /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -691,6 +695,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Oracle;
@@ -795,6 +800,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Oracle;
