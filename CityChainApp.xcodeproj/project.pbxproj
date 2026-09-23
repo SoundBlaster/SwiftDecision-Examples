@@ -9,37 +9,38 @@
 /* Begin PBXBuildFile section */
 		05AB46FBE54D49FA367F8C75 /* OracleAnswerTexture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4FEBB2DA601F4435F8A4D24 /* OracleAnswerTexture.swift */; };
 		070C17965265C50BE178E613 /* OracleGame in Frameworks */ = {isa = PBXBuildFile; productRef = 4E5F7613A5B4238BF6496ACD /* OracleGame */; };
-		E1A7F5D42B6C9013587A4E20 /* OracleHistory in Frameworks */ = {isa = PBXBuildFile; productRef = E1A7F5D42B6C9013587A4E21 /* OracleHistory */; };
 		08750526D5EF2E6AEEE23BD3 /* OracleLighting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD88EDB4A07A20B61CED052A /* OracleLighting.swift */; };
+		0C413AFAC6BB64504225BC2A /* OracleKeyboardDismissalUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1ABCEFDF8B508F160F6631 /* OracleKeyboardDismissalUITests.swift */; };
 		0C4CFA6FCD802F3DBBC3FE18 /* CityChainPageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAD9C413344AF26731F5A83 /* CityChainPageModel.swift */; };
+		0F14080BDB66721C03229982 /* OracleHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D4C408255199F51C9E4D9E /* OracleHaptics.swift */; };
 		1171D0C01276BB198AED2320 /* OraclePageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A4C6BD24CF45CE45B11625 /* OraclePageModel.swift */; };
-		19E30C8A6D1A4F3C9B7E2D51 /* OracleCredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B7F8A4C1D9E6B305F2C7A18 /* OracleCredentialsStore.swift */; };
-		9A6F30CC19E5445A8E6BB0A1 /* OracleHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A6F30CC19E5445A8E6BB0A2 /* OracleHaptics.swift */; };
 		11CCB03EDA6C91FCA8DA8BB6 /* OracleBallViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1298BCF7A4C481829D00DD0D /* OracleBallViewport.swift */; };
+		1A1ED4733AC5023DF7F56DD1 /* OracleFieldMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C81B75995F2AFAA80302DE /* OracleFieldMesh.swift */; };
 		1E7947AE883BC2653A6DCA5F /* OracleRevealComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445C45A6D202E3AB95183E34 /* OracleRevealComponent.swift */; };
+		248C23E9ABDAFA82B6D469EB /* OracleFieldSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF602E9E75819274A5A4DAB /* OracleFieldSystem.swift */; };
 		28B49B28EE662B70EEE0AA13 /* OracleWindow.metal in Sources */ = {isa = PBXBuildFile; fileRef = 15519B2D3913C91241F53B9E /* OracleWindow.metal */; };
 		2970C361B601B3AFC3C83A8E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F85255BEFB921D1C014C1753 /* Assets.xcassets */; };
 		2CCEE2308AE20D4D17F0FDFB /* AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A67E1F11F5D3410963D22099 /* AppDependencies.swift */; };
 		2D0F7D6CD3818F07344C8A38 /* OracleBallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E8AA3D45A8DA72E5C9C6AE /* OracleBallApp.swift */; };
-		31B5C9E41397190210C3F5F7 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = DBD98CB51A2AA5E83A46C423 /* AppIcon.icon */; };
 		48C4C4E3A605725A5B907DF4 /* CityChainGame in Frameworks */ = {isa = PBXBuildFile; productRef = BCFC25CE5B72400FF274C46C /* CityChainGame */; };
 		50807669B747813DBC71B7FD /* OracleScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 357AF2B335862288246DA28C /* OracleScene.swift */; };
 		580EB72F3B3FF332583161E7 /* CityChainPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4EA5F6E5CAB64FE4C85581F /* CityChainPage.swift */; };
 		67A639B8B3CC8FD71BA3D81E /* SubmitCityForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E564316622538C1B0F24094 /* SubmitCityForm.swift */; };
+		707B83D1BDF302B7B347FB89 /* OracleHistory in Frameworks */ = {isa = PBXBuildFile; productRef = E14F9F1E7EE4A975AA0F6EC8 /* OracleHistory */; };
 		7D280D82F2F7E5DF67FEA291 /* OraclePage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */; };
 		82E6986B7DF9835BC0DFA101 /* OracleMotionInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = D28DFCC17C6D03DE5A7A7D1A /* OracleMotionInput.swift */; };
 		85139911433978FEDC77673D /* OracleFace.metal in Sources */ = {isa = PBXBuildFile; fileRef = EC4B8F1131B0DF0B3975D1D3 /* OracleFace.metal */; };
 		A3EE2CC47B4CB15DD7A30F73 /* OracleMaterials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 173D0B5C45B582AFDB6217F4 /* OracleMaterials.swift */; };
-		A9F100000000000000000001 /* OracleFieldMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F100000000000000000002 /* OracleFieldMesh.swift */; };
-		A9F100000000000000000003 /* OracleFieldComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F100000000000000000004 /* OracleFieldComponent.swift */; };
-		A9F100000000000000000005 /* OracleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F100000000000000000006 /* OracleField.swift */; };
-		A9F100000000000000000007 /* OracleFieldSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F100000000000000000008 /* OracleFieldSystem.swift */; };
-		A9F100000000000000000009 /* OracleField.metal in Sources */ = {isa = PBXBuildFile; fileRef = A9F10000000000000000000A /* OracleField.metal */; };
 		AF6617E50ED31DA57800D22C /* OracleMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57250EFE799C3061E9C2760F /* OracleMesh.swift */; };
 		B8487555A70BD40DA8F7B8F0 /* AskOracleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A1AE4194E83ECDCE129A0C /* AskOracleField.swift */; };
 		BEEB7D3D5DEE34E208AFB5DF /* OracleCosmicBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6D0F2E9F233D95523F6AADE /* OracleCosmicBackground.swift */; };
+		C428D200A15D0227F94E7C98 /* OracleField.metal in Sources */ = {isa = PBXBuildFile; fileRef = 491709646E8608240F697179 /* OracleField.metal */; };
+		C5CBA2C9D15B3CECA29148AF /* OracleFieldComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB7FC53B3F1BD79B3963ABE /* OracleFieldComponent.swift */; };
+		C660E0BCF93CFFEAC6ED29E0 /* OracleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B702F06B496B0B161550F616 /* OracleField.swift */; };
 		CA7B6FB826C11092AB41EF8B /* CityTurnRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 346C1BCD4A824791392C194B /* CityTurnRow.swift */; };
+		CE982400AFC0CA0CEAC8CB7A /* OracleCredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */; };
 		D2642B91F5B4C9FF8DB60BF8 /* OraclePresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 01B68DE758911AE15B2AAEBE /* OraclePresentation */; };
+		D58DEC0FE1D9DBC3A288FEBD /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = B531FD1996E7982085FB0DAB /* AppIcon.icon */; };
 		D59B5FA5D6EDECEAF9F38A98 /* OracleRevealSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12F66D65B6726987E960904 /* OracleRevealSystem.swift */; };
 		D811AB713A983C27ABB46B7F /* CityChainAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABBD1A12DA4DC7CDD5E30DA /* CityChainAppApp.swift */; };
 		EC6595AF675A41B6667771EE /* OracleMotionComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2083F00EA6DAE97338B46E3A /* OracleMotionComponent.swift */; };
@@ -48,43 +49,55 @@
 		FD2EA813D1694B02FD07768F /* OracleModeSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 911A170638EF56C6D38F8199 /* OracleModeSelector.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		69A1E8FBACC85BE2F5E28221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8CE498A7BADB6E1F82DF9593 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5F2AA21B77A3804B4174B9AD;
+			remoteInfo = OracleBallApp;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		1298BCF7A4C481829D00DD0D /* OracleBallViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleBallViewport.swift; sourceTree = "<group>"; };
 		15519B2D3913C91241F53B9E /* OracleWindow.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleWindow.metal; sourceTree = "<group>"; };
 		173D0B5C45B582AFDB6217F4 /* OracleMaterials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMaterials.swift; sourceTree = "<group>"; };
+		189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCredentialsStore.swift; sourceTree = "<group>"; };
 		2083F00EA6DAE97338B46E3A /* OracleMotionComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionComponent.swift; sourceTree = "<group>"; };
 		2E564316622538C1B0F24094 /* SubmitCityForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmitCityForm.swift; sourceTree = "<group>"; };
 		346C1BCD4A824791392C194B /* CityTurnRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityTurnRow.swift; sourceTree = "<group>"; };
 		357AF2B335862288246DA28C /* OracleScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleScene.swift; sourceTree = "<group>"; };
-		373D4F350281AEB2AD84E367 /* SwiftDecision-Examples */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "SwiftDecision-Examples"; path = .; sourceTree = SOURCE_ROOT; };
 		445C45A6D202E3AB95183E34 /* OracleRevealComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleRevealComponent.swift; sourceTree = "<group>"; };
+		491709646E8608240F697179 /* OracleField.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleField.metal; sourceTree = "<group>"; };
+		4C1ABCEFDF8B508F160F6631 /* OracleKeyboardDismissalUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleKeyboardDismissalUITests.swift; sourceTree = "<group>"; };
 		5549BCD5D7EB858B6086D906 /* GameBoardWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameBoardWidget.swift; sourceTree = "<group>"; };
 		55A4C6BD24CF45CE45B11625 /* OraclePageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePageModel.swift; sourceTree = "<group>"; };
-		2B7F8A4C1D9E6B305F2C7A18 /* OracleCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCredentialsStore.swift; sourceTree = "<group>"; };
-		9A6F30CC19E5445A8E6BB0A2 /* OracleHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleHaptics.swift; sourceTree = "<group>"; };
 		57250EFE799C3061E9C2760F /* OracleMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMesh.swift; sourceTree = "<group>"; };
 		68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePage.swift; sourceTree = "<group>"; };
 		7D2B12290F6ADAE2F1B1DBB2 /* CityChainApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CityChainApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		89D4C408255199F51C9E4D9E /* OracleHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleHaptics.swift; sourceTree = "<group>"; };
 		8CAD9C413344AF26731F5A83 /* CityChainPageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainPageModel.swift; sourceTree = "<group>"; };
 		911A170638EF56C6D38F8199 /* OracleModeSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleModeSelector.swift; sourceTree = "<group>"; };
 		93A1AE4194E83ECDCE129A0C /* AskOracleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskOracleField.swift; sourceTree = "<group>"; };
+		9C2615427A2B6A804DDC43B7 /* OracleBallAppUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = OracleBallAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4EA5F6E5CAB64FE4C85581F /* CityChainPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainPage.swift; sourceTree = "<group>"; };
 		A67E1F11F5D3410963D22099 /* AppDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencies.swift; sourceTree = "<group>"; };
 		A9E8AA3D45A8DA72E5C9C6AE /* OracleBallApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleBallApp.swift; sourceTree = "<group>"; };
-		A9F100000000000000000002 /* OracleFieldMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldMesh.swift; sourceTree = "<group>"; };
-		A9F100000000000000000004 /* OracleFieldComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldComponent.swift; sourceTree = "<group>"; };
-		A9F100000000000000000006 /* OracleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleField.swift; sourceTree = "<group>"; };
-		A9F100000000000000000008 /* OracleFieldSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldSystem.swift; sourceTree = "<group>"; };
-		A9F10000000000000000000A /* OracleField.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleField.metal; sourceTree = "<group>"; };
+		B1B23EFD257E0971B6BF99FF /* SwiftDecision-Examples */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "SwiftDecision-Examples"; path = .; sourceTree = SOURCE_ROOT; };
 		B4FEBB2DA601F4435F8A4D24 /* OracleAnswerTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleAnswerTexture.swift; sourceTree = "<group>"; };
+		B531FD1996E7982085FB0DAB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		B702F06B496B0B161550F616 /* OracleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleField.swift; sourceTree = "<group>"; };
 		BABBD1A12DA4DC7CDD5E30DA /* CityChainAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainAppApp.swift; sourceTree = "<group>"; };
+		BCB7FC53B3F1BD79B3963ABE /* OracleFieldComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldComponent.swift; sourceTree = "<group>"; };
 		BD88EDB4A07A20B61CED052A /* OracleLighting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleLighting.swift; sourceTree = "<group>"; };
 		C12F66D65B6726987E960904 /* OracleRevealSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleRevealSystem.swift; sourceTree = "<group>"; };
 		C440A94AC7B3B70E4C383882 /* OraclePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePalette.swift; sourceTree = "<group>"; };
 		D28DFCC17C6D03DE5A7A7D1A /* OracleMotionInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionInput.swift; sourceTree = "<group>"; };
+		D4C81B75995F2AFAA80302DE /* OracleFieldMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldMesh.swift; sourceTree = "<group>"; };
 		DEC372D3239535942E74F4DC /* OracleBallApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OracleBallApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		DBD98CB51A2AA5E83A46C423 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		EC4B8F1131B0DF0B3975D1D3 /* OracleFace.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleFace.metal; sourceTree = "<group>"; };
+		ECF602E9E75819274A5A4DAB /* OracleFieldSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldSystem.swift; sourceTree = "<group>"; };
 		F6D0F2E9F233D95523F6AADE /* OracleCosmicBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCosmicBackground.swift; sourceTree = "<group>"; };
 		F85255BEFB921D1C014C1753 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -96,7 +109,7 @@
 			files = (
 				D2642B91F5B4C9FF8DB60BF8 /* OraclePresentation in Frameworks */,
 				070C17965265C50BE178E613 /* OracleGame in Frameworks */,
-				E1A7F5D42B6C9013587A4E20 /* OracleHistory in Frameworks */,
+				707B83D1BDF302B7B347FB89 /* OracleHistory in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -180,7 +193,7 @@
 		23391980C59A7DB43B369234 /* model */ = {
 			isa = PBXGroup;
 			children = (
-				A9F100000000000000000004 /* OracleFieldComponent.swift */,
+				BCB7FC53B3F1BD79B3963ABE /* OracleFieldComponent.swift */,
 				2083F00EA6DAE97338B46E3A /* OracleMotionComponent.swift */,
 				445C45A6D202E3AB95183E34 /* OracleRevealComponent.swift */,
 			);
@@ -192,9 +205,9 @@
 			children = (
 				B4FEBB2DA601F4435F8A4D24 /* OracleAnswerTexture.swift */,
 				EC4B8F1131B0DF0B3975D1D3 /* OracleFace.metal */,
-				A9F100000000000000000006 /* OracleField.swift */,
-				A9F10000000000000000000A /* OracleField.metal */,
-				A9F100000000000000000008 /* OracleFieldSystem.swift */,
+				491709646E8608240F697179 /* OracleField.metal */,
+				B702F06B496B0B161550F616 /* OracleField.swift */,
+				ECF602E9E75819274A5A4DAB /* OracleFieldSystem.swift */,
 				BD88EDB4A07A20B61CED052A /* OracleLighting.swift */,
 				173D0B5C45B582AFDB6217F4 /* OracleMaterials.swift */,
 				C12F66D65B6726987E960904 /* OracleRevealSystem.swift */,
@@ -268,7 +281,7 @@
 		5F1713E7F0F35C0B50E48F63 /* oracle */ = {
 			isa = PBXGroup;
 			children = (
-				A71C4E2D9F6B3A508C2D7E19 /* model */,
+				6CDCC0ABD61BE7F944D52719 /* model */,
 				8C76CDAD2025377612C086A7 /* ui */,
 			);
 			path = oracle;
@@ -287,8 +300,18 @@
 			children = (
 				7D2B12290F6ADAE2F1B1DBB2 /* CityChainApp.app */,
 				DEC372D3239535942E74F4DC /* OracleBallApp.app */,
+				9C2615427A2B6A804DDC43B7 /* OracleBallAppUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		6CDCC0ABD61BE7F944D52719 /* model */ = {
+			isa = PBXGroup;
+			children = (
+				189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */,
+				89D4C408255199F51C9E4D9E /* OracleHaptics.swift */,
+			);
+			path = model;
 			sourceTree = "<group>";
 		};
 		753D497C7C54FCA33A867ABF /* app */ = {
@@ -320,6 +343,7 @@
 			children = (
 				99862B608796978B198961A0 /* CityChainApp */,
 				2AF2A62A3FE3E69437999835 /* OracleBallApp */,
+				CA640C364C9B6FC6382406BE /* OracleBallAppUITests */,
 				C6D37A194A720C9F68B69A47 /* Packages */,
 				66A1B65FA39F571F0FA6699E /* Products */,
 			);
@@ -335,19 +359,10 @@
 			path = ui;
 			sourceTree = "<group>";
 		};
-		A71C4E2D9F6B3A508C2D7E19 /* model */ = {
-			isa = PBXGroup;
-			children = (
-				2B7F8A4C1D9E6B305F2C7A18 /* OracleCredentialsStore.swift */,
-				9A6F30CC19E5445A8E6BB0A2 /* OracleHaptics.swift */,
-			);
-			path = model;
-			sourceTree = "<group>";
-		};
 		8CEFD12E0DDC9060C245F2B3 /* assets */ = {
 			isa = PBXGroup;
 			children = (
-				DBD98CB51A2AA5E83A46C423 /* AppIcon.icon */,
+				B531FD1996E7982085FB0DAB /* AppIcon.icon */,
 				F85255BEFB921D1C014C1753 /* Assets.xcassets */,
 			);
 			path = assets;
@@ -384,7 +399,7 @@
 		C6D37A194A720C9F68B69A47 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				373D4F350281AEB2AD84E367 /* SwiftDecision-Examples */,
+				B1B23EFD257E0971B6BF99FF /* SwiftDecision-Examples */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -392,10 +407,18 @@
 		C9014AB88BFBAFE6445429B0 /* geometry */ = {
 			isa = PBXGroup;
 			children = (
-				A9F100000000000000000002 /* OracleFieldMesh.swift */,
+				D4C81B75995F2AFAA80302DE /* OracleFieldMesh.swift */,
 				57250EFE799C3061E9C2760F /* OracleMesh.swift */,
 			);
 			path = geometry;
+			sourceTree = "<group>";
+		};
+		CA640C364C9B6FC6382406BE /* OracleBallAppUITests */ = {
+			isa = PBXGroup;
+			children = (
+				4C1ABCEFDF8B508F160F6631 /* OracleKeyboardDismissalUITests.swift */,
+			);
+			path = OracleBallAppUITests;
 			sourceTree = "<group>";
 		};
 		D5C249E64B808CE04F3CA95E /* entities */ = {
@@ -494,11 +517,29 @@
 			packageProductDependencies = (
 				01B68DE758911AE15B2AAEBE /* OraclePresentation */,
 				4E5F7613A5B4238BF6496ACD /* OracleGame */,
-				E1A7F5D42B6C9013587A4E21 /* OracleHistory */,
+				E14F9F1E7EE4A975AA0F6EC8 /* OracleHistory */,
 			);
 			productName = OracleBallApp;
 			productReference = DEC372D3239535942E74F4DC /* OracleBallApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		963DA7726D5C483EA1F25ECB /* OracleBallAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D2026C704D37C7AF31608CB7 /* Build configuration list for PBXNativeTarget "OracleBallAppUITests" */;
+			buildPhases = (
+				82B5E802B4A2D461ED90A4DC /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D8917E6A59D12DA71436BCD2 /* PBXTargetDependency */,
+			);
+			name = OracleBallAppUITests;
+			packageProductDependencies = (
+			);
+			productName = OracleBallAppUITests;
+			productReference = 9C2615427A2B6A804DDC43B7 /* OracleBallAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		B1033693A11B9FECC49A3912 /* CityChainApp */ = {
 			isa = PBXNativeTarget;
@@ -528,6 +569,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					963DA7726D5C483EA1F25ECB = {
+						TestTargetID = 5F2AA21B77A3804B4174B9AD;
+					};
 				};
 			};
 			buildConfigurationList = CA8A0F14E6CD98AC98D99187 /* Build configuration list for PBXProject "CityChainApp" */;
@@ -549,6 +593,7 @@
 			targets = (
 				B1033693A11B9FECC49A3912 /* CityChainApp */,
 				5F2AA21B77A3804B4174B9AD /* OracleBallApp */,
+				963DA7726D5C483EA1F25ECB /* OracleBallAppUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -558,7 +603,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				31B5C9E41397190210C3F5F7 /* AppIcon.icon in Resources */,
+				D58DEC0FE1D9DBC3A288FEBD /* AppIcon.icon in Resources */,
 				2970C361B601B3AFC3C83A8E /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -575,27 +620,35 @@
 				2D0F7D6CD3818F07344C8A38 /* OracleBallApp.swift in Sources */,
 				11CCB03EDA6C91FCA8DA8BB6 /* OracleBallViewport.swift in Sources */,
 				BEEB7D3D5DEE34E208AFB5DF /* OracleCosmicBackground.swift in Sources */,
+				CE982400AFC0CA0CEAC8CB7A /* OracleCredentialsStore.swift in Sources */,
 				85139911433978FEDC77673D /* OracleFace.metal in Sources */,
+				C428D200A15D0227F94E7C98 /* OracleField.metal in Sources */,
+				C660E0BCF93CFFEAC6ED29E0 /* OracleField.swift in Sources */,
+				C5CBA2C9D15B3CECA29148AF /* OracleFieldComponent.swift in Sources */,
+				1A1ED4733AC5023DF7F56DD1 /* OracleFieldMesh.swift in Sources */,
+				248C23E9ABDAFA82B6D469EB /* OracleFieldSystem.swift in Sources */,
+				0F14080BDB66721C03229982 /* OracleHaptics.swift in Sources */,
 				08750526D5EF2E6AEEE23BD3 /* OracleLighting.swift in Sources */,
 				A3EE2CC47B4CB15DD7A30F73 /* OracleMaterials.swift in Sources */,
-				A9F100000000000000000001 /* OracleFieldMesh.swift in Sources */,
-				A9F100000000000000000003 /* OracleFieldComponent.swift in Sources */,
-				A9F100000000000000000005 /* OracleField.swift in Sources */,
-				A9F100000000000000000009 /* OracleField.metal in Sources */,
-				A9F100000000000000000007 /* OracleFieldSystem.swift in Sources */,
 				AF6617E50ED31DA57800D22C /* OracleMesh.swift in Sources */,
 				FD2EA813D1694B02FD07768F /* OracleModeSelector.swift in Sources */,
 				EC6595AF675A41B6667771EE /* OracleMotionComponent.swift in Sources */,
 				82E6986B7DF9835BC0DFA101 /* OracleMotionInput.swift in Sources */,
 				7D280D82F2F7E5DF67FEA291 /* OraclePage.swift in Sources */,
 				1171D0C01276BB198AED2320 /* OraclePageModel.swift in Sources */,
-				19E30C8A6D1A4F3C9B7E2D51 /* OracleCredentialsStore.swift in Sources */,
-				9A6F30CC19E5445A8E6BB0A1 /* OracleHaptics.swift in Sources */,
 				F68B6A00A624552F48757EBB /* OraclePalette.swift in Sources */,
 				1E7947AE883BC2653A6DCA5F /* OracleRevealComponent.swift in Sources */,
 				D59B5FA5D6EDECEAF9F38A98 /* OracleRevealSystem.swift in Sources */,
 				50807669B747813DBC71B7FD /* OracleScene.swift in Sources */,
 				28B49B28EE662B70EEE0AA13 /* OracleWindow.metal in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		82B5E802B4A2D461ED90A4DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0C413AFAC6BB64504225BC2A /* OracleKeyboardDismissalUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -614,6 +667,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D8917E6A59D12DA71436BCD2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5F2AA21B77A3804B4174B9AD /* OracleBallApp */;
+			targetProxy = 69A1E8FBACC85BE2F5E28221 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		338941EBE6C8E69FF571E24A /* Release */ = {
@@ -690,6 +751,44 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
+		};
+		59218A294CE1ABDE6FE049A4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.soundblaster.oracleball.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = OracleBallApp;
+			};
+			name = Release;
+		};
+		5D6D7D8973AA994FE604117D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.soundblaster.oracleball.uitests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = OracleBallApp;
+			};
+			name = Debug;
 		};
 		6E2DEC192172CE5422BE28A3 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -849,6 +948,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		D2026C704D37C7AF31608CB7 /* Build configuration list for PBXNativeTarget "OracleBallAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5D6D7D8973AA994FE604117D /* Debug */,
+				59218A294CE1ABDE6FE049A4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -867,14 +975,13 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = OracleGame;
 		};
-		E1A7F5D42B6C9013587A4E21 /* OracleHistory */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 49CB85DE23EA0C4605378EF4 /* XCLocalSwiftPackageReference "." */;
-			productName = OracleHistory;
-		};
 		BCFC25CE5B72400FF274C46C /* CityChainGame */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CityChainGame;
+		};
+		E14F9F1E7EE4A975AA0F6EC8 /* OracleHistory */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OracleHistory;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

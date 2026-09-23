@@ -50,3 +50,22 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
+    scheme:
+      testTargets:
+        - OracleBallAppUITests
+
+  OracleBallAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: OracleBallAppUITests
+    dependencies:
+      - target: OracleBallApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball.uitests
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
