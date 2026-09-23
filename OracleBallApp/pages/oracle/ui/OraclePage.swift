@@ -9,6 +9,8 @@ struct OraclePage: View {
   @State private var infoSheetDetent: PresentationDetent = .medium
   @FocusState private var isQuestionFocused: Bool
   @State private var questionFieldFrame: CGRect = .zero
+  @AppStorage("oracle.keepsBallSizeWhileTyping") private var keepsBallSizeWhileTyping = false
+  @State private var initialBallViewportSide: CGFloat?
 
   init(model: OraclePageModel = OraclePageModel()) {
     _model = State(initialValue: model)
@@ -17,7 +19,10 @@ struct OraclePage: View {
   var body: some View {
     GeometryReader { proxy in
       let availableHeight = max(proxy.size.height, 1)
-      let viewportSide = max(1, min(proxy.size.width - 16, max(180, availableHeight - 260)))
+      let responsiveViewportSide = max(
+        1, min(proxy.size.width - 16, max(180, availableHeight - 260)))
+      let fixedViewportSide = initialBallViewportSide ?? responsiveViewportSide
+      let viewportSide = keepsBallSizeWhileTyping ? fixedViewportSide : responsiveViewportSide
 
       ZStack {
         OracleCosmicBackground()
@@ -89,6 +94,13 @@ struct OraclePage: View {
             guard isQuestionFocused, !questionFieldFrame.contains(tap.location) else { return }
             isQuestionFocused = false
           })
+      .onGeometryChange(for: CGSize.self) { geometry in
+        geometry.size
+      } action: { size in
+        guard initialBallViewportSide == nil else { return }
+        initialBallViewportSide = max(
+          1, min(size.width - 16, max(180, size.height - 260)))
+      }
     }
     .preferredColorScheme(.dark)
     .sheet(isPresented: $isShowingInfo) {
@@ -96,6 +108,7 @@ struct OraclePage: View {
         apiKey: model.configuredAPIKey,
         providerDescription: model.providerDescription,
         historyEntries: model.historyEntries,
+        keepsBallSizeWhileTyping: $keepsBallSizeWhileTyping,
         selectedDetent: $infoSheetDetent,
         onSave: model.saveAPIKey,
         onRepeatHistoryEntry: model.repeatQuestion,
@@ -173,6 +186,7 @@ private struct OracleInfoSheet: View {
   private let savedAPIKey: String
   let providerDescription: String
   let historyEntries: [OracleHistoryEntry]
+  @Binding var keepsBallSizeWhileTyping: Bool
   @Binding var selectedDetent: PresentationDetent
   let onSave: (String) -> Bool
   let onRepeatHistoryEntry: (String) -> Void
@@ -183,6 +197,7 @@ private struct OracleInfoSheet: View {
     apiKey: String,
     providerDescription: String,
     historyEntries: [OracleHistoryEntry],
+    keepsBallSizeWhileTyping: Binding<Bool>,
     selectedDetent: Binding<PresentationDetent>,
     onSave: @escaping (String) -> Bool,
     onRepeatHistoryEntry: @escaping (String) -> Void,
@@ -194,6 +209,7 @@ private struct OracleInfoSheet: View {
     savedAPIKey = apiKey
     self.providerDescription = providerDescription
     self.historyEntries = historyEntries
+    self._keepsBallSizeWhileTyping = keepsBallSizeWhileTyping
     self._selectedDetent = selectedDetent
     self.onSave = onSave
     self.onRepeatHistoryEntry = onRepeatHistoryEntry
@@ -203,6 +219,8 @@ private struct OracleInfoSheet: View {
 
   var body: some View {
     List {
+      BallViewportSettingsSection(keepsBallSizeWhileTyping: $keepsBallSizeWhileTyping)
+
       Section {
         VStack(alignment: .leading, spacing: selectedDetent == .large ? 16 : 8) {
           HStack {
@@ -383,6 +401,21 @@ private struct OracleInfoSheet: View {
       .buttonStyle(.plain)
       .disabled(historyEntries.isEmpty)
       .accessibilityLabel("Delete all history")
+    }
+  }
+}
+
+private struct BallViewportSettingsSection: View {
+  @Binding var keepsBallSizeWhileTyping: Bool
+
+  var body: some View {
+    Section("Appearance") {
+      Toggle("Keep ball size while typing", isOn: $keepsBallSizeWhileTyping)
+        .accessibilityHint("Keeps the oracle ball at its normal size when the keyboard appears")
+      Text("The ball stays centered in its viewport while you type.")
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
     }
   }
 }
