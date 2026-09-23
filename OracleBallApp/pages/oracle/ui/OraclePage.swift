@@ -220,6 +220,7 @@ private struct OracleInfoSheet: View {
   }
 
   var body: some View {
+    NavigationStack {
     List {
       BallViewportSettingsSection(keepsBallSizeWhileTyping: $keepsBallSizeWhileTyping)
 
@@ -321,7 +322,12 @@ private struct OracleInfoSheet: View {
               .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
           } else {
             ForEach(historyEntries) { entry in
-              OracleHistoryRow(entry: entry)
+              NavigationLink {
+                OraclePipelineDetailView(entry: entry)
+              } label: {
+                OracleHistoryRow(entry: entry)
+              }
+              .tint(.oracleLavender)
                 .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
                 .swipeActions(edge: .leading, allowsFullSwipe: false) {
                   Button {
@@ -369,6 +375,8 @@ private struct OracleInfoSheet: View {
     ) {
       Button("Delete All", role: .destructive, action: onClearHistory)
       Button("Cancel", role: .cancel) {}
+    }
+    .toolbar(.hidden, for: .navigationBar)
     }
   }
 

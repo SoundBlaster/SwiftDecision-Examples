@@ -40,6 +40,7 @@
 		CA7B6FB826C11092AB41EF8B /* CityTurnRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 346C1BCD4A824791392C194B /* CityTurnRow.swift */; };
 		CE982400AFC0CA0CEAC8CB7A /* OracleCredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */; };
 		D2642B91F5B4C9FF8DB60BF8 /* OraclePresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 01B68DE758911AE15B2AAEBE /* OraclePresentation */; };
+		D1C5A914C54E4A9EA945C502 /* OraclePipelineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C5A914C54E4A9EA945C502 /* OraclePipelineDetailView.swift */; };
 		D58DEC0FE1D9DBC3A288FEBD /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = B531FD1996E7982085FB0DAB /* AppIcon.icon */; };
 		D59B5FA5D6EDECEAF9F38A98 /* OracleRevealSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12F66D65B6726987E960904 /* OracleRevealSystem.swift */; };
 		D811AB713A983C27ABB46B7F /* CityChainAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABBD1A12DA4DC7CDD5E30DA /* CityChainAppApp.swift */; };
@@ -94,6 +95,7 @@
 		C12F66D65B6726987E960904 /* OracleRevealSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleRevealSystem.swift; sourceTree = "<group>"; };
 		C440A94AC7B3B70E4C383882 /* OraclePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePalette.swift; sourceTree = "<group>"; };
 		D28DFCC17C6D03DE5A7A7D1A /* OracleMotionInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionInput.swift; sourceTree = "<group>"; };
+		D2C5A914C54E4A9EA945C502 /* OraclePipelineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePipelineDetailView.swift; sourceTree = "<group>"; };
 		D4C81B75995F2AFAA80302DE /* OracleFieldMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldMesh.swift; sourceTree = "<group>"; };
 		DEC372D3239535942E74F4DC /* OracleBallApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OracleBallApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EC4B8F1131B0DF0B3975D1D3 /* OracleFace.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleFace.metal; sourceTree = "<group>"; };
@@ -355,6 +357,7 @@
 				F6D0F2E9F233D95523F6AADE /* OracleCosmicBackground.swift */,
 				68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */,
 				55A4C6BD24CF45CE45B11625 /* OraclePageModel.swift */,
+				D2C5A914C54E4A9EA945C502 /* OraclePipelineDetailView.swift */,
 			);
 			path = ui;
 			sourceTree = "<group>";
@@ -636,6 +639,7 @@
 				82E6986B7DF9835BC0DFA101 /* OracleMotionInput.swift in Sources */,
 				7D280D82F2F7E5DF67FEA291 /* OraclePage.swift in Sources */,
 				1171D0C01276BB198AED2320 /* OraclePageModel.swift in Sources */,
+				D1C5A914C54E4A9EA945C502 /* OraclePipelineDetailView.swift in Sources */,
 				F68B6A00A624552F48757EBB /* OraclePalette.swift in Sources */,
 				1E7947AE883BC2653A6DCA5F /* OracleRevealComponent.swift in Sources */,
 				D59B5FA5D6EDECEAF9F38A98 /* OracleRevealSystem.swift in Sources */,
