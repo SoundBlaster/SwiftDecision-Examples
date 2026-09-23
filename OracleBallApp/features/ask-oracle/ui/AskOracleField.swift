@@ -2,10 +2,9 @@ import SwiftUI
 
 struct AskOracleField: View {
   @Binding var text: String
+  @FocusState.Binding var isFocused: Bool
   let isSubmitting: Bool
   let onSubmit: () -> Void
-
-  @FocusState private var isFocused: Bool
 
   private func submit() {
     guard !isSubmitting else { return }
