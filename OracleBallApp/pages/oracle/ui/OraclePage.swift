@@ -7,6 +7,7 @@ struct OraclePage: View {
   @State private var model: OraclePageModel
   @State private var isShowingInfo = false
   @State private var infoSheetDetent: PresentationDetent = .medium
+  @FocusState private var isQuestionFocused: Bool
 
   init(model: OraclePageModel = OraclePageModel()) {
     _model = State(initialValue: model)
@@ -47,6 +48,7 @@ struct OraclePage: View {
             VStack(spacing: 12) {
               AskOracleField(
                 text: $model.question,
+                isFocused: $isQuestionFocused,
                 isSubmitting: model.isSubmitting,
                 onSubmit: model.submit)
               Text(model.statusMessage ?? model.answerStatus)
@@ -68,6 +70,11 @@ struct OraclePage: View {
               .padding(.bottom, 8)
           }
           .frame(minHeight: availableHeight)
+        }
+        .background {
+          Color.clear
+            .contentShape(Rectangle())
+            .onTapGesture { isQuestionFocused = false }
         }
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize)
