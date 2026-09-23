@@ -707,14 +707,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       id: title,
       title: title,
       summary: summary,
-      specificationEvents: events.map { event in
-        OracleSpecificationTraceStep(
-          id: event.id,
-          parentID: event.parentID,
-          name: event.name,
-          outcome: outcomeName(event.outcome),
-          durationNanoseconds: event.durationNanoseconds)
-      })
+      specificationEvents: OraclePipelineTraceRecorder.ruleResult(from: events))
   }
 
   private func decisionStage<Value: Sendable>(
@@ -732,25 +725,7 @@ public final class OracleGameEngine: @unchecked Sendable {
           timestamp: event.timestamp,
           detail: event.detail)
       },
-      specificationEvents: result.specificationTrace.map { event in
-        OracleSpecificationTraceStep(
-          id: event.id,
-          parentID: event.parentID,
-          name: event.name,
-          outcome: outcomeName(event.outcome),
-          durationNanoseconds: event.durationNanoseconds)
-      })
+      specificationEvents: OraclePipelineTraceRecorder.decisionDetails(from: result.specificationTrace))
   }
 
-  private func outcomeName(_ outcome: SpecificationTraceOutcome) -> String {
-    switch outcome {
-    case .satisfied: "Satisfied"
-    case .unsatisfied: "Not satisfied"
-    case .selected: "Selected"
-    case .noMatch: "No match"
-    case .skipped: "Skipped"
-    case let .failed(errorType): "Failed: \(errorType)"
-    case .cancelled: "Cancelled"
-    }
-  }
 }
