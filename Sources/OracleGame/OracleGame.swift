@@ -67,11 +67,12 @@ public enum OracleOutcome: Hashable, Sendable {
   case abstained(reason: String)
 }
 
-/// A content-free snapshot of one important decision stage in an Oracle request.
+/// A curated snapshot of one important decision stage in an Oracle request.
 public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
   public let id: String
   public let title: String
   public let summary: String?
+  public let details: [OraclePipelineDetail]?
   public let decisionEvents: [OracleDecisionTraceStep]
   public let specificationEvents: [OracleSpecificationTraceStep]
 
@@ -79,14 +80,29 @@ public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
     id: String,
     title: String,
     summary: String? = nil,
+    details: [OraclePipelineDetail]? = nil,
     decisionEvents: [OracleDecisionTraceStep] = [],
     specificationEvents: [OracleSpecificationTraceStep] = []
   ) {
     self.id = id
     self.title = title
     self.summary = summary
+    self.details = details
     self.decisionEvents = decisionEvents
     self.specificationEvents = specificationEvents
+  }
+}
+
+/// A human-readable, domain-specific fact that explains how a pipeline stage proceeded.
+public struct OraclePipelineDetail: Codable, Hashable, Identifiable, Sendable {
+  public let id: String
+  public let label: String
+  public let value: String
+
+  public init(id: String, label: String, value: String) {
+    self.id = id
+    self.label = label
+    self.value = value
   }
 }
 
@@ -423,6 +439,13 @@ public final class OracleGameEngine: @unchecked Sendable {
 
     let question = request.question.trimmingCharacters(in: .whitespacesAndNewlines)
     let choicePlan = OracleChoicePlanner.plan(for: question)
+    let choiceRecorder = SpecificationTraceRecorder()
+    let isChoicePlanValid = try await SpecificationTraceRuntime.evaluateAsync(
+      requestPolicy.choicePlanIsValid,
+      choicePlan,
+      recordingTo: choiceRecorder)
+    pipeline.append(choiceAlternativesStage(plan: choicePlan, events: choiceRecorder.events))
+
     let routingContext = OracleRoutingContext(
       mode: request.mode,
       choicePlan: choicePlan,
@@ -438,7 +461,11 @@ public final class OracleGameEngine: @unchecked Sendable {
     pipeline.append(specificationStage(
       "Request routing",
       events: routingRecorder.events,
-      summary: selection.operation.traceLabel))
+      summary: selection.operation.traceLabel,
+      details: [
+        traceDetail("requested-mode", "Requested mode", request.mode.rawValue),
+        traceDetail("selected-route", "Selected route", selection.operation.traceLabel),
+      ]))
 
     let evaluation: OracleEvaluation
     if selection.operation == .unsupported {
@@ -450,7 +477,8 @@ public final class OracleGameEngine: @unchecked Sendable {
       pipeline.append(decisionStage(
         "Question type",
         result: intent,
-        summary: intent.value?.traceLabel))
+        summary: intent.value.map { "\($0.traceLabel) · \(percentage(intent.confidence))" },
+        details: intentDiagnostics(for: intent)))
       guard let operation = intent.value else {
         let reason: String
         if case let .abstained(abstentionReason) = intent.outcome {
@@ -466,13 +494,7 @@ public final class OracleGameEngine: @unchecked Sendable {
           confidence: intent.confidence,
           reason: "question is outside the supported answer types")
       } else if operation == .choice {
-        let choiceRecorder = SpecificationTraceRecorder()
-        let isValid = try await SpecificationTraceRuntime.evaluateAsync(
-          requestPolicy.choicePlanIsValid,
-          choicePlan,
-          recordingTo: choiceRecorder)
-        pipeline.append(specificationStage("Choice alternatives", events: choiceRecorder.events))
-        if isValid {
+        if isChoicePlanValid {
           evaluation = try await evaluate(
             request,
             selection: OracleOperationSelection(.choice, choicePlan: choicePlan))
@@ -488,12 +510,6 @@ public final class OracleGameEngine: @unchecked Sendable {
       }
     } else {
       if selection.operation == .choice {
-        let choiceRecorder = SpecificationTraceRecorder()
-        _ = try await SpecificationTraceRuntime.evaluateAsync(
-          requestPolicy.choicePlanIsValid,
-          choicePlan,
-          recordingTo: choiceRecorder)
-        pipeline.append(specificationStage("Choice alternatives", events: choiceRecorder.events))
         selection = OracleOperationSelection(.choice, choicePlan: choicePlan)
       }
       evaluation = try await evaluate(request, selection: selection)
@@ -576,7 +592,11 @@ public final class OracleGameEngine: @unchecked Sendable {
         mode: .noul,
         displayText: result.value.map { $0 ? "Definitely\nyes" : "Probably\nno" },
         noulValue: result.value,
-        result: result
+        result: result,
+        details: distributionDetails(
+          options: ["No", "Yes"],
+          selected: result.value.map { $0 ? "Yes" : "No" },
+          result: result)
       )
     case .choice:
       let options = selection.choicePlan.options.isEmpty
@@ -605,9 +625,14 @@ public final class OracleGameEngine: @unchecked Sendable {
           default: return "Ask again\nlater"
           }
         },
-        result: result
+        result: result,
+        details: distributionDetails(
+          options: options,
+          selected: result.value,
+          result: result)
       )
     case .score:
+      let scoreLevels = ["Very unlikely", "Uncertain", "Likely", "Very likely"]
       let result = try await decisionEngine.score(
         instructions: question,
         context: question,
@@ -620,7 +645,15 @@ public final class OracleGameEngine: @unchecked Sendable {
         fallback: fallbackEnabled ? ScoreValue(level: 1, expectedValue: 0.50) : nil
       )
       let text = result.value.map { "\(Int(($0.expectedValue * 100).rounded()))%" }
-      return try await makeEvaluation(request: request, mode: .score, displayText: text, result: result)
+      return try await makeEvaluation(
+        request: request,
+        mode: .score,
+        displayText: text,
+        result: result,
+        details: distributionDetails(
+          options: scoreLevels,
+          selected: result.value.map { scoreLevels[$0.level] },
+          result: result))
     case .unsupported, .automatic:
       throw OracleGameError.noPolicy
     }
@@ -631,9 +664,10 @@ public final class OracleGameEngine: @unchecked Sendable {
     mode: OracleMode? = nil,
     displayText: String?,
     noulValue: Bool? = nil,
-    result: DecisionResult<Value>
+    result: DecisionResult<Value>,
+    details: [OraclePipelineDetail] = []
   ) async throws -> OracleEvaluation {
-    let decisionTraceStage = decisionStage("Answer decision", result: result)
+    let decisionTraceStage = decisionStage("Answer decision", result: result, details: details)
     switch result.outcome {
     case let .abstained(reason):
       return OracleEvaluation(
@@ -701,24 +735,48 @@ public final class OracleGameEngine: @unchecked Sendable {
   private func specificationStage(
     _ title: String,
     events: [SpecificationTraceEvent],
-    summary: String? = nil
+    summary: String? = nil,
+    details: [OraclePipelineDetail]? = nil
   ) -> OraclePipelineStage {
-    OraclePipelineStage(
+    return OraclePipelineStage(
       id: title,
       title: title,
       summary: summary,
+      details: details,
       specificationEvents: OraclePipelineTraceRecorder.ruleResult(from: events))
+  }
+
+  private func choiceAlternativesStage(
+    plan: OracleChoicePlan,
+    events: [SpecificationTraceEvent]
+  ) -> OraclePipelineStage {
+    let summary = plan.options.isEmpty
+      ? "No options extracted"
+      : "\(plan.options.count) options extracted"
+    let options = plan.options.isEmpty ? "None" : plan.options.joined(separator: " · ")
+    let details = [
+      traceDetail("extracted-options", "Extracted options", options),
+      traceDetail("extraction-rule", "Extraction", plan.extractionDescription),
+    ]
+    return specificationStage(
+      "Choice alternatives",
+      events: events,
+      summary: summary,
+      details: details)
   }
 
   private func decisionStage<Value: Sendable>(
     _ title: String,
     result: DecisionResult<Value>,
-    summary: String? = nil
+    summary: String? = nil,
+    details: [OraclePipelineDetail]? = nil
   ) -> OraclePipelineStage {
-    OraclePipelineStage(
+    let provider = result.trace.first { $0.stage == .inferenceCompleted }?.detail
+    return OraclePipelineStage(
       id: title,
       title: title,
       summary: summary,
+      details: (details ?? []) + (provider.map { [traceDetail("provider", "Provider", $0)] } ?? []),
       decisionEvents: result.trace.map { event in
         OracleDecisionTraceStep(
           stage: event.stage.rawValue,
@@ -726,6 +784,44 @@ public final class OracleGameEngine: @unchecked Sendable {
           detail: event.detail)
       },
       specificationEvents: OraclePipelineTraceRecorder.decisionDetails(from: result.specificationTrace))
+  }
+
+  private func intentDiagnostics(
+    for result: DecisionResult<OracleOperation>
+  ) -> [OraclePipelineDetail] {
+    let labels = ["Noul", "Choice", "Score", "Unsupported"]
+    let distribution = zip(labels, result.probabilities)
+      .map { "\($0.0) \(percentage($0.1))" }
+      .joined(separator: " · ")
+    return [
+      traceDetail("intent-confidence", "Selected confidence", percentage(result.confidence)),
+      traceDetail("intent-scores", "Intent scores", distribution),
+    ]
+  }
+
+  private func distributionDetails<Value: Sendable>(
+    options: [String],
+    selected: String?,
+    result: DecisionResult<Value>
+  ) -> [OraclePipelineDetail] {
+    let distribution = zip(options, result.probabilities)
+      .map { "\($0.0) \(percentage($0.1))" }
+      .joined(separator: " · ")
+    var details = [traceDetail("options-sent", "Options sent", options.joined(separator: " · "))]
+    if let selected {
+      details.append(traceDetail("selected-option", "Selected option", selected))
+    }
+    details.append(traceDetail("probabilities", "Probabilities", distribution))
+    details.append(traceDetail("confidence", "Selected confidence", percentage(result.confidence)))
+    return details
+  }
+
+  private func traceDetail(_ id: String, _ label: String, _ value: String) -> OraclePipelineDetail {
+    OraclePipelineDetail(id: id, label: label, value: value)
+  }
+
+  private func percentage(_ value: Double) -> String {
+    "\(Int((value * 100).rounded()))%"
   }
 
 }

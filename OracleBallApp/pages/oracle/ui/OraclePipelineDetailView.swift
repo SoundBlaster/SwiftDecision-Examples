@@ -18,9 +18,23 @@ struct OraclePipelineDetailView: View {
         ForEach(pipeline) { stage in
           Section(header: Text(stage.title)) {
             if let summary = stage.summary {
-              Label("Selected: \(summary)", systemImage: "arrow.turn.down.right")
+              Label(summary, systemImage: "info.circle")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Color.oracleLavender)
+            }
+
+            ForEach(stage.details ?? []) { detail in
+              HStack(alignment: .top, spacing: 10) {
+                Text(detail.label)
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+                  .frame(width: 120, alignment: .leading)
+                Text(detail.value)
+                  .font(.caption.weight(.medium))
+                  .fixedSize(horizontal: false, vertical: true)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+              }
+              .accessibilityElement(children: .combine)
             }
 
             ForEach(Array(stage.decisionEvents.enumerated()), id: \.offset) { _, event in
