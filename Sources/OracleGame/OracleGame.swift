@@ -368,6 +368,20 @@ private enum OracleResolution: Sendable {
   case abstained(reason: String)
 }
 
+private enum OracleAnswerValidationRule {
+  static let root = "Answer validation"
+  static let nonEmptyText = "Answer text is non-empty"
+  static let validConfidence = "Confidence is absent or within 0...1"
+  static let traceNames: Set<String> = [root, nonEmptyText, validConfidence]
+}
+
+private enum OracleAnswerResolutionRule {
+  static let accepted = "Answer exists and passed policy"
+  static let fallback = "Answer exists and uses fallback"
+  static let abstained = "No answer is available"
+  static let traceNames: Set<String> = [accepted, fallback, abstained]
+}
+
 /// Coordinates SwiftDecision with domain policies expressed as specifications.
 /// The engine owns immutable policies and a sendable DecisionEngine. The unchecked
 /// conformance is intentional: specifications are immutable after initialization.
@@ -398,24 +412,34 @@ public final class OracleGameEngine: @unchecked Sendable {
     } else {
       self.backendIdentifier = String(describing: type(of: backend))
     }
-    answerValidation = AnyAsyncSpecification { answer in
-      guard !answer.displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-        return false
-      }
+    let answerHasVisibleText = AnyAsyncSpecification<OracleAnswer> { answer in
+      !answer.displayText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }.tracedAsync(OracleAnswerValidationRule.nonEmptyText)
+    let answerConfidenceIsValid = AnyAsyncSpecification<OracleAnswer> { answer in
       guard let confidence = answer.confidence else { return true }
       return confidence.isFinite && (0 ... 1).contains(confidence)
-    }
+    }.tracedAsync(OracleAnswerValidationRule.validConfidence)
+    answerValidation = AnyAsyncSpecification(
+      answerHasVisibleText
+        .andAsync(answerConfidenceIsValid)
+        .tracedAsync(OracleAnswerValidationRule.root))
     resolutionPolicy = AsyncFirstMatchSpec<OracleEvaluation, OracleResolution>.builder()
-      .addPredicate(
-        { evaluation in evaluation.answer != nil && !evaluation.isFallback },
+      .add(
+        AnyAsyncSpecification<OracleEvaluation> { evaluation in
+          evaluation.answer != nil && !evaluation.isFallback
+        }.tracedAsync(OracleAnswerResolutionRule.accepted),
         result: .accepted
       )
-      .addPredicate(
-        { evaluation in evaluation.answer != nil && evaluation.isFallback },
+      .add(
+        AnyAsyncSpecification<OracleEvaluation> { evaluation in
+          evaluation.answer != nil && evaluation.isFallback
+        }.tracedAsync(OracleAnswerResolutionRule.fallback),
         result: .fallback
       )
-      .addPredicate(
-        { evaluation in evaluation.answer == nil },
+      .add(
+        AnyAsyncSpecification<OracleEvaluation> { evaluation in
+          evaluation.answer == nil
+        }.tracedAsync(OracleAnswerResolutionRule.abstained),
         result: .abstained(reason: "decision policy abstained")
       )
       .build()
@@ -524,7 +548,29 @@ public final class OracleGameEngine: @unchecked Sendable {
     ) else {
       throw OracleGameError.noPolicy
     }
-    pipeline.append(specificationStage("Answer resolution", events: resolutionRecorder.events))
+    let resolutionSummary: String
+    let resolutionReason: String
+    switch routed {
+    case .accepted:
+      resolutionSummary = "Accepted"
+      resolutionReason = "A validated answer was available and no fallback was used."
+    case .fallback:
+      resolutionSummary = "Fallback selected"
+      resolutionReason = evaluation.reason ?? "The decision policy selected a fallback."
+    case let .abstained(reason):
+      resolutionSummary = "Abstained"
+      resolutionReason = evaluation.reason ?? reason
+    }
+    pipeline.append(specificationStage(
+      "Answer resolution",
+      events: resolutionRecorder.events,
+      summary: resolutionSummary,
+      details: [
+        traceDetail("answer-available", "Answer available", evaluation.answer == nil ? "No" : "Yes"),
+        traceDetail("fallback-used", "Fallback used", evaluation.isFallback ? "Yes" : "No"),
+        traceDetail("resolution-reason", "Reason", resolutionReason),
+      ],
+      retainedRuleNames: OracleAnswerResolutionRule.traceNames))
     switch routed {
     case .accepted:
       guard let answer = evaluation.answer else { throw OracleGameError.invalidAnswer }
@@ -558,7 +604,10 @@ public final class OracleGameEngine: @unchecked Sendable {
       answerValidation,
       answer,
       recordingTo: validationRecorder)
-    let validationStage = specificationStage("Answer validation", events: validationRecorder.events)
+    let validationStage = answerValidationStage(
+      answer: answer,
+      isValid: isValid,
+      events: validationRecorder.events)
     guard isValid else {
       return OracleEvaluation(
         answer: nil,
@@ -675,7 +724,7 @@ public final class OracleGameEngine: @unchecked Sendable {
         confidence: result.confidence,
         reason: reason,
         isFallback: false,
-        pipeline: [decisionTraceStage])
+        pipeline: [decisionTraceStage, skippedAnswerValidationStage(reason: reason)])
     case .accepted:
       break
     case .fallback:
@@ -688,7 +737,10 @@ public final class OracleGameEngine: @unchecked Sendable {
         confidence: result.confidence,
         reason: "answer validation failed",
         isFallback: false,
-        pipeline: [decisionTraceStage])
+        pipeline: [
+          decisionTraceStage,
+          skippedAnswerValidationStage(reason: "No display-ready answer was produced."),
+        ])
     }
     let source: OracleAnswerSource = backendIdentifier == "offline-fixture"
       ? .offlineFixture
@@ -706,7 +758,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       recordingTo: validationRecorder)
     let pipeline = [
       decisionTraceStage,
-      specificationStage("Answer validation", events: validationRecorder.events),
+      answerValidationStage(answer: answer, isValid: isValid, events: validationRecorder.events),
     ]
     guard isValid else {
       return OracleEvaluation(
@@ -736,14 +788,51 @@ public final class OracleGameEngine: @unchecked Sendable {
     _ title: String,
     events: [SpecificationTraceEvent],
     summary: String? = nil,
-    details: [OraclePipelineDetail]? = nil
+    details: [OraclePipelineDetail]? = nil,
+    retainedRuleNames: Set<String>? = nil
   ) -> OraclePipelineStage {
     return OraclePipelineStage(
       id: title,
       title: title,
       summary: summary,
       details: details,
-      specificationEvents: OraclePipelineTraceRecorder.ruleResult(from: events))
+      specificationEvents: retainedRuleNames.map {
+        OraclePipelineTraceRecorder.namedRuleDetails(from: events, names: $0)
+      } ?? OraclePipelineTraceRecorder.ruleResult(from: events))
+  }
+
+  private func answerValidationStage(
+    answer: OracleAnswer,
+    isValid: Bool,
+    events: [SpecificationTraceEvent]
+  ) -> OraclePipelineStage {
+    let confidenceDescription: String
+    if let confidence = answer.confidence {
+      confidenceDescription = confidence.isFinite ? percentage(confidence) : String(describing: confidence)
+    } else {
+      confidenceDescription = "Not provided; allowed"
+    }
+    return specificationStage(
+      "Answer validation",
+      events: events,
+      summary: isValid ? "Passed" : "Rejected",
+      details: [
+        traceDetail("candidate-answer", "Candidate answer", answer.displayText),
+        traceDetail("answer-type", "Answer type", answer.mode.rawValue),
+        traceDetail("answer-confidence", "Confidence", confidenceDescription),
+      ],
+      retainedRuleNames: OracleAnswerValidationRule.traceNames)
+  }
+
+  private func skippedAnswerValidationStage(reason: String) -> OraclePipelineStage {
+    OraclePipelineStage(
+      id: "Answer validation",
+      title: "Answer validation",
+      summary: "Skipped",
+      details: [
+        traceDetail("candidate-answer", "Candidate answer", "None"),
+        traceDetail("validation-reason", "Reason", reason),
+      ])
   }
 
   private func choiceAlternativesStage(

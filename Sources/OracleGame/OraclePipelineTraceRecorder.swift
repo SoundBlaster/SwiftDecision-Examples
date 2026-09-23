@@ -33,6 +33,21 @@ enum OraclePipelineTraceRecorder {
   /// Keep named decision checkpoints and their nearest retained ancestors.
   static func decisionDetails(from events: [SpecificationTraceEvent]) -> [OracleSpecificationTraceStep] {
     let selected = events.filter { decisionEventNames.contains($0.name) }
+    return details(from: selected, within: events)
+  }
+
+  /// Keep named answer-validation and resolution rules without exposing their erased wrapper tree.
+  static func namedRuleDetails(
+    from events: [SpecificationTraceEvent],
+    names: Set<String>
+  ) -> [OracleSpecificationTraceStep] {
+    details(from: events.filter { names.contains($0.name) }, within: events)
+  }
+
+  private static func details(
+    from selected: [SpecificationTraceEvent],
+    within events: [SpecificationTraceEvent]
+  ) -> [OracleSpecificationTraceStep] {
     let selectedIDs = Set(selected.map(\.id))
     let parents = Dictionary(uniqueKeysWithValues: events.map { ($0.id, $0.parentID) })
 
