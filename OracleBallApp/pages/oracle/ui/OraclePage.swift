@@ -8,6 +8,7 @@ struct OraclePage: View {
   @State private var isShowingInfo = false
   @State private var infoSheetDetent: PresentationDetent = .medium
   @FocusState private var isQuestionFocused: Bool
+  @State private var questionFieldFrame: CGRect = .zero
 
   init(model: OraclePageModel = OraclePageModel()) {
     _model = State(initialValue: model)
@@ -51,6 +52,11 @@ struct OraclePage: View {
                 isFocused: $isQuestionFocused,
                 isSubmitting: model.isSubmitting,
                 onSubmit: model.submit)
+                .onGeometryChange(for: CGRect.self) { geometry in
+                  geometry.frame(in: .named("oraclePage"))
+                } action: { frame in
+                  questionFieldFrame = frame
+                }
               Text(model.statusMessage ?? model.answerStatus)
                 .font(.caption2.weight(.medium))
                 .tracking(0.5)
@@ -71,15 +77,17 @@ struct OraclePage: View {
           }
           .frame(minHeight: availableHeight)
         }
-        .background {
-          Color.clear
-            .contentShape(Rectangle())
-            .onTapGesture { isQuestionFocused = false }
-        }
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
       }
+      .coordinateSpace(name: "oraclePage")
+      .simultaneousGesture(
+        SpatialTapGesture(coordinateSpace: .named("oraclePage"))
+          .onEnded { tap in
+            guard isQuestionFocused, !questionFieldFrame.contains(tap.location) else { return }
+            isQuestionFocused = false
+          })
     }
     .preferredColorScheme(.dark)
     .sheet(isPresented: $isShowingInfo) {

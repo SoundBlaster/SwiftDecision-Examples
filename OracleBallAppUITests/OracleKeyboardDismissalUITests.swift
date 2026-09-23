@@ -17,7 +17,7 @@ final class OracleKeyboardDismissalUITests: XCTestCase {
     let fieldFrame = questionField.frame
     let freeAreaTap = app.coordinate(
       withNormalizedOffset: CGVector(
-        dx: fieldFrame.minX / appFrame.width / 2,
+        dx: 0.01,
         dy: fieldFrame.midY / appFrame.height))
     freeAreaTap.tap()
 
