@@ -82,6 +82,7 @@ struct OraclePage: View {
         historyEntries: model.historyEntries,
         selectedDetent: $infoSheetDetent,
         onSave: model.saveAPIKey,
+        onRepeatHistoryEntry: model.repeatQuestion,
         onDeleteHistoryEntry: model.deleteHistoryEntry,
         onClearHistory: model.clearHistory)
         .presentationDetents([.medium, .large], selection: $infoSheetDetent)
@@ -158,6 +159,7 @@ private struct OracleInfoSheet: View {
   let historyEntries: [OracleHistoryEntry]
   @Binding var selectedDetent: PresentationDetent
   let onSave: (String) -> Bool
+  let onRepeatHistoryEntry: (String) -> Void
   let onDeleteHistoryEntry: (OracleHistoryEntry.ID) -> Void
   let onClearHistory: () -> Void
 
@@ -167,6 +169,7 @@ private struct OracleInfoSheet: View {
     historyEntries: [OracleHistoryEntry],
     selectedDetent: Binding<PresentationDetent>,
     onSave: @escaping (String) -> Bool,
+    onRepeatHistoryEntry: @escaping (String) -> Void,
     onDeleteHistoryEntry: @escaping (OracleHistoryEntry.ID) -> Void,
     onClearHistory: @escaping () -> Void
   ) {
@@ -177,6 +180,7 @@ private struct OracleInfoSheet: View {
     self.historyEntries = historyEntries
     self._selectedDetent = selectedDetent
     self.onSave = onSave
+    self.onRepeatHistoryEntry = onRepeatHistoryEntry
     self.onDeleteHistoryEntry = onDeleteHistoryEntry
     self.onClearHistory = onClearHistory
   }
@@ -283,6 +287,15 @@ private struct OracleInfoSheet: View {
             ForEach(historyEntries) { entry in
               OracleHistoryRow(entry: entry)
                 .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                  Button {
+                    dismiss()
+                    onRepeatHistoryEntry(entry.question)
+                  } label: {
+                    Label("Repeat", systemImage: "arrow.clockwise")
+                  }
+                  .tint(.oracleLavender)
+                }
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                   Button(role: .destructive) {
                     onDeleteHistoryEntry(entry.id)
