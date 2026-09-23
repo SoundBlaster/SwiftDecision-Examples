@@ -21,7 +21,9 @@ struct OraclePage: View {
       let availableHeight = max(proxy.size.height, 1)
       let responsiveViewportSide = max(
         1, min(proxy.size.width - 16, max(180, availableHeight - 260)))
-      let fixedViewportSide = initialBallViewportSide ?? responsiveViewportSide
+      let fixedViewportSide = min(
+        initialBallViewportSide ?? responsiveViewportSide,
+        max(1, proxy.size.width - 16))
       let viewportSide = keepsBallSizeWhileTyping ? fixedViewportSide : responsiveViewportSide
 
       ZStack {
