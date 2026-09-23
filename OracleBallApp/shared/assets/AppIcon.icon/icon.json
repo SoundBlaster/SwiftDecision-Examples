@@ -1,0 +1,93 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "fill" : {
+            "solid" : "srgb:0.00000,0.00000,0.10265,1.00000"
+          },
+          "image-name" : "Window.png",
+          "name" : "Window",
+          "position" : {
+            "scale" : 1.05,
+            "translation-in-points" : [
+              -1.1368683772161603e-13,
+              -1.1368683772161603e-13
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "solid" : "srgb:0.00000,0.00000,0.10265,1.00000"
+          },
+          "image-name" : "Window.png",
+          "name" : "Window",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "glass" : false,
+          "image-name" : "YES.png",
+          "name" : "YES",
+          "position" : {
+            "scale" : 1.1,
+            "translation-in-points" : [
+              59,
+              53
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "linear-gradient" : [
+              "display-p3:0.04552,0.16376,0.63229,1.00000",
+              "srgb:0.00000,0.09982,0.48966,1.00000"
+            ]
+          },
+          "glass" : true,
+          "image-name" : "Triangle.png",
+          "name" : "Triangle",
+          "position" : {
+            "scale" : 1.1,
+            "translation-in-points" : [
+              59,
+              177
+            ]
+          }
+        },
+        {
+          "fill" : {
+            "linear-gradient" : [
+              "display-p3:0.00000,0.03815,0.06090,1.00000",
+              "srgb:0.00000,0.00000,0.00000,1.00000"
+            ]
+          },
+          "glass" : false,
+          "hidden" : false,
+          "image-name" : "Background.png",
+          "name" : "Background"
+        }
+      ],
+      "name" : "OracleBall",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.3
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
