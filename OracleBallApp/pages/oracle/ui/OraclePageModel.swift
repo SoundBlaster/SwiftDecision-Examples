@@ -116,15 +116,16 @@ final class OraclePageModel {
 
     requestTask = Task { [weak self, engine] in
       do {
-        let outcome = try await engine.answer(for: request)
+        let tracedOutcome = try await engine.answerWithTrace(for: request)
         guard let self else { return }
         guard self.requestID == requestID else { return }
-        switch outcome {
+        switch tracedOutcome.outcome {
         case let .accepted(answer), let .fallback(answer, _):
           self.answer = answer
           self.historyStore.append(
             question: request.question.trimmingCharacters(in: .whitespacesAndNewlines),
-            answer: answer)
+            answer: answer,
+            pipeline: tracedOutcome.pipeline)
           self.historyEntries = self.historyStore.entries
           self.answerRequestID = requestID
           self.terminalRequestID = 0

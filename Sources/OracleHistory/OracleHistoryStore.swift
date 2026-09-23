@@ -10,6 +10,8 @@ public struct OracleHistoryEntry: Codable, Hashable, Identifiable, Sendable {
   public let confidence: Double?
   public let source: String
   public let createdAt: Date
+  /// The content-free SwiftDecision and SpecificationCore stages for this answer.
+  public let pipeline: [OraclePipelineStage]?
 
   public init(
     id: UUID = UUID(),
@@ -18,7 +20,8 @@ public struct OracleHistoryEntry: Codable, Hashable, Identifiable, Sendable {
     mode: String,
     confidence: Double?,
     source: String,
-    createdAt: Date = .now
+    createdAt: Date = .now,
+    pipeline: [OraclePipelineStage]? = nil
   ) {
     self.id = id
     self.question = question
@@ -27,16 +30,23 @@ public struct OracleHistoryEntry: Codable, Hashable, Identifiable, Sendable {
     self.confidence = confidence
     self.source = source
     self.createdAt = createdAt
+    self.pipeline = pipeline
   }
 
-  public init(question: String, answer: OracleAnswer, createdAt: Date = .now) {
+  public init(
+    question: String,
+    answer: OracleAnswer,
+    createdAt: Date = .now,
+    pipeline: [OraclePipelineStage]? = nil
+  ) {
     self.init(
       question: question,
       answer: answer.displayText,
       mode: answer.mode.rawValue,
       confidence: answer.confidence,
       source: Self.sourceLabel(answer.source),
-      createdAt: createdAt)
+      createdAt: createdAt,
+      pipeline: pipeline)
   }
 
   private static func sourceLabel(_ source: OracleAnswerSource) -> String {
@@ -78,8 +88,17 @@ public final class OracleHistoryStore {
   }
 
   @discardableResult
-  public func append(question: String, answer: OracleAnswer, createdAt: Date = .now) -> OracleHistoryEntry {
-    let entry = OracleHistoryEntry(question: question, answer: answer, createdAt: createdAt)
+  public func append(
+    question: String,
+    answer: OracleAnswer,
+    createdAt: Date = .now,
+    pipeline: [OraclePipelineStage]? = nil
+  ) -> OracleHistoryEntry {
+    let entry = OracleHistoryEntry(
+      question: question,
+      answer: answer,
+      createdAt: createdAt,
+      pipeline: pipeline)
     entries.insert(entry, at: 0)
     entries = Array(entries.prefix(limit))
     persist()

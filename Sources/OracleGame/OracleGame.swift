@@ -67,6 +67,74 @@ public enum OracleOutcome: Hashable, Sendable {
   case abstained(reason: String)
 }
 
+/// A content-free snapshot of one important decision stage in an Oracle request.
+public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
+  public let id: String
+  public let title: String
+  public let summary: String?
+  public let decisionEvents: [OracleDecisionTraceStep]
+  public let specificationEvents: [OracleSpecificationTraceStep]
+
+  public init(
+    id: String,
+    title: String,
+    summary: String? = nil,
+    decisionEvents: [OracleDecisionTraceStep] = [],
+    specificationEvents: [OracleSpecificationTraceStep] = []
+  ) {
+    self.id = id
+    self.title = title
+    self.summary = summary
+    self.decisionEvents = decisionEvents
+    self.specificationEvents = specificationEvents
+  }
+}
+
+public struct OracleDecisionTraceStep: Codable, Hashable, Sendable {
+  public let stage: String
+  public let timestamp: Date
+  public let detail: String?
+
+  public init(stage: String, timestamp: Date, detail: String?) {
+    self.stage = stage
+    self.timestamp = timestamp
+    self.detail = detail
+  }
+}
+
+public struct OracleSpecificationTraceStep: Codable, Hashable, Sendable {
+  public let id: Int
+  public let parentID: Int?
+  public let name: String
+  public let outcome: String
+  public let durationNanoseconds: UInt64
+
+  public init(
+    id: Int,
+    parentID: Int?,
+    name: String,
+    outcome: String,
+    durationNanoseconds: UInt64
+  ) {
+    self.id = id
+    self.parentID = parentID
+    self.name = name
+    self.outcome = outcome
+    self.durationNanoseconds = durationNanoseconds
+  }
+}
+
+/// The answer plus its SpecificationCore and SwiftDecision execution pipeline.
+public struct OracleTracedOutcome: Sendable {
+  public let outcome: OracleOutcome
+  public let pipeline: [OraclePipelineStage]
+
+  public init(outcome: OracleOutcome, pipeline: [OraclePipelineStage]) {
+    self.outcome = outcome
+    self.pipeline = pipeline
+  }
+}
+
 public enum OracleGameError: Error, Equatable, Sendable {
   case invalidQuestion
   case invalidAnswer
@@ -128,6 +196,16 @@ private enum OracleOperation: Sendable, Equatable {
     case .score: 2
     case .unsupported: 3
     case .automatic: 0
+    }
+  }
+
+  var traceLabel: String {
+    switch self {
+    case .noul: "Noul"
+    case .choice: "Choice"
+    case .score: "Score"
+    case .unsupported: "Unsupported"
+    case .automatic: "Automatic"
     }
   }
 }
@@ -265,6 +343,7 @@ private struct OracleEvaluation: Sendable {
   let confidence: Double
   let reason: String?
   let isFallback: Bool
+  let pipeline: [OraclePipelineStage]
 }
 
 private enum OracleResolution: Sendable {
@@ -327,18 +406,40 @@ public final class OracleGameEngine: @unchecked Sendable {
   }
 
   public func answer(for request: OracleRequest) async throws -> OracleOutcome {
-    guard try await requestPolicy.eligibility.isSatisfiedBy(request) else {
+    try await answerWithTrace(for: request).outcome
+  }
+
+  public func answerWithTrace(for request: OracleRequest) async throws -> OracleTracedOutcome {
+    var pipeline: [OraclePipelineStage] = []
+    let eligibilityRecorder = SpecificationTraceRecorder()
+    guard try await SpecificationTraceRuntime.evaluateAsync(
+      requestPolicy.eligibility,
+      request,
+      recordingTo: eligibilityRecorder
+    ) else {
       throw OracleGameError.invalidQuestion
     }
+    pipeline.append(specificationStage("Question eligibility", events: eligibilityRecorder.events))
+
     let question = request.question.trimmingCharacters(in: .whitespacesAndNewlines)
     let choicePlan = OracleChoicePlanner.plan(for: question)
     let routingContext = OracleRoutingContext(
       mode: request.mode,
       choicePlan: choicePlan,
       asksForProbability: OracleChoicePlanner.asksForProbability(question))
-    guard var selection = try await requestPolicy.operation.decide(routingContext) else {
+    let routingRecorder = SpecificationTraceRecorder()
+    guard var selection = try await SpecificationTraceRuntime.decideAsync(
+      requestPolicy.operation,
+      routingContext,
+      recordingTo: routingRecorder
+    ) else {
       throw OracleGameError.noPolicy
     }
+    pipeline.append(specificationStage(
+      "Request routing",
+      events: routingRecorder.events,
+      summary: selection.operation.traceLabel))
+
     let evaluation: OracleEvaluation
     if selection.operation == .unsupported {
       evaluation = try await makeUnsupportedEvaluation(
@@ -346,6 +447,10 @@ public final class OracleGameEngine: @unchecked Sendable {
         reason: "unsupported answer mode requested")
     } else if selection.operation == .automatic {
       let intent = try await intentClassifier.classify(question)
+      pipeline.append(decisionStage(
+        "Question type",
+        result: intent,
+        summary: intent.value?.traceLabel))
       guard let operation = intent.value else {
         let reason: String
         if case let .abstained(abstentionReason) = intent.outcome {
@@ -353,7 +458,7 @@ public final class OracleGameEngine: @unchecked Sendable {
         } else {
           reason = "intent classifier abstained"
         }
-        return .abstained(reason: reason)
+        return OracleTracedOutcome(outcome: .abstained(reason: reason), pipeline: pipeline)
       }
 
       if operation == .unsupported {
@@ -361,7 +466,13 @@ public final class OracleGameEngine: @unchecked Sendable {
           confidence: intent.confidence,
           reason: "question is outside the supported answer types")
       } else if operation == .choice {
-        if try await requestPolicy.choicePlanIsValid.isSatisfiedBy(choicePlan) {
+        let choiceRecorder = SpecificationTraceRecorder()
+        let isValid = try await SpecificationTraceRuntime.evaluateAsync(
+          requestPolicy.choicePlanIsValid,
+          choicePlan,
+          recordingTo: choiceRecorder)
+        pipeline.append(specificationStage("Choice alternatives", events: choiceRecorder.events))
+        if isValid {
           evaluation = try await evaluate(
             request,
             selection: OracleOperationSelection(.choice, choicePlan: choicePlan))
@@ -377,27 +488,40 @@ public final class OracleGameEngine: @unchecked Sendable {
       }
     } else {
       if selection.operation == .choice {
+        let choiceRecorder = SpecificationTraceRecorder()
+        _ = try await SpecificationTraceRuntime.evaluateAsync(
+          requestPolicy.choicePlanIsValid,
+          choicePlan,
+          recordingTo: choiceRecorder)
+        pipeline.append(specificationStage("Choice alternatives", events: choiceRecorder.events))
         selection = OracleOperationSelection(.choice, choicePlan: choicePlan)
       }
       evaluation = try await evaluate(request, selection: selection)
     }
 
-    return try await resolve(evaluation)
-  }
-
-  private func resolve(_ evaluation: OracleEvaluation) async throws -> OracleOutcome {
-    guard let routed = try await resolutionPolicy.decide(evaluation) else {
+    pipeline.append(contentsOf: evaluation.pipeline)
+    let resolutionRecorder = SpecificationTraceRecorder()
+    guard let routed = try await SpecificationTraceRuntime.decideAsync(
+      resolutionPolicy,
+      evaluation,
+      recordingTo: resolutionRecorder
+    ) else {
       throw OracleGameError.noPolicy
     }
+    pipeline.append(specificationStage("Answer resolution", events: resolutionRecorder.events))
     switch routed {
     case .accepted:
       guard let answer = evaluation.answer else { throw OracleGameError.invalidAnswer }
-      return .accepted(answer)
+      return OracleTracedOutcome(outcome: .accepted(answer), pipeline: pipeline)
     case .fallback:
       guard let answer = evaluation.answer else { throw OracleGameError.invalidAnswer }
-      return .fallback(answer, reason: evaluation.reason ?? "policy fallback")
+      return OracleTracedOutcome(
+        outcome: .fallback(answer, reason: evaluation.reason ?? "policy fallback"),
+        pipeline: pipeline)
     case .abstained:
-      return .abstained(reason: evaluation.reason ?? "decision policy abstained")
+      return OracleTracedOutcome(
+        outcome: .abstained(reason: evaluation.reason ?? "decision policy abstained"),
+        pipeline: pipeline)
     }
   }
 
@@ -413,18 +537,26 @@ public final class OracleGameEngine: @unchecked Sendable {
       displayText: OracleUnsupportedResponses.random(),
       confidence: confidence,
       source: source)
-    guard try await answerValidation.isSatisfiedBy(answer) else {
+    let validationRecorder = SpecificationTraceRecorder()
+    let isValid = try await SpecificationTraceRuntime.evaluateAsync(
+      answerValidation,
+      answer,
+      recordingTo: validationRecorder)
+    let validationStage = specificationStage("Answer validation", events: validationRecorder.events)
+    guard isValid else {
       return OracleEvaluation(
         answer: nil,
         confidence: confidence,
         reason: "answer validation failed",
-        isFallback: false)
+        isFallback: false,
+        pipeline: [validationStage])
     }
     return OracleEvaluation(
       answer: answer,
       confidence: confidence,
       reason: reason,
-      isFallback: true)
+      isFallback: true,
+      pipeline: [validationStage])
   }
 
   private func evaluate(
@@ -501,9 +633,15 @@ public final class OracleGameEngine: @unchecked Sendable {
     noulValue: Bool? = nil,
     result: DecisionResult<Value>
   ) async throws -> OracleEvaluation {
+    let decisionTraceStage = decisionStage("Answer decision", result: result)
     switch result.outcome {
     case let .abstained(reason):
-      return OracleEvaluation(answer: nil, confidence: result.confidence, reason: reason, isFallback: false)
+      return OracleEvaluation(
+        answer: nil,
+        confidence: result.confidence,
+        reason: reason,
+        isFallback: false,
+        pipeline: [decisionTraceStage])
     case .accepted:
       break
     case .fallback:
@@ -511,7 +649,12 @@ public final class OracleGameEngine: @unchecked Sendable {
     }
 
     guard let displayText else {
-      return OracleEvaluation(answer: nil, confidence: result.confidence, reason: "answer validation failed", isFallback: false)
+      return OracleEvaluation(
+        answer: nil,
+        confidence: result.confidence,
+        reason: "answer validation failed",
+        isFallback: false,
+        pipeline: [decisionTraceStage])
     }
     let source: OracleAnswerSource = backendIdentifier == "offline-fixture"
       ? .offlineFixture
@@ -522,12 +665,92 @@ public final class OracleGameEngine: @unchecked Sendable {
       noulValue: noulValue,
       confidence: result.confidence,
       source: source)
-    guard try await answerValidation.isSatisfiedBy(answer) else {
-      return OracleEvaluation(answer: nil, confidence: result.confidence, reason: "answer validation failed", isFallback: false)
+    let validationRecorder = SpecificationTraceRecorder()
+    let isValid = try await SpecificationTraceRuntime.evaluateAsync(
+      answerValidation,
+      answer,
+      recordingTo: validationRecorder)
+    let pipeline = [
+      decisionTraceStage,
+      specificationStage("Answer validation", events: validationRecorder.events),
+    ]
+    guard isValid else {
+      return OracleEvaluation(
+        answer: nil,
+        confidence: result.confidence,
+        reason: "answer validation failed",
+        isFallback: false,
+        pipeline: pipeline)
     }
     if case let .fallback(_, reason) = result.outcome {
-      return OracleEvaluation(answer: answer, confidence: result.confidence, reason: reason, isFallback: true)
+      return OracleEvaluation(
+        answer: answer,
+        confidence: result.confidence,
+        reason: reason,
+        isFallback: true,
+        pipeline: pipeline)
     }
-    return OracleEvaluation(answer: answer, confidence: result.confidence, reason: nil, isFallback: false)
+    return OracleEvaluation(
+      answer: answer,
+      confidence: result.confidence,
+      reason: nil,
+      isFallback: false,
+      pipeline: pipeline)
+  }
+
+  private func specificationStage(
+    _ title: String,
+    events: [SpecificationTraceEvent],
+    summary: String? = nil
+  ) -> OraclePipelineStage {
+    OraclePipelineStage(
+      id: title,
+      title: title,
+      summary: summary,
+      specificationEvents: events.map { event in
+        OracleSpecificationTraceStep(
+          id: event.id,
+          parentID: event.parentID,
+          name: event.name,
+          outcome: outcomeName(event.outcome),
+          durationNanoseconds: event.durationNanoseconds)
+      })
+  }
+
+  private func decisionStage<Value: Sendable>(
+    _ title: String,
+    result: DecisionResult<Value>,
+    summary: String? = nil
+  ) -> OraclePipelineStage {
+    OraclePipelineStage(
+      id: title,
+      title: title,
+      summary: summary,
+      decisionEvents: result.trace.map { event in
+        OracleDecisionTraceStep(
+          stage: event.stage.rawValue,
+          timestamp: event.timestamp,
+          detail: event.detail)
+      },
+      specificationEvents: result.specificationTrace.map { event in
+        OracleSpecificationTraceStep(
+          id: event.id,
+          parentID: event.parentID,
+          name: event.name,
+          outcome: outcomeName(event.outcome),
+          durationNanoseconds: event.durationNanoseconds)
+      })
+  }
+
+  private func outcomeName(_ outcome: SpecificationTraceOutcome) -> String {
+    switch outcome {
+    case .satisfied: "Satisfied"
+    case .unsatisfied: "Not satisfied"
+    case .selected: "Selected"
+    case .noMatch: "No match"
+    case .skipped: "Skipped"
+    case let .failed(errorType): "Failed: \(errorType)"
+    case .cancelled: "Cancelled"
+    }
   }
 }
