@@ -31,11 +31,11 @@ The game engine has no UI or live model requirement, so its rule combinations ru
 swift test
 ```
 
-The engine package supports iOS 13+ and macOS 10.15+. A SwiftUI example app can use it as its domain layer.
+The engine package supports iOS 15+ and macOS 10.15+. A SwiftUI example app can use it as its domain layer.
 
 ## Optional TypeSafe Jev backend
 
-The package resolves [`SwiftJev 0.1.0`](https://github.com/SoundBlaster/SwiftJev/releases/tag/0.1.0), [`SwiftDecision 0.3.0`](https://github.com/SoundBlaster/SwiftDecision/releases/tag/0.3.0), and [`SpecificationCore 2.0.0`](https://github.com/SoundBlaster/SpecificationCore/releases/tag/2.0.0). The game remains offline by default; choose the hosted provider explicitly through `CityChainBackendFactory` when a caller has configured a key:
+The package resolves [`SwiftJev 0.2.0`](https://github.com/SoundBlaster/SwiftJev/releases/tag/0.2.0), [`SwiftDecision 0.4.0`](https://github.com/SoundBlaster/SwiftDecision/releases/tag/0.4.0), and [`SpecificationCore 2.0.0`](https://github.com/SoundBlaster/SpecificationCore/releases/tag/2.0.0). The game remains offline by default; choose the hosted provider explicitly through `CityChainBackendFactory` when a caller has configured a key:
 
 ```swift
 let backend = try CityChainBackendFactory.makeJev(apiKey: apiKey)
