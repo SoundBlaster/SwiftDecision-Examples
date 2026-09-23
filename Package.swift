@@ -15,8 +15,11 @@ let package = Package(
     .library(name: "OracleHistory", targets: ["OracleHistory"])
   ],
   dependencies: [
-    .package(url: "https://github.com/SoundBlaster/SwiftDecision.git", exact: "0.2.0"),
-    .package(url: "https://github.com/SoundBlaster/SpecificationCore.git", exact: "1.1.0"),
+    .package(url: "https://github.com/SoundBlaster/SwiftDecision.git", exact: "0.3.0"),
+    .package(
+      url: "https://github.com/SoundBlaster/SpecificationCore.git",
+      exact: "2.0.0"
+    ),
     .package(url: "https://github.com/SoundBlaster/SwiftJev.git", exact: "0.1.0"),
   ],
   targets: [
