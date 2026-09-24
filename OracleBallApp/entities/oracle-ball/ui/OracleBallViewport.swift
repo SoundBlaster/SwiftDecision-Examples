@@ -6,27 +6,34 @@ struct OracleBallViewport: View {
   let requestID: Int
   let answerRequestID: Int
   let terminalRequestID: Int
+  var isPaused = false
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.scenePhase) private var scenePhase
   @State private var renderer: OracleScene?
   @State private var renderFailed = false
+  @State private var lastHandledRequestID: Int?
+
+  private var shouldPauseScene: Bool {
+    isPaused || scenePhase != .active
+  }
 
   var body: some View {
     RealityView { content in
       content.camera = .virtual
       do {
         let scene = try await OracleScene(
-          answer: answer, reduceMotion: reduceMotion, paused: scenePhase != .active)
+          answer: answer, reduceMotion: reduceMotion, paused: shouldPauseScene)
         content.add(scene.root)
         renderer = scene
       } catch {
         renderFailed = true
       }
     } update: { _ in
-      renderer?.setEnvironment(reduceMotion: reduceMotion, paused: scenePhase != .active)
+      renderer?.setEnvironment(reduceMotion: reduceMotion, paused: shouldPauseScene)
     }
     .task(id: "\(requestID)-\(renderer != nil)") {
-      guard let renderer, requestID > 0 else { return }
+      guard let renderer, requestID > 0, lastHandledRequestID != requestID else { return }
+      lastHandledRequestID = requestID
       renderer.beginWaiting(request: requestID)
       if terminalRequestID == requestID {
         renderer.cancelWaiting(request: requestID)
@@ -51,8 +58,13 @@ struct OracleBallViewport: View {
       guard let renderer, requestID > 0, terminalRequestID == requestID else { return }
       renderer.cancelWaiting(request: requestID)
     }
-    .onAppear { renderer?.setEnvironment(reduceMotion: reduceMotion, paused: scenePhase != .active) }
+    .onAppear {
+      renderer?.setEnvironment(reduceMotion: reduceMotion, paused: shouldPauseScene)
+    }
     .onDisappear { renderer?.setEnvironment(reduceMotion: reduceMotion, paused: true) }
+    .onChange(of: shouldPauseScene) { _, paused in
+      renderer?.setEnvironment(reduceMotion: reduceMotion, paused: paused)
+    }
     .overlay {
       if renderFailed {
         ContentUnavailableView(
