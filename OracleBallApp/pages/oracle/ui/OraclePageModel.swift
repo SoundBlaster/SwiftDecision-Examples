@@ -150,6 +150,37 @@ final class OraclePageModel {
     }
   }
 
+  func handleShake() {
+    guard question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      submit()
+      return
+    }
+
+    question = ""
+    requestTask?.cancel()
+    requestTask = nil
+    requestID += 1
+    isSubmitting = false
+
+    let value = Bool.random()
+    answer = OracleAnswer(
+      mode: .noul,
+      displayText: value ? "Definitely\nyes" : "Definitely\nno",
+      noulValue: value,
+      source: .offlineFixture)
+    answerRequestID = requestID
+    terminalRequestID = 0
+    statusMessage = "Random answer"
+  }
+
+  func setShakeFeedbackActive(_ isActive: Bool) {
+    if isActive {
+      haptics.startShakeFeedback()
+    } else {
+      haptics.stopShakeFeedback()
+    }
+  }
+
   func repeatQuestion(_ question: String) {
     self.question = question
     submit()

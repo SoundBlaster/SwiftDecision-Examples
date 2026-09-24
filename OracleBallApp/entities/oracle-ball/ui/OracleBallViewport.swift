@@ -7,7 +7,10 @@ struct OracleBallViewport: View {
   let answerRequestID: Int
   let terminalRequestID: Int
   let onClear: () -> Void
+  let onShake: () -> Void
+  let onShakeActivityChanged: (Bool) -> Void
   var isPaused = false
+  var isShakeEnabled = true
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.scenePhase) private var scenePhase
   @State private var renderer: OracleScene?
@@ -23,7 +26,12 @@ struct OracleBallViewport: View {
       content.camera = .virtual
       do {
         let scene = try await OracleScene(
-          answer: answer, reduceMotion: reduceMotion, paused: shouldPauseScene)
+          answer: answer,
+          reduceMotion: reduceMotion,
+          paused: shouldPauseScene,
+          shakeEnabled: isShakeEnabled,
+          onShake: onShake,
+          onShakeActivityChanged: onShakeActivityChanged)
         content.add(scene.root)
         renderer = scene
       } catch {
@@ -31,6 +39,7 @@ struct OracleBallViewport: View {
       }
     } update: { _ in
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: shouldPauseScene)
+      renderer?.setShakeEnabled(isShakeEnabled)
     }
     .task(id: "\(requestID)-\(renderer != nil)") {
       guard let renderer, requestID > 0, lastHandledRequestID != requestID else { return }
@@ -61,10 +70,14 @@ struct OracleBallViewport: View {
     }
     .onAppear {
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: shouldPauseScene)
+      renderer?.setShakeEnabled(isShakeEnabled)
     }
     .onDisappear { renderer?.setEnvironment(reduceMotion: reduceMotion, paused: true) }
     .onChange(of: shouldPauseScene) { _, paused in
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: paused)
+    }
+    .onChange(of: isShakeEnabled) { _, enabled in
+      renderer?.setShakeEnabled(enabled)
     }
     .contentShape(Rectangle())
     .onTapGesture(perform: onClear)

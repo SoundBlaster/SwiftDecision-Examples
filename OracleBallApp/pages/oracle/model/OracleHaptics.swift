@@ -55,15 +55,20 @@ enum OracleHapticCue {
 @MainActor
 protocol OracleHapticFeedback {
   func play(_ cue: OracleHapticCue)
+  func startShakeFeedback()
+  func stopShakeFeedback()
 }
 
 @MainActor
 final class OracleHaptics: OracleHapticFeedback {
   private static let submissionCueDuration: TimeInterval = 0.25
+  private static let shakeFeedbackIntensity: Float = 1.0
+  private static let shakeFeedbackSharpness: Float = 0.72
 
   private let engine: CHHapticEngine?
   private var submissionCueEndTime: TimeInterval = 0
   private var deferredResultTask: Task<Void, Never>?
+  private var shakePlayer: CHHapticPatternPlayer?
 
   init() {
     guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else {
@@ -98,6 +103,37 @@ final class OracleHaptics: OracleHapticFeedback {
         self.playImmediately(cue)
       }
     }
+  }
+
+  func startShakeFeedback() {
+    guard shakePlayer == nil, let engine else { return }
+    let event = CHHapticEvent(
+      eventType: .hapticContinuous,
+      parameters: [
+        CHHapticEventParameter(
+          parameterID: .hapticIntensity,
+          value: Self.shakeFeedbackIntensity),
+        CHHapticEventParameter(
+          parameterID: .hapticSharpness,
+          value: Self.shakeFeedbackSharpness),
+      ],
+      relativeTime: 0,
+      duration: 30)
+    do {
+      let pattern = try CHHapticPattern(events: [event], parameters: [])
+      try engine.start()
+      let player = try engine.makePlayer(with: pattern)
+      try player.start(atTime: CHHapticTimeImmediate)
+      shakePlayer = player
+    } catch {
+      // Haptic availability must not affect the question or its answer.
+    }
+  }
+
+  func stopShakeFeedback() {
+    guard let shakePlayer else { return }
+    try? shakePlayer.stop(atTime: CHHapticTimeImmediate)
+    self.shakePlayer = nil
   }
 
   private func playImmediately(_ cue: OracleHapticCue) {
