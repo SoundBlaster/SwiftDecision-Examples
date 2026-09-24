@@ -158,6 +158,7 @@ final class OraclePageModel {
   func clearQuestionAndAnswer() {
     guard !question.isEmpty || !answer.displayText.isEmpty || isSubmitting else { return }
 
+    haptics.play(.clear)
     requestTask?.cancel()
     requestTask = nil
     requestID += 1

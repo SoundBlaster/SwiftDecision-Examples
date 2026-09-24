@@ -2,6 +2,7 @@ import CoreHaptics
 
 enum OracleHapticCue {
   case submit
+  case clear
   case positiveResult
   case negativeResult
 
@@ -14,6 +15,8 @@ enum OracleHapticCue {
         Self.tap(at: 0.11, intensity: 0.48, sharpness: 0.55),
         Self.tap(at: 0.22, intensity: 0.72, sharpness: 0.78),
       ]
+    case .clear:
+      return [Self.tap(at: 0, intensity: 0.5, sharpness: 0.45)]
     case .positiveResult:
       return [
         Self.tap(at: 0, intensity: 0.38, sharpness: 0.65),
@@ -77,6 +80,8 @@ final class OracleHaptics: OracleHapticFeedback {
       deferredResultTask?.cancel()
       deferredResultTask = nil
       submissionCueEndTime = now + Self.submissionCueDuration
+      playImmediately(cue)
+    case .clear:
       playImmediately(cue)
     case .positiveResult, .negativeResult:
       let delay = submissionCueEndTime - now
