@@ -173,7 +173,7 @@ final class OracleGameTests: XCTestCase {
       return XCTFail("expected accepted answer")
     }
     XCTAssertEqual(answer.mode, .noul)
-    XCTAssertEqual(answer.displayText, "Definitely\nyes")
+    XCTAssertTrue(OracleAnswerPhrases.affirmative.contains(answer.displayText))
     XCTAssertEqual(answer.source, .offlineFixture)
   }
 
@@ -255,8 +255,32 @@ final class OracleGameTests: XCTestCase {
     guard case let .fallback(answer, reason) = outcome else {
       return XCTFail("expected fallback")
     }
-    XCTAssertEqual(answer.displayText, "Definitely\nyes")
+    XCTAssertTrue(OracleAnswerPhrases.affirmative.contains(answer.displayText))
     XCTAssertTrue(reason.contains("confidence"))
+  }
+
+  func testBinaryAnswerPhrasesStayWithinTheirMeaning() {
+    XCTAssertEqual(
+      Set(OracleAnswerPhrases.affirmative).count,
+      OracleAnswerPhrases.affirmative.count)
+    XCTAssertEqual(
+      Set(OracleAnswerPhrases.negative).count,
+      OracleAnswerPhrases.negative.count)
+    XCTAssertTrue(
+      Set(OracleAnswerPhrases.affirmative).isDisjoint(with: OracleAnswerPhrases.negative))
+
+    var sampledAffirmative = Set<String>()
+    var sampledNegative = Set<String>()
+    for _ in 0..<100 {
+      let affirmative = OracleAnswerPhrases.random(for: true)
+      let negative = OracleAnswerPhrases.random(for: false)
+      XCTAssertTrue(OracleAnswerPhrases.affirmative.contains(affirmative))
+      XCTAssertTrue(OracleAnswerPhrases.negative.contains(negative))
+      sampledAffirmative.insert(affirmative)
+      sampledNegative.insert(negative)
+    }
+    XCTAssertGreaterThan(sampledAffirmative.count, 1)
+    XCTAssertGreaterThan(sampledNegative.count, 1)
   }
 
   func testBackendProvenanceSurvivesDisabledTracing() async throws {
