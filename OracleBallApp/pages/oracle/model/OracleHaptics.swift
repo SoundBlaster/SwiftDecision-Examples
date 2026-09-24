@@ -62,6 +62,8 @@ protocol OracleHapticFeedback {
 @MainActor
 final class OracleHaptics: OracleHapticFeedback {
   private static let submissionCueDuration: TimeInterval = 0.25
+  private static let shakeFeedbackIntensity: Float = 1.0
+  private static let shakeFeedbackSharpness: Float = 0.72
 
   private let engine: CHHapticEngine?
   private var submissionCueEndTime: TimeInterval = 0
@@ -108,8 +110,12 @@ final class OracleHaptics: OracleHapticFeedback {
     let event = CHHapticEvent(
       eventType: .hapticContinuous,
       parameters: [
-        CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.18),
-        CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.22),
+        CHHapticEventParameter(
+          parameterID: .hapticIntensity,
+          value: Self.shakeFeedbackIntensity),
+        CHHapticEventParameter(
+          parameterID: .hapticSharpness,
+          value: Self.shakeFeedbackSharpness),
       ],
       relativeTime: 0,
       duration: 30)
