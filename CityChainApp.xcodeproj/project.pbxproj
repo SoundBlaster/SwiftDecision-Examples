@@ -41,6 +41,7 @@
 		CA7B6FB826C11092AB41EF8B /* CityTurnRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 346C1BCD4A824791392C194B /* CityTurnRow.swift */; };
 		CE982400AFC0CA0CEAC8CB7A /* OracleCredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */; };
 		D2642B91F5B4C9FF8DB60BF8 /* OraclePresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 01B68DE758911AE15B2AAEBE /* OraclePresentation */; };
+		E101A11D5A3C4D7B8E20A001 /* NestedA11yIDs in Frameworks */ = {isa = PBXBuildFile; productRef = E101A11D5A3C4D7B8E20A002 /* NestedA11yIDs */; };
 		D1C5A914C54E4A9EA945C502 /* OraclePipelineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C5A914C54E4A9EA945C502 /* OraclePipelineDetailView.swift */; };
 		D58DEC0FE1D9DBC3A288FEBD /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = B531FD1996E7982085FB0DAB /* AppIcon.icon */; };
 		D59B5FA5D6EDECEAF9F38A98 /* OracleRevealSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12F66D65B6726987E960904 /* OracleRevealSystem.swift */; };
@@ -112,6 +113,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D2642B91F5B4C9FF8DB60BF8 /* OraclePresentation in Frameworks */,
+				E101A11D5A3C4D7B8E20A001 /* NestedA11yIDs in Frameworks */,
 				070C17965265C50BE178E613 /* OracleGame in Frameworks */,
 				707B83D1BDF302B7B347FB89 /* OracleHistory in Frameworks */,
 			);
@@ -524,6 +526,7 @@
 				01B68DE758911AE15B2AAEBE /* OraclePresentation */,
 				4E5F7613A5B4238BF6496ACD /* OracleGame */,
 				E14F9F1E7EE4A975AA0F6EC8 /* OracleHistory */,
+				E101A11D5A3C4D7B8E20A002 /* NestedA11yIDs */,
 			);
 			productName = OracleBallApp;
 			productReference = DEC372D3239535942E74F4DC /* OracleBallApp.app */;
@@ -591,6 +594,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				49CB85DE23EA0C4605378EF4 /* XCLocalSwiftPackageReference "." */,
+				E101A11D5A3C4D7B8E20A003 /* XCRemoteSwiftPackageReference "NestedA11yIDs" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 66A1B65FA39F571F0FA6699E /* Products */;
@@ -996,6 +1000,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		E101A11D5A3C4D7B8E20A003 /* XCRemoteSwiftPackageReference "NestedA11yIDs" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SoundBlaster/NestedA11yIDs.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		01B68DE758911AE15B2AAEBE /* OraclePresentation */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -1012,6 +1027,11 @@
 		E14F9F1E7EE4A975AA0F6EC8 /* OracleHistory */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OracleHistory;
+		};
+		E101A11D5A3C4D7B8E20A002 /* NestedA11yIDs */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E101A11D5A3C4D7B8E20A003 /* XCRemoteSwiftPackageReference "NestedA11yIDs" */;
+			productName = NestedA11yIDs;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

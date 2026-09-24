@@ -1,4 +1,5 @@
 import SwiftUI
+import NestedA11yIDs
 
 struct AskOracleField: View {
   @Binding var text: String
@@ -24,6 +25,7 @@ struct AskOracleField: View {
         .onSubmit(submit)
         .accessibilityLabel("Question for the oracle")
         .accessibilityHint("Type a question, or submit an empty field to replay the demo")
+        .nestedAccessibilityIdentifier("input")
 
       Button(action: submit) {
         ZStack {
@@ -57,6 +59,7 @@ struct AskOracleField: View {
         isSubmitting
           ? "The oracle is preparing an answer"
           : "The oracle chooses the answer format automatically")
+      .nestedAccessibilityIdentifier("submit")
     }
     .padding(.leading, 18)
     .padding(.trailing, 7)
@@ -68,5 +71,6 @@ struct AskOracleField: View {
     }
     .shadow(color: .black.opacity(0.28), radius: 18, y: 8)
     .animation(.easeOut(duration: 0.18), value: isFocused)
+    .nestedAccessibilityIdentifier("question")
   }
 }

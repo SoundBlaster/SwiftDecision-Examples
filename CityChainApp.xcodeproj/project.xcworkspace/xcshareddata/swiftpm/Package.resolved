@@ -1,6 +1,15 @@
 {
-  "originHash" : "c9f30b7c746d1e81ef9feaa8a99c4a561762681770a5c590fec7dd24ac7875db",
+  "originHash" : "2cd3f2e2cb61a200816eb87c16a14bb042b00c20ac288ddd9e98a8fb6d5d885b",
   "pins" : [
+    {
+      "identity" : "nesteda11yids",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SoundBlaster/NestedA11yIDs.git",
+      "state" : {
+        "revision" : "ad123fbc8dda58f20de1e6fbd21120bcfbaabf85",
+        "version" : "1.0.0"
+      }
+    },
     {
       "identity" : "specificationcore",
       "kind" : "remoteSourceControl",

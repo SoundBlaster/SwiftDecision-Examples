@@ -3,6 +3,7 @@ import SwiftUI
 import UIKit
 import OracleGame
 import OracleHistory
+import NestedA11yIDs
 
 struct OraclePage: View {
   @State private var model: OraclePageModel
@@ -146,6 +147,7 @@ struct OraclePage: View {
         }
       }
     }
+    .a11yRoot("oracle")
     .preferredColorScheme(.dark)
     .sheet(isPresented: $isShowingInfo) {
       OracleInfoSheet(
@@ -206,8 +208,10 @@ private struct OracleHeader: View {
       }
       .buttonStyle(.plain)
       .accessibilityLabel("Oracle settings")
+      .nestedAccessibilityIdentifier("settings")
     }
     .padding(.horizontal, 16)
+    .nestedAccessibilityIdentifier("header")
   }
 }
 
@@ -281,6 +285,7 @@ private struct OracleInfoSheet: View {
           HStack {
             Text("Oracle settings")
               .font(.title3.weight(.semibold))
+              .nestedAccessibilityIdentifier("title")
             Spacer()
             Image(systemName: "lock.shield")
               .foregroundStyle(.secondary)
@@ -302,6 +307,7 @@ private struct OracleInfoSheet: View {
             Label("Learn more at TypeSafe.ai", systemImage: "arrow.up.right.square")
               .font(.subheadline.weight(.medium))
           }
+          .nestedAccessibilityIdentifier("learn-more")
 
           HStack(spacing: 10) {
             Image(systemName: "key.fill")
@@ -313,6 +319,7 @@ private struct OracleInfoSheet: View {
               .keyboardType(.asciiCapable)
               .textFieldStyle(.plain)
               .accessibilityLabel("TypeSafe API key")
+              .nestedAccessibilityIdentifier("api-key")
           }
           .padding(.horizontal, 16)
           .frame(minHeight: 48)
@@ -341,6 +348,7 @@ private struct OracleInfoSheet: View {
               }
             }
             .buttonStyle(.bordered)
+            .nestedAccessibilityIdentifier("clear-key")
 
             Spacer()
 
@@ -352,6 +360,7 @@ private struct OracleInfoSheet: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(!canSaveAPIKey)
+            .nestedAccessibilityIdentifier("save-key")
           }
         }
         .padding(.vertical, 4)
@@ -384,6 +393,7 @@ private struct OracleInfoSheet: View {
                 OracleHistoryRow(entry: entry)
               }
               .tint(.oracleLavender)
+              .nestedAccessibilityIdentifier("history.entry.\(entry.id.uuidString)")
               .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
               .listRowSeparator(.visible, edges: .bottom)
               .listRowSeparatorTint(.white.opacity(0.12))
@@ -436,6 +446,7 @@ private struct OracleInfoSheet: View {
     }
     .toolbar(.hidden, for: .navigationBar)
     }
+    .a11yRoot("oracle.settings")
   }
 
   private var canSaveAPIKey: Bool {
@@ -469,7 +480,9 @@ private struct OracleInfoSheet: View {
       .buttonStyle(.plain)
       .disabled(historyEntries.isEmpty)
       .accessibilityLabel("Delete all history")
+      .nestedAccessibilityIdentifier("delete-all")
     }
+    .nestedAccessibilityIdentifier("history")
   }
 }
 
