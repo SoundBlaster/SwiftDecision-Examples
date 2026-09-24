@@ -9,7 +9,7 @@ struct OraclePage: View {
   @State private var infoSheetDetent: PresentationDetent = .medium
   @FocusState private var isQuestionFocused: Bool
   @State private var questionFieldFrame: CGRect = .zero
-  @AppStorage("oracle.keepsBallSizeWhileTyping") private var keepsBallSizeWhileTyping = false
+  @AppStorage("oracle.keepsBallSizeWhileTyping") private var keepsBallSizeWhileTyping = true
   @State private var initialBallViewportSide: CGFloat?
 
   init(model: OraclePageModel = OraclePageModel()) {
@@ -116,7 +116,6 @@ struct OraclePage: View {
         apiKey: model.configuredAPIKey,
         providerDescription: model.providerDescription,
         historyEntries: model.historyEntries,
-        keepsBallSizeWhileTyping: $keepsBallSizeWhileTyping,
         selectedDetent: $infoSheetDetent,
         onSave: model.saveAPIKey,
         onRepeatHistoryEntry: model.repeatQuestion,
@@ -194,7 +193,6 @@ private struct OracleInfoSheet: View {
   private let savedAPIKey: String
   let providerDescription: String
   let historyEntries: [OracleHistoryEntry]
-  @Binding var keepsBallSizeWhileTyping: Bool
   @Binding var selectedDetent: PresentationDetent
   let onSave: (String) -> Bool
   let onRepeatHistoryEntry: (String) -> Void
@@ -205,7 +203,6 @@ private struct OracleInfoSheet: View {
     apiKey: String,
     providerDescription: String,
     historyEntries: [OracleHistoryEntry],
-    keepsBallSizeWhileTyping: Binding<Bool>,
     selectedDetent: Binding<PresentationDetent>,
     onSave: @escaping (String) -> Bool,
     onRepeatHistoryEntry: @escaping (String) -> Void,
@@ -217,7 +214,6 @@ private struct OracleInfoSheet: View {
     savedAPIKey = apiKey
     self.providerDescription = providerDescription
     self.historyEntries = historyEntries
-    self._keepsBallSizeWhileTyping = keepsBallSizeWhileTyping
     self._selectedDetent = selectedDetent
     self.onSave = onSave
     self.onRepeatHistoryEntry = onRepeatHistoryEntry
@@ -228,8 +224,6 @@ private struct OracleInfoSheet: View {
   var body: some View {
     NavigationStack {
     List {
-      BallViewportSettingsSection(keepsBallSizeWhileTyping: $keepsBallSizeWhileTyping)
-
       Section {
         VStack(alignment: .leading, spacing: selectedDetent == .large ? 16 : 8) {
           HStack {
@@ -423,21 +417,6 @@ private struct OracleInfoSheet: View {
       .buttonStyle(.plain)
       .disabled(historyEntries.isEmpty)
       .accessibilityLabel("Delete all history")
-    }
-  }
-}
-
-private struct BallViewportSettingsSection: View {
-  @Binding var keepsBallSizeWhileTyping: Bool
-
-  var body: some View {
-    Section("Appearance") {
-      Toggle("Keep ball size while typing", isOn: $keepsBallSizeWhileTyping)
-        .accessibilityHint("Keeps the oracle ball at its normal size when the keyboard appears")
-      Text("The ball stays centered in its viewport while you type.")
-        .font(.footnote)
-        .foregroundStyle(.secondary)
-        .fixedSize(horizontal: false, vertical: true)
     }
   }
 }
