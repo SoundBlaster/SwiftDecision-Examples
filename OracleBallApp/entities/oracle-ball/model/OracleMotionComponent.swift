@@ -1,3 +1,4 @@
+import OraclePresentation
 import RealityKit
 
 struct OracleMotionComponent: Component {
@@ -7,6 +8,8 @@ struct OracleMotionComponent: Component {
   let lighting: Entity
   let contour: Entity
   var tilt: SIMD2<Float> = .zero
+  var dragTarget: SIMD2<Float> = .zero
+  var dragMotion = OracleDragMotion.State()
   var elapsed: Double = 0
   var reduceMotion = false
   var isPaused = false

@@ -15,6 +15,7 @@
 		0F14080BDB66721C03229982 /* OracleHaptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D4C408255199F51C9E4D9E /* OracleHaptics.swift */; };
 		1171D0C01276BB198AED2320 /* OraclePageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A4C6BD24CF45CE45B11625 /* OraclePageModel.swift */; };
 		11CCB03EDA6C91FCA8DA8BB6 /* OracleBallViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1298BCF7A4C481829D00DD0D /* OracleBallViewport.swift */; };
+		11CCB03EDA6C91FCA8DA8BB7 /* OracleBallGestureLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1298BCF7A4C481829D00DD0E /* OracleBallGestureLayer.swift */; };
 		1A1ED4733AC5023DF7F56DD1 /* OracleFieldMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C81B75995F2AFAA80302DE /* OracleFieldMesh.swift */; };
 		1E7947AE883BC2653A6DCA5F /* OracleRevealComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445C45A6D202E3AB95183E34 /* OracleRevealComponent.swift */; };
 		248C23E9ABDAFA82B6D469EB /* OracleFieldSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF602E9E75819274A5A4DAB /* OracleFieldSystem.swift */; };
@@ -62,6 +63,7 @@
 
 /* Begin PBXFileReference section */
 		1298BCF7A4C481829D00DD0D /* OracleBallViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleBallViewport.swift; sourceTree = "<group>"; };
+		1298BCF7A4C481829D00DD0E /* OracleBallGestureLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleBallGestureLayer.swift; sourceTree = "<group>"; };
 		15519B2D3913C91241F53B9E /* OracleWindow.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleWindow.metal; sourceTree = "<group>"; };
 		173D0B5C45B582AFDB6217F4 /* OracleMaterials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMaterials.swift; sourceTree = "<group>"; };
 		189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCredentialsStore.swift; sourceTree = "<group>"; };
@@ -137,6 +139,7 @@
 		0966F5EBC78D20791C03F650 /* ui */ = {
 			isa = PBXGroup;
 			children = (
+				1298BCF7A4C481829D00DD0E /* OracleBallGestureLayer.swift */,
 				1298BCF7A4C481829D00DD0D /* OracleBallViewport.swift */,
 			);
 			path = ui;
@@ -622,6 +625,7 @@
 				05AB46FBE54D49FA367F8C75 /* OracleAnswerTexture.swift in Sources */,
 				2D0F7D6CD3818F07344C8A38 /* OracleBallApp.swift in Sources */,
 				11CCB03EDA6C91FCA8DA8BB6 /* OracleBallViewport.swift in Sources */,
+				11CCB03EDA6C91FCA8DA8BB7 /* OracleBallGestureLayer.swift in Sources */,
 				BEEB7D3D5DEE34E208AFB5DF /* OracleCosmicBackground.swift in Sources */,
 				CE982400AFC0CA0CEAC8CB7A /* OracleCredentialsStore.swift in Sources */,
 				85139911433978FEDC77673D /* OracleFace.metal in Sources */,
