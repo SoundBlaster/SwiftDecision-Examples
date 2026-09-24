@@ -12,7 +12,8 @@ final class OracleMotionInput {
   private var orientation = UIDeviceOrientation.portrait
   private var onShake: (() -> Void)?
   private var isShakeEnabled = true
-  private var lastShakeTime: TimeInterval = 0
+  private var isShakeArmed = true
+  private var quietSince: TimeInterval?
 
   func setShakeHandler(_ handler: @escaping () -> Void) {
     onShake = handler
@@ -59,15 +60,33 @@ final class OracleMotionInput {
   }
 
   private func detectShake(using motion: CMDeviceMotion) {
-    guard isShakeEnabled else { return }
+    guard isShakeEnabled else {
+      quietSince = nil
+      return
+    }
     let acceleration = motion.userAcceleration
     let magnitude = sqrt(
       acceleration.x * acceleration.x
         + acceleration.y * acceleration.y
         + acceleration.z * acceleration.z)
     let now = ProcessInfo.processInfo.systemUptime
-    guard magnitude >= 2.0, now - lastShakeTime >= 1.0 else { return }
-    lastShakeTime = now
+
+    if magnitude < 0.6 {
+      guard !isShakeArmed else { return }
+      if let quietSince {
+        if now - quietSince >= 0.5 {
+          isShakeArmed = true
+          self.quietSince = nil
+        }
+      } else {
+        quietSince = now
+      }
+      return
+    }
+
+    quietSince = nil
+    guard magnitude >= 2.0, isShakeArmed else { return }
+    isShakeArmed = false
     onShake?()
   }
 
