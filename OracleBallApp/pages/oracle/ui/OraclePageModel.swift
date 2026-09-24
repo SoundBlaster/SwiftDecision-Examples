@@ -155,6 +155,20 @@ final class OraclePageModel {
     submit()
   }
 
+  func clearQuestionAndAnswer() {
+    guard !question.isEmpty || !answer.displayText.isEmpty || isSubmitting else { return }
+
+    requestTask?.cancel()
+    requestTask = nil
+    requestID += 1
+    isSubmitting = false
+    question = ""
+    answer = OracleAnswer(mode: mode, displayText: "", source: answer.source)
+    answerRequestID = requestID
+    terminalRequestID = 0
+    statusMessage = nil
+  }
+
   func deleteHistoryEntry(id: OracleHistoryEntry.ID) {
     historyStore.remove(id: id)
     historyEntries = historyStore.entries

@@ -44,6 +44,7 @@ struct OraclePage: View {
               requestID: model.requestID,
               answerRequestID: model.answerRequestID,
               terminalRequestID: model.terminalRequestID,
+              onClear: model.clearQuestionAndAnswer,
               isPaused: isShowingInfo && infoSheetDetent == .large)
               .frame(width: viewportSide, height: viewportSide)
               .id("oracle-ball-viewport")
