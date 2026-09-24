@@ -8,6 +8,7 @@ struct OracleBallViewport: View {
   let terminalRequestID: Int
   let onClear: () -> Void
   let onShake: () -> Void
+  let onShakeActivityChanged: (Bool) -> Void
   var isPaused = false
   var isShakeEnabled = true
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -29,7 +30,8 @@ struct OracleBallViewport: View {
           reduceMotion: reduceMotion,
           paused: shouldPauseScene,
           shakeEnabled: isShakeEnabled,
-          onShake: onShake)
+          onShake: onShake,
+          onShakeActivityChanged: onShakeActivityChanged)
         content.add(scene.root)
         renderer = scene
       } catch {

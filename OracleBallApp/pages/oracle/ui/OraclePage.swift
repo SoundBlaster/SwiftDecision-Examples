@@ -46,6 +46,7 @@ struct OraclePage: View {
               terminalRequestID: model.terminalRequestID,
               onClear: model.clearQuestionAndAnswer,
               onShake: model.handleShake,
+              onShakeActivityChanged: model.setShakeFeedbackActive,
               isPaused: isShowingInfo && infoSheetDetent == .large,
               isShakeEnabled: !isShowingInfo)
               .frame(width: viewportSide, height: viewportSide)

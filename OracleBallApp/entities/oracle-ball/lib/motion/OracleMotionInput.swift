@@ -11,22 +11,32 @@ final class OracleMotionInput {
   private var neutral: simd_quatf?
   private var orientation = UIDeviceOrientation.portrait
   private var onShake: (() -> Void)?
+  private var onShakeActivityChanged: ((Bool) -> Void)?
   private var isShakeEnabled = true
   private var isShakeArmed = true
+  private var isShakeActive = false
   private var quietSince: TimeInterval?
 
   func setShakeHandler(_ handler: @escaping () -> Void) {
     onShake = handler
   }
 
+  func setShakeActivityHandler(_ handler: @escaping (Bool) -> Void) {
+    onShakeActivityChanged = handler
+  }
+
   func setShakeEnabled(_ enabled: Bool) {
     isShakeEnabled = enabled
+    if !enabled {
+      setShakeActive(false)
+    }
   }
 
   func setActive(_ active: Bool) {
     guard active, manager.isDeviceMotionAvailable else {
       manager.stopDeviceMotionUpdates()
       neutral = nil
+      setShakeActive(false)
       return
     }
     guard !manager.isDeviceMotionActive else { return }
@@ -62,6 +72,7 @@ final class OracleMotionInput {
   private func detectShake(using motion: CMDeviceMotion) {
     guard isShakeEnabled else {
       quietSince = nil
+      setShakeActive(false)
       return
     }
     let acceleration = motion.userAcceleration
@@ -77,6 +88,7 @@ final class OracleMotionInput {
         if now - quietSince >= 0.5 {
           isShakeArmed = true
           self.quietSince = nil
+          setShakeActive(false)
         }
       } else {
         quietSince = now
@@ -87,7 +99,14 @@ final class OracleMotionInput {
     quietSince = nil
     guard magnitude >= 2.0, isShakeArmed else { return }
     isShakeArmed = false
+    setShakeActive(true)
     onShake?()
+  }
+
+  private func setShakeActive(_ active: Bool) {
+    guard isShakeActive != active else { return }
+    isShakeActive = active
+    onShakeActivityChanged?(active)
   }
 
   isolated deinit { manager.stopDeviceMotionUpdates() }

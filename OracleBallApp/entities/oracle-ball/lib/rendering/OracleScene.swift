@@ -16,7 +16,8 @@ final class OracleScene {
     reduceMotion: Bool,
     paused: Bool,
     shakeEnabled: Bool,
-    onShake: @escaping () -> Void
+    onShake: @escaping () -> Void,
+    onShakeActivityChanged: @escaping (Bool) -> Void
   ) async throws {
     root.name = "Oracle scene"
     let camera = PerspectiveCamera()
@@ -97,6 +98,7 @@ final class OracleScene {
       input: motion, ball: ball, camera: camera, lighting: lighting, contour: contour,
       reduceMotion: reduceMotion, isPaused: paused))
     motion.setShakeHandler(onShake)
+    motion.setShakeActivityHandler(onShakeActivityChanged)
     motion.setShakeEnabled(shakeEnabled)
     motion.setActive(!paused)
     root.isEnabled = !paused

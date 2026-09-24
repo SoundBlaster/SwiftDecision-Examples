@@ -173,6 +173,14 @@ final class OraclePageModel {
     statusMessage = "Random answer"
   }
 
+  func setShakeFeedbackActive(_ isActive: Bool) {
+    if isActive {
+      haptics.startShakeFeedback()
+    } else {
+      haptics.stopShakeFeedback()
+    }
+  }
+
   func repeatQuestion(_ question: String) {
     self.question = question
     submit()
