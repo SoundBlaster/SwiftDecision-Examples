@@ -6,6 +6,7 @@ struct OracleBallViewport: View {
   let requestID: Int
   let answerRequestID: Int
   let terminalRequestID: Int
+  let onClear: () -> Void
   var isPaused = false
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.scenePhase) private var scenePhase
@@ -65,6 +66,8 @@ struct OracleBallViewport: View {
     .onChange(of: shouldPauseScene) { _, paused in
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: paused)
     }
+    .contentShape(Rectangle())
+    .onTapGesture(perform: onClear)
     .overlay {
       if renderFailed {
         ContentUnavailableView(
@@ -77,5 +80,8 @@ struct OracleBallViewport: View {
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Magic 8 Ball")
     .accessibilityValue(answer.replacingOccurrences(of: "\n", with: " "))
+    .accessibilityHint("Tap to clear the question and answer")
+    .accessibilityAddTraits(.isButton)
+    .accessibilityAction(.default, onClear)
   }
 }
