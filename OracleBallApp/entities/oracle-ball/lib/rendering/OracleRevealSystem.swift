@@ -95,8 +95,9 @@ final class OracleRevealSystem: System {
         * simd_quatf(angle: tilt.y * 0.6 + drift.y, axis: [1, 0, 0])
       // Keep the decorative silhouette ring tangent to the sphere as the camera moves.
       let direction = simd_normalize(position - state.ball.position)
-      state.contour.position = direction * 0.282
-      state.contour.orientation = simd_quatf(from: [0, 0, 1], to: direction)
+      let localDirection = simd_act(simd_inverse(state.ball.orientation), direction)
+      state.contour.position = localDirection * 0.282
+      state.contour.orientation = simd_quatf(from: [0, 0, 1], to: localDirection)
       root.components.set(state)
     }
   }

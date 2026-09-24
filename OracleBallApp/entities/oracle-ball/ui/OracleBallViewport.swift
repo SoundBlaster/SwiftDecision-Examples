@@ -22,6 +22,10 @@ struct OracleBallViewport: View {
     isPaused || scenePhase != .active
   }
 
+  private var rendererTaskID: String {
+    "\(requestID)-\(renderer != nil)"
+  }
+
   var body: some View {
     RealityView { content in
       content.camera = .virtual
@@ -42,7 +46,7 @@ struct OracleBallViewport: View {
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: shouldPauseScene)
       renderer?.setShakeEnabled(isShakeEnabled)
     }
-    .task(id: "\(requestID)-\(renderer != nil)") {
+    .task(id: rendererTaskID) {
       guard let renderer, requestID > 0, lastHandledRequestID != requestID else { return }
       lastHandledRequestID = requestID
       renderer.beginWaiting(request: requestID)
