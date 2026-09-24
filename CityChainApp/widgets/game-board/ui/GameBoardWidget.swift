@@ -10,7 +10,7 @@ struct GameBoardWidget: View {
         Text("Game board")
           .font(.headline)
         Spacer()
-        Text("\(cities.count) cities")
+        Text(String(format: String(localized: "Cities · %lld"), Int64(cities.count)))
           .font(.caption)
           .foregroundStyle(.secondary)
       }

@@ -24,7 +24,7 @@ enum OraclePipelineTraceRecorder {
       OracleSpecificationTraceStep(
         id: index,
         parentID: nil,
-        name: "Rule result",
+        name: oracleLocalized("Rule result"),
         outcome: outcomeName(event.outcome),
         durationNanoseconds: event.durationNanoseconds
       )
@@ -91,19 +91,19 @@ enum OraclePipelineTraceRecorder {
 
   private static func lifecycleName(_ stage: DecisionTraceEvent.Stage) -> String {
     switch stage {
-    case .requestValidated: "Request validated"
-    case .policySelected: "Policy selected"
-    case .inferenceStarted: "Inference started"
-    case .inferenceCompleted: "Inference completed"
-    case .outputValidated: "Output validated"
-    case .resolved: "Decision resolved"
+    case .requestValidated: oracleLocalized("Request validated")
+    case .policySelected: oracleLocalized("Policy selected")
+    case .inferenceStarted: oracleLocalized("Inference started")
+    case .inferenceCompleted: oracleLocalized("Inference completed")
+    case .outputValidated: oracleLocalized("Output validated")
+    case .resolved: oracleLocalized("Decision resolved")
     }
   }
 
   private static func lifecycleExplanation(_ stage: DecisionTraceEvent.Stage) -> String? {
     switch stage {
     case .requestValidated:
-      "ID and instructions are present; at least two options have descriptions and unique IDs."
+      oracleLocalized("ID and instructions are present; at least two options have descriptions and unique IDs.")
     case .policySelected, .inferenceStarted, .inferenceCompleted, .outputValidated, .resolved:
       nil
     }
@@ -145,13 +145,13 @@ enum OraclePipelineTraceRecorder {
 
   private static func outcomeName(_ outcome: SpecificationTraceOutcome) -> String {
     switch outcome {
-    case .satisfied: "Satisfied"
-    case .unsatisfied: "Not satisfied"
-    case .selected: "Selected"
-    case .noMatch: "No match"
-    case .skipped: "Skipped"
-    case let .failed(errorType): "Failed: \(errorType)"
-    case .cancelled: "Cancelled"
+    case .satisfied: oracleLocalized("Satisfied")
+    case .unsatisfied: oracleLocalized("Not satisfied")
+    case .selected: oracleLocalized("Selected")
+    case .noMatch: oracleLocalized("No match")
+    case .skipped: oracleLocalized("Skipped")
+    case let .failed(errorType): String(format: oracleLocalized("Failed: %@"), errorType)
+    case .cancelled: oracleLocalized("Cancelled")
     }
   }
 }

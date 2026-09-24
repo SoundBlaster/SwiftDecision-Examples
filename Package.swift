@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
   name: "SwiftDecision-Examples",
+  defaultLocalization: "en",
   platforms: [
     .iOS(.v15),
     .macOS(.v10_15),
@@ -31,7 +32,8 @@ let package = Package(
         .product(name: "SwiftDecision", package: "SwiftDecision"),
         .product(name: "SpecificationCore", package: "SpecificationCore"),
         .product(name: "SwiftJev", package: "SwiftJev"),
-      ]
+      ],
+      resources: [.process("Resources")]
     ),
     .testTarget(
       name: "OracleGameTests",

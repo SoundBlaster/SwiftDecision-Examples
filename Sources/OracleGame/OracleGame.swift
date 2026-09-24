@@ -35,7 +35,7 @@ public enum OracleAnswerSource: Hashable, Sendable {
 
 /// Varied display copy for binary answers, grouped by their underlying Boolean value.
 public enum OracleAnswerPhrases {
-  public static let affirmative = [
+  private static let affirmativeSource = [
     "Yes, odds\nlook good",
     "Good signs\nahead",
     "A favorable\nturn",
@@ -46,7 +46,7 @@ public enum OracleAnswerPhrases {
     "Your chances\nlook good",
   ]
 
-  public static let negative = [
+  private static let negativeSource = [
     "No, not this\ntime",
     "Odds lean\nagainst it",
     "Best to pause\nfor now",
@@ -57,11 +57,22 @@ public enum OracleAnswerPhrases {
     "Wait for better\ntiming",
   ]
 
+  public static var affirmative: [String] { affirmativeSource.map(oracleLocalized) }
+  public static var negative: [String] { negativeSource.map(oracleLocalized) }
+
   /// Returns a randomly selected phrase without changing the underlying decision.
   public static func random(for value: Bool) -> String {
     let phrases = value ? affirmative : negative
-    return phrases.randomElement() ?? (value ? "A strong\nyes" : "A firm\nno")
+    return phrases.randomElement() ?? oracleLocalized(value ? "A strong\nyes" : "A firm\nno")
   }
+}
+
+func oracleLocalized(_ key: String) -> String {
+  String(localized: String.LocalizationValue(key), bundle: .module)
+}
+
+private func oracleLocalizedFormat(_ key: String, _ arguments: CVarArg...) -> String {
+  String(format: oracleLocalized(key), locale: .current, arguments: arguments)
 }
 
 /// Optional metadata a backend can expose without relying on SwiftDecision traces.
@@ -291,11 +302,11 @@ private enum OracleOperation: Sendable, Equatable {
 
   var traceLabel: String {
     switch self {
-    case .noul: "Noul"
-    case .choice: "Choice"
-    case .score: "Score"
-    case .unsupported: "Unsupported"
-    case .automatic: "Automatic"
+    case .noul: oracleLocalized("Noul")
+    case .choice: oracleLocalized("Choice")
+    case .score: oracleLocalized("Score")
+    case .unsupported: oracleLocalized("Unsupported")
+    case .automatic: oracleLocalized("Automatic")
     }
   }
 }
@@ -358,7 +369,7 @@ enum OracleUnsupportedResponses {
   ]
 
   static func random() -> String {
-    messages.randomElement() ?? messages[0]
+    messages.randomElement().map(oracleLocalized) ?? oracleLocalized(messages[0])
   }
 }
 
@@ -652,7 +663,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       events: routingRecorder.events,
       summary: selection.operation.traceLabel,
       details: [
-        traceDetail("requested-mode", "Requested mode", request.mode.rawValue),
+        traceDetail("requested-mode", "Requested mode", oracleLocalized(request.mode.rawValue)),
         traceDetail("selected-route", "Selected route", selection.operation.traceLabel),
       ]))
 
@@ -660,7 +671,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     if selection.operation == .unsupported {
       evaluation = try await makeUnsupportedEvaluation(
         confidence: 1,
-        reason: "unsupported answer mode requested")
+        reason: oracleLocalized("unsupported answer mode requested"))
     } else if selection.operation == .automatic {
       let intent = try await intentClassifier.classify(question)
       pipeline.append(decisionStage(
@@ -681,7 +692,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       if operation == .unsupported {
         evaluation = try await makeUnsupportedEvaluation(
           confidence: intent.confidence,
-          reason: "question is outside the supported answer types")
+          reason: oracleLocalized("question is outside the supported answer types"))
       } else if operation == .choice {
         if isChoicePlanValid {
           evaluation = try await evaluate(
@@ -690,7 +701,7 @@ public final class OracleGameEngine: @unchecked Sendable {
         } else {
           evaluation = try await makeUnsupportedEvaluation(
             confidence: intent.confidence,
-            reason: "choice alternatives could not be extracted")
+            reason: oracleLocalized("choice alternatives could not be extracted"))
         }
       } else {
         evaluation = try await evaluate(
@@ -725,13 +736,13 @@ public final class OracleGameEngine: @unchecked Sendable {
     let resolutionReason: String
     switch routed {
     case .accepted:
-      resolutionSummary = "Accepted"
-      resolutionReason = "A validated answer was available and no fallback was used."
+      resolutionSummary = oracleLocalized("Accepted")
+      resolutionReason = oracleLocalized("A validated answer was available and no fallback was used.")
     case .fallback:
-      resolutionSummary = "Fallback selected"
-      resolutionReason = evaluation.reason ?? "The decision policy selected a fallback."
+      resolutionSummary = oracleLocalized("Fallback selected")
+      resolutionReason = evaluation.reason ?? oracleLocalized("The decision policy selected a fallback.")
     case let .abstained(reason):
-      resolutionSummary = "Abstained"
+      resolutionSummary = oracleLocalized("Abstained")
       resolutionReason = evaluation.reason ?? reason
     }
     pipeline.append(specificationStage(
@@ -739,8 +750,8 @@ public final class OracleGameEngine: @unchecked Sendable {
       events: resolutionRecorder.events,
       summary: resolutionSummary,
       details: [
-        traceDetail("answer-available", "Answer available", evaluation.answer == nil ? "No" : "Yes"),
-        traceDetail("fallback-used", "Fallback used", evaluation.isFallback ? "Yes" : "No"),
+        traceDetail("answer-available", "Answer available", oracleLocalized(evaluation.answer == nil ? "No" : "Yes")),
+        traceDetail("fallback-used", "Fallback used", oracleLocalized(evaluation.isFallback ? "Yes" : "No")),
         traceDetail("resolution-reason", "Reason", resolutionReason),
       ],
       retainedRuleNames: OracleAnswerResolutionRule.traceNames))
@@ -844,7 +855,7 @@ public final class OracleGameEngine: @unchecked Sendable {
           switch $0 {
           case "yes": return OracleAnswerPhrases.random(for: true)
           case "no": return OracleAnswerPhrases.random(for: false)
-          default: return "Ask again\nlater"
+          default: return oracleLocalized("Ask again\nlater")
           }
         },
         result: result,
@@ -967,8 +978,8 @@ public final class OracleGameEngine: @unchecked Sendable {
   ) -> OraclePipelineStage {
     return OraclePipelineStage(
       id: title,
-      title: title,
-      summary: summary,
+      title: oracleLocalized(title),
+      summary: summary.map(oracleLocalized),
       details: details,
       specificationEvents: retainedRuleNames.map {
         OraclePipelineTraceRecorder.namedRuleDetails(from: events, names: $0)
@@ -984,15 +995,15 @@ public final class OracleGameEngine: @unchecked Sendable {
     if let confidence = answer.confidence {
       confidenceDescription = confidence.isFinite ? percentage(confidence) : String(describing: confidence)
     } else {
-      confidenceDescription = "Not provided; allowed"
+      confidenceDescription = oracleLocalized("Not provided; allowed")
     }
     return specificationStage(
       "Answer validation",
       events: events,
-      summary: isValid ? "Passed" : "Rejected",
+      summary: oracleLocalized(isValid ? "Passed" : "Rejected"),
       details: [
         traceDetail("candidate-answer", "Candidate answer", answer.displayText),
-        traceDetail("answer-type", "Answer type", answer.mode.rawValue),
+        traceDetail("answer-type", "Answer type", oracleLocalized(answer.mode.rawValue)),
         traceDetail("answer-confidence", "Confidence", confidenceDescription),
       ],
       retainedRuleNames: OracleAnswerValidationRule.traceNames)
@@ -1002,9 +1013,9 @@ public final class OracleGameEngine: @unchecked Sendable {
     OraclePipelineStage(
       id: "Answer validation",
       title: "Answer validation",
-      summary: "Skipped",
+      summary: oracleLocalized("Skipped"),
       details: [
-        traceDetail("candidate-answer", "Candidate answer", "None"),
+        traceDetail("candidate-answer", "Candidate answer", oracleLocalized("None")),
         traceDetail("validation-reason", "Reason", reason),
       ])
   }
@@ -1014,8 +1025,8 @@ public final class OracleGameEngine: @unchecked Sendable {
     events: [SpecificationTraceEvent]
   ) -> OraclePipelineStage {
     let summary = plan.options.isEmpty
-      ? "No options extracted"
-      : "\(plan.options.count) options extracted"
+      ? oracleLocalized("No options extracted")
+      : oracleLocalizedFormat("%d options extracted", plan.options.count)
     let options = plan.options.isEmpty ? "None" : plan.options.joined(separator: " · ")
     let details = [
       traceDetail("extracted-options", "Extracted options", options),
@@ -1037,8 +1048,8 @@ public final class OracleGameEngine: @unchecked Sendable {
     let provider = result.trace.first { $0.stage == .inferenceCompleted }?.detail
     return OraclePipelineStage(
       id: title,
-      title: title,
-      summary: summary,
+      title: oracleLocalized(title),
+      summary: summary.map(oracleLocalized),
       details: (details ?? []) + (provider.map { [traceDetail("provider", "Provider", $0)] } ?? []),
       decisionEvents: result.trace.map { event in
         OracleDecisionTraceStep(
@@ -1081,7 +1092,7 @@ public final class OracleGameEngine: @unchecked Sendable {
   }
 
   private func traceDetail(_ id: String, _ label: String, _ value: String) -> OraclePipelineDetail {
-    OraclePipelineDetail(id: id, label: label, value: value)
+    OraclePipelineDetail(id: id, label: oracleLocalized(label), value: value)
   }
 
   private func percentage(_ value: Double) -> String {

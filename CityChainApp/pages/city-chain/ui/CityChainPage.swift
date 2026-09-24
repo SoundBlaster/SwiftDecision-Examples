@@ -58,7 +58,8 @@ struct CityChainPage: View {
     VStack(alignment: .leading) {
       if let requiredLetter = snapshot.requiredStartingLetter {
         Label(
-          "Next city starts with \(String(requiredLetter))", systemImage: "arrow.turn.down.right"
+          String(format: String(localized: "Next city starts with %@"), String(requiredLetter)),
+          systemImage: "arrow.turn.down.right"
         )
         .font(.headline)
       }

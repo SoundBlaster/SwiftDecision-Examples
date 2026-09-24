@@ -508,9 +508,9 @@ private struct OracleHistoryRow: View {
         .fixedSize(horizontal: false, vertical: true)
 
       HStack(spacing: 8) {
-        Text(entry.mode)
+        Text(String(localized: String.LocalizationValue(entry.mode)))
         Text("·")
-        Text(entry.source)
+        Text(String(localized: String.LocalizationValue(entry.source)))
           .lineLimit(1)
           .truncationMode(.middle)
         Spacer(minLength: 4)

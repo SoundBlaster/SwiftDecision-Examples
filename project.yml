@@ -1,6 +1,7 @@
 name: CityChainApp
 options:
   bundleIdPrefix: com.soundblaster
+  developmentLanguage: en
   deploymentTarget:
     iOS: "17.0"
 packages:
@@ -9,6 +10,11 @@ packages:
   NestedA11yIDs:
     url: https://github.com/SoundBlaster/NestedA11yIDs.git
     from: 1.0.0
+schemes:
+  CityChainApp:
+    build:
+      targets:
+        CityChainApp: all
 targets:
   CityChainApp:
     type: application

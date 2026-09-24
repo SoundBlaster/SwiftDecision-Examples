@@ -13,27 +13,27 @@ struct OraclePipelineDetailView: View {
           "Question",
           value: entry.question.isEmpty ? String(localized: "Random answer") : entry.question)
         detailValue("Answer", value: entry.answer, tint: .oracleLavender)
-        detailValue("Decision", value: entry.mode)
-        detailValue("Provider", value: entry.source)
+        detailValue("Decision", value: localizedPipelineText(entry.mode))
+        detailValue("Provider", value: localizedPipelineText(entry.source))
         detailValue("Timestamp", value: entry.createdAt.formatted(date: .abbreviated, time: .shortened))
       }
 
       if let pipeline = entry.pipeline, !pipeline.isEmpty {
         ForEach(pipeline) { stage in
-          Section(header: Text(stage.title)) {
+          Section(header: Text(localizedPipelineText(stage.title))) {
             if let summary = stage.summary {
-              Label(summary, systemImage: "info.circle")
+              Label(localizedPipelineText(summary), systemImage: "info.circle")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Color.oracleLavender)
             }
 
             ForEach(stage.details ?? []) { detail in
               HStack(alignment: .top, spacing: 10) {
-                Text(detail.label)
+                Text(localizedPipelineText(detail.label))
                   .font(.caption)
                   .foregroundStyle(.secondary)
                   .frame(width: 120, alignment: .leading)
-                Text(detail.value)
+                Text(localizedDetailValue(detail))
                   .font(.caption.weight(.medium))
                   .fixedSize(horizontal: false, vertical: true)
                   .frame(maxWidth: .infinity, alignment: .leading)
@@ -55,10 +55,10 @@ struct OraclePipelineDetailView: View {
                     .foregroundStyle(Color.oracleLavender)
                     .frame(width: 18)
                   VStack(alignment: .leading, spacing: 3) {
-                    Text(event.stage.pipelineDisplayName)
+                    Text(localizedPipelineText(event.stage.pipelineDisplayName))
                       .font(.subheadline)
                     if let detail = event.detail, !detail.isEmpty {
-                      Text(detail)
+                      Text(localizedPipelineText(detail))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     }
@@ -106,7 +106,7 @@ struct OraclePipelineDetailView: View {
 
   private func detailValue(_ title: String, value: String, tint: Color = .primary) -> some View {
     VStack(alignment: .leading, spacing: 4) {
-      Text(title)
+      Text(localizedPipelineText(title))
         .font(.caption)
         .foregroundStyle(.secondary)
       Text(value)
@@ -125,11 +125,11 @@ struct OraclePipelineDetailView: View {
         .foregroundStyle(color(for: event.outcome))
         .frame(width: 18)
       VStack(alignment: .leading, spacing: 3) {
-        Text(event.name.pipelineDisplayName)
+        Text(localizedSpecificationDisplayName(event.name))
           .font(.subheadline)
           .fixedSize(horizontal: false, vertical: true)
         HStack(spacing: 8) {
-          Text(event.outcome)
+          Text(localizedPipelineText(event.outcome))
           Text(event.durationNanoseconds.pipelineDuration)
         }
         .font(.caption2)
@@ -147,24 +147,24 @@ struct OraclePipelineDetailView: View {
   ) -> some View {
     let isSpecification = event.kind == .specification
     let kind = isSpecification ? "Rule check" : "Flow"
-    var metadata = [kind]
-    if let outcome = event.outcome { metadata.append(outcome) }
+    var metadata = [localizedPipelineText(kind)]
+    if let outcome = event.outcome { metadata.append(localizedPipelineText(outcome)) }
     if let duration = event.durationNanoseconds { metadata.append(duration.pipelineDuration) }
-    metadata.append("at +\(event.elapsedNanoseconds.pipelineOffset)")
+    metadata.append(String(format: String(localized: "at +%@"), locale: .current, event.elapsedNanoseconds.pipelineOffset))
 
     return HStack(alignment: .top, spacing: 10) {
       Image(systemName: isSpecification ? symbol(for: event.outcome ?? "") : lifecycleSymbol(for: event.name))
         .foregroundStyle(isSpecification ? color(for: event.outcome ?? "") : Color.oracleLavender)
         .frame(width: 18)
       VStack(alignment: .leading, spacing: 3) {
-        Text(event.name.pipelineDisplayName)
+        Text(isSpecification ? localizedSpecificationDisplayName(event.name) : localizedPipelineText(event.name.pipelineDisplayName))
           .font(.subheadline)
           .fixedSize(horizontal: false, vertical: true)
-        Text(metadata.joined(separator: " · "))
+      Text(metadata.joined(separator: " · "))
           .font(.caption2)
           .foregroundStyle(.secondary)
         if let detail = event.detail, !detail.isEmpty {
-          Text(detail)
+          Text(localizedPipelineText(detail))
             .font(.caption)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
@@ -190,10 +190,10 @@ struct OraclePipelineDetailView: View {
 
   private func lifecycleSymbol(for name: String) -> String {
     switch name {
-    case "Request validated", "Output validated": "checkmark.seal"
-    case "Policy selected": "arrow.triangle.branch"
-    case "Inference started", "Inference completed": "sparkles"
-    case "Decision resolved": "arrow.uturn.forward"
+    case "Request validated", "Output validated", "Запрос проверен", "Результат проверен": "checkmark.seal"
+    case "Policy selected", "Выбрана политика": "arrow.triangle.branch"
+    case "Inference started", "Inference completed", "Начат вывод", "Вывод завершён": "sparkles"
+    case "Decision resolved", "Решение получено": "arrow.uturn.forward"
     default: "point.3.connected.trianglepath.dotted"
     }
   }
@@ -212,22 +212,47 @@ struct OraclePipelineDetailView: View {
 
   private func symbol(for outcome: String) -> String {
     switch outcome {
-    case "Satisfied", "Selected": "checkmark.circle.fill"
-    case "Not satisfied", "No match": "xmark.circle"
-    case "Skipped": "forward.end.circle"
-    case "Cancelled": "xmark.circle.fill"
+    case "Satisfied", "Selected", "Выполнено", "Выбрано": "checkmark.circle.fill"
+    case "Not satisfied", "No match", "Не выполнено", "Нет совпадения": "xmark.circle"
+    case "Skipped", "Пропущено": "forward.end.circle"
+    case "Cancelled", "Отменено": "xmark.circle.fill"
     default: outcome.hasPrefix("Failed") ? "exclamationmark.circle.fill" : "circle"
     }
   }
 
   private func color(for outcome: String) -> Color {
     switch outcome {
-    case "Satisfied", "Selected": .green
-    case "Not satisfied", "No match", "Skipped": .secondary
-    case "Cancelled": .orange
+    case "Satisfied", "Selected", "Выполнено", "Выбрано": .green
+    case "Not satisfied", "No match", "Skipped", "Не выполнено", "Нет совпадения", "Пропущено": .secondary
+    case "Cancelled", "Отменено": .orange
     default: outcome.hasPrefix("Failed") ? .red : .secondary
     }
   }
+}
+
+private func localizedPipelineText(_ value: String) -> String {
+  if let match = value.range(of: #"^(\d+) options extracted$"#, options: .regularExpression),
+     let count = Int(value[match].split(separator: " ").first ?? "") {
+    return String(format: String(localized: "%d options extracted"), locale: .current, count)
+  }
+  return String(localized: String.LocalizationValue(value))
+}
+
+private func localizedDetailValue(_ detail: OraclePipelineDetail) -> String {
+  switch detail.id {
+  case "requested-mode", "selected-route", "answer-available", "fallback-used", "answer-type",
+       "resolution-reason", "validation-reason", "extraction-rule":
+    localizedPipelineText(detail.value)
+  default:
+    detail.value
+  }
+}
+
+private func localizedSpecificationDisplayName(_ name: String) -> String {
+  if name.contains("Any Async Specification"), name.contains("Oracle Request") {
+    return localizedPipelineText("Oracle request rules")
+  }
+  return localizedPipelineText(name.pipelineDisplayName)
 }
 
 private extension String {
@@ -250,14 +275,14 @@ private extension UInt64 {
     if milliseconds < 1 {
       return "<1 ms"
     }
-    return String(format: "%.1f ms", milliseconds)
+    return String(format: "%.1f ms", locale: .current, milliseconds)
   }
 
   var pipelineOffset: String {
     let milliseconds = Double(self) / 1_000_000
     if milliseconds < 1 {
-      return String(format: "%.0f μs", Double(self) / 1_000)
+      return String(format: "%.0f μs", locale: .current, Double(self) / 1_000)
     }
-    return String(format: "%.1f ms", milliseconds)
+    return String(format: "%.1f ms", locale: .current, milliseconds)
   }
 }

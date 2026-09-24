@@ -1,6 +1,10 @@
 import SwiftUI
 import OracleGame
 extension OracleMode {
+  var localizedName: String {
+    String(localized: String.LocalizationValue(rawValue))
+  }
+
   var icon: String {
     switch self {
     case .automatic: "wand.and.stars"
@@ -13,11 +17,11 @@ extension OracleMode {
 
   var descriptor: String {
     switch self {
-    case .automatic: "Auto"
-    case .noul: "Yes / No"
-    case .choice: "Phrase"
-    case .score: "Confidence"
-    case .unsupported: "No answer"
+    case .automatic: String(localized: "Auto")
+    case .noul: String(localized: "Yes / No")
+    case .choice: String(localized: "Phrase")
+    case .score: String(localized: "Confidence")
+    case .unsupported: String(localized: "No answer")
     }
   }
 
@@ -34,7 +38,7 @@ struct OracleModeSelector: View {
         } label: {
           Label {
             VStack(alignment: .leading, spacing: 1) {
-              Text(mode.rawValue)
+              Text(mode.localizedName)
                 .font(.caption.weight(.semibold))
               Text(mode.descriptor)
                 .font(.caption2)
@@ -55,7 +59,7 @@ struct OracleModeSelector: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selection == mode ? .isSelected : [])
-        .accessibilityLabel("\(mode.rawValue) mode, \(mode.descriptor)")
+        .accessibilityLabel("\(mode.localizedName) · \(mode.descriptor)")
       }
     }
     .padding(4)

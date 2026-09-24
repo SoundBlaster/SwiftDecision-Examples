@@ -63,8 +63,8 @@ enum OracleChoicePlanner {
     let initialCandidates = ageCandidates?.options ?? splitCandidates(body)
     let extractionDescription = ageCandidates?.description
       ?? separators.first(where: { matchingText.range(of: $0) != nil })
-        .map { "Split on ‘\($0.trimmingCharacters(in: .whitespaces))’" }
-      ?? "Comma-separated alternatives"
+        .map { String(format: oracleLocalized("Split on ‘%@’"), $0.trimmingCharacters(in: .whitespaces)) }
+      ?? oracleLocalized("Comma-separated alternatives")
     let candidates = normalizeInterrogativeCandidates(
       initialCandidates,
       body: body)
@@ -99,7 +99,7 @@ enum OracleChoicePlanner {
     else {
       return nil
     }
-    return ([String(question[firstRange]), String(question[secondRange])], "Age-number alternatives")
+    return ([String(question[firstRange]), String(question[secondRange])], oracleLocalized("Age-number alternatives"))
   }
 
   static func asksForProbability(_ question: String) -> Bool {

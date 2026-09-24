@@ -45,6 +45,8 @@
 		D1C5A914C54E4A9EA945C502 /* OraclePipelineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2C5A914C54E4A9EA945C502 /* OraclePipelineDetailView.swift */; };
 		D58DEC0FE1D9DBC3A288FEBD /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = B531FD1996E7982085FB0DAB /* AppIcon.icon */; };
 		F3A8B19C7D624E55A8200111 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F3A8B19C7D624E55A8200110 /* LaunchScreen.storyboard */; };
+		A00000000000000000000001 /* Oracle Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001 /* Oracle Localizable.xcstrings */; };
+		A00000000000000000000002 /* City Chain Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000002 /* City Chain Localizable.xcstrings */; };
 		D59B5FA5D6EDECEAF9F38A98 /* OracleRevealSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12F66D65B6726987E960904 /* OracleRevealSystem.swift */; };
 		D811AB713A983C27ABB46B7F /* CityChainAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABBD1A12DA4DC7CDD5E30DA /* CityChainAppApp.swift */; };
 		EC6595AF675A41B6667771EE /* OracleMotionComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2083F00EA6DAE97338B46E3A /* OracleMotionComponent.swift */; };
@@ -107,6 +109,8 @@
 		F6D0F2E9F233D95523F6AADE /* OracleCosmicBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCosmicBackground.swift; sourceTree = "<group>"; };
 		F85255BEFB921D1C014C1753 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F3A8B19C7D624E55A8200110 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		B00000000000000000000001 /* Oracle Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		B00000000000000000000002 /* City Chain Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -238,6 +242,7 @@
 		2AF2A62A3FE3E69437999835 /* OracleBallApp */ = {
 			isa = PBXGroup;
 			children = (
+				B00000000000000000000001 /* Oracle Localizable.xcstrings */,
 				753D497C7C54FCA33A867ABF /* app */,
 				D5C249E64B808CE04F3CA95E /* entities */,
 				0653EA418B5B1744072B956C /* features */,
@@ -382,6 +387,7 @@
 		99862B608796978B198961A0 /* CityChainApp */ = {
 			isa = PBXGroup;
 			children = (
+				B00000000000000000000002 /* City Chain Localizable.xcstrings */,
 				F233BC842C4179774235664C /* app */,
 				DC519239E23DE3286310650B /* entities */,
 				3E724B63D8BA68E67F16EC0B /* features */,
@@ -558,6 +564,7 @@
 			buildConfigurationList = 92FCE6D0664E009C07747289 /* Build configuration list for PBXNativeTarget "CityChainApp" */;
 			buildPhases = (
 				B99C9381A191E6D03E09665E /* Sources */,
+				C00000000000000000000001 /* Resources */,
 				F7679AD4D23EBBD70E4EC960 /* Frameworks */,
 			);
 			buildRules = (
@@ -592,6 +599,7 @@
 			knownRegions = (
 				Base,
 				en,
+				ru,
 			);
 			mainGroup = 8351295B1AC7B8307C384027;
 			minimizedProjectReferenceProxies = 1;
@@ -616,9 +624,18 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A00000000000000000000001 /* Oracle Localizable.xcstrings in Resources */,
 				D58DEC0FE1D9DBC3A288FEBD /* AppIcon.icon in Resources */,
 				2970C361B601B3AFC3C83A8E /* Assets.xcassets in Resources */,
 				F3A8B19C7D624E55A8200111 /* LaunchScreen.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C00000000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000002 /* City Chain Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
