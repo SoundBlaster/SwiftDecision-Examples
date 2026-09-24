@@ -75,6 +75,9 @@ public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
   public let details: [OraclePipelineDetail]?
   public let decisionEvents: [OracleDecisionTraceStep]
   public let specificationEvents: [OracleSpecificationTraceStep]
+  /// Unified, ordered events from SwiftDecision's invocation-scoped timeline when available.
+  /// Optional so history entries written by earlier app versions remain decodable.
+  public let orderedTrace: [OraclePipelineTimelineEvent]?
 
   public init(
     id: String,
@@ -82,7 +85,8 @@ public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
     summary: String? = nil,
     details: [OraclePipelineDetail]? = nil,
     decisionEvents: [OracleDecisionTraceStep] = [],
-    specificationEvents: [OracleSpecificationTraceStep] = []
+    specificationEvents: [OracleSpecificationTraceStep] = [],
+    orderedTrace: [OraclePipelineTimelineEvent]? = nil
   ) {
     self.id = id
     self.title = title
@@ -90,6 +94,44 @@ public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
     self.details = details
     self.decisionEvents = decisionEvents
     self.specificationEvents = specificationEvents
+    self.orderedTrace = orderedTrace
+  }
+}
+
+/// A lifecycle checkpoint or curated specification event at its position in a decision call.
+public struct OraclePipelineTimelineEvent: Codable, Hashable, Identifiable, Sendable {
+  public enum Kind: String, Codable, Hashable, Sendable {
+    case lifecycle
+    case specification
+  }
+
+  public let id: UInt64
+  public let parentID: UInt64?
+  public let kind: Kind
+  public let name: String
+  public let detail: String?
+  public let outcome: String?
+  public let durationNanoseconds: UInt64?
+  public let elapsedNanoseconds: UInt64
+
+  public init(
+    id: UInt64,
+    parentID: UInt64? = nil,
+    kind: Kind,
+    name: String,
+    detail: String? = nil,
+    outcome: String? = nil,
+    durationNanoseconds: UInt64? = nil,
+    elapsedNanoseconds: UInt64
+  ) {
+    self.id = id
+    self.parentID = parentID
+    self.kind = kind
+    self.name = name
+    self.detail = detail
+    self.outcome = outcome
+    self.durationNanoseconds = durationNanoseconds
+    self.elapsedNanoseconds = elapsedNanoseconds
   }
 }
 
@@ -894,7 +936,8 @@ public final class OracleGameEngine: @unchecked Sendable {
           timestamp: event.timestamp,
           detail: event.detail ?? event.stage.pipelineExplanation)
       },
-      specificationEvents: OraclePipelineTraceRecorder.decisionDetails(from: result.specificationTrace))
+      specificationEvents: OraclePipelineTraceRecorder.decisionDetails(from: result.specificationTrace),
+      orderedTrace: OraclePipelineTraceRecorder.orderedDecisionTrace(from: result.orderedTrace))
   }
 
   private func intentDiagnostics(
