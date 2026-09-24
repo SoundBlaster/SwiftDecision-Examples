@@ -47,21 +47,12 @@ enum OracleAnswerTexture {
       let baseFontSize: CGFloat = label.count <= 5 ? 100 : (label.count > 24 ? 45 : 58)
       let fontSize = baseFontSize * max(fontScale, 0.5)
       let rect = CGRect(x: 112, y: 175, width: 544, height: 245)
-      let requestedFont = UIFont.systemFont(ofSize: fontSize, weight: .medium)
-      let requestedAttributes: [NSAttributedString.Key: Any] = [
-        .font: requestedFont,
-        .foregroundColor: UIColor(red: 0.89, green: 0.88, blue: 1, alpha: 1),
-        .paragraphStyle: paragraph,
-      ]
-      let measured = (label as NSString).boundingRect(
-        with: rect.size,
-        options: [.usesLineFragmentOrigin, .usesFontLeading],
-        attributes: requestedAttributes,
-        context: nil)
-      let fitScale = min(
-        1,
-        min(rect.width / max(measured.width, 1), rect.height / max(measured.height, 1)))
-      let fittedFont = UIFont.systemFont(ofSize: fontSize * fitScale, weight: .medium)
+      let fittedFontSize = largestFontSize(
+        fitting: label,
+        maximumSize: fontSize,
+        in: rect,
+        paragraph: paragraph)
+      let fittedFont = UIFont.systemFont(ofSize: fittedFontSize, weight: .medium)
       let attributes: [NSAttributedString.Key: Any] = [
         .font: fittedFont,
         .foregroundColor: UIColor(red: 0.89, green: 0.88, blue: 1, alpha: 1),
@@ -81,6 +72,37 @@ enum OracleAnswerTexture {
       sharp: TextureResource(image: sharpImage, options: .init(semantic: .color)),
       blurred: TextureResource(image: blurredImage, options: .init(semantic: .color))
     )
+  }
+
+  private static func largestFontSize(
+    fitting text: String,
+    maximumSize: CGFloat,
+    in rect: CGRect,
+    paragraph: NSParagraphStyle
+  ) -> CGFloat {
+    var lowerBound: CGFloat = 1
+    var upperBound = maximumSize
+
+    for _ in 0..<16 {
+      let candidate = (lowerBound + upperBound) / 2
+      let attributes: [NSAttributedString.Key: Any] = [
+        .font: UIFont.systemFont(ofSize: candidate, weight: .medium),
+        .paragraphStyle: paragraph,
+      ]
+      let measured = (text as NSString).boundingRect(
+        with: rect.size,
+        options: [.usesLineFragmentOrigin, .usesFontLeading],
+        attributes: attributes,
+        context: nil)
+
+      if measured.width <= rect.width && measured.height <= rect.height {
+        lowerBound = candidate
+      } else {
+        upperBound = candidate
+      }
+    }
+
+    return lowerBound
   }
 }
 

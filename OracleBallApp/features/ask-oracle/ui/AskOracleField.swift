@@ -41,7 +41,7 @@ struct AskOracleField: View {
               .transition(.opacity.combined(with: .scale(scale: 0.8)))
           }
         }
-        .frame(width: submitButtonSize, height: submitButtonSize)
+        .frame(width: max(44, submitButtonSize), height: max(44, submitButtonSize))
         .foregroundStyle(.white)
         .background(
           LinearGradient(

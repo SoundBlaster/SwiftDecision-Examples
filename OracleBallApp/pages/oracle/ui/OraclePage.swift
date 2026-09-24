@@ -210,7 +210,7 @@ private struct OracleHeader: View {
         Image(systemName: "info.circle")
           .font(.body.weight(.medium))
           .foregroundStyle(.white.opacity(0.55))
-          .frame(width: settingsButtonSize, height: settingsButtonSize)
+          .frame(width: max(44, settingsButtonSize), height: max(44, settingsButtonSize))
       }
       .buttonStyle(.plain)
       .accessibilityLabel("Oracle settings")
