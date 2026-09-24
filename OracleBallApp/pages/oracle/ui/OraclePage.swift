@@ -23,9 +23,12 @@ struct OraclePage: View {
       let availableHeight = max(proxy.size.height, 1)
       let responsiveViewportSide = max(
         1, min(proxy.size.width - 16, max(180, availableHeight - 260)))
-      let fixedViewportSide = min(
+      let widthLimitedViewportSide = min(
         initialBallViewportSide ?? responsiveViewportSide,
         max(1, proxy.size.width - 16))
+      let fixedViewportSide = isKeyboardVisible
+        ? widthLimitedViewportSide
+        : min(widthLimitedViewportSide, max(1, availableHeight - 260))
       let viewportSide = fixedViewportSide
       // The RealityKit scene has animated field rings below BallRoot; offset the viewport
       // slightly so the sphere itself, rather than the full scene bounds, reads as centered.
@@ -130,9 +133,11 @@ struct OraclePage: View {
         initialBallViewportSide = max(
           1, min(size.width - 16, max(180, size.height - 260)))
       }
-      .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+      .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { notification in
         withAnimation(.easeOut(duration: 0.2)) {
-          isKeyboardVisible = true
+          isKeyboardVisible = keyboardReachesBottomEdge(
+            notification,
+            containerFrame: proxy.frame(in: .global))
         }
       }
       .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
@@ -155,6 +160,22 @@ struct OraclePage: View {
         .presentationDetents([.medium, .large], selection: $infoSheetDetent)
         .presentationDragIndicator(.visible)
     }
+  }
+
+  private func keyboardReachesBottomEdge(
+    _ notification: Notification,
+    containerFrame: CGRect
+  ) -> Bool {
+    guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect
+    else {
+      return false
+    }
+
+    let overlapsHorizontally = keyboardFrame.minX < containerFrame.maxX
+      && keyboardFrame.maxX > containerFrame.minX
+    let reachesBottom = keyboardFrame.maxY >= containerFrame.maxY - 1
+      && keyboardFrame.minY < containerFrame.maxY
+    return overlapsHorizontally && reachesBottom
   }
 
 }
