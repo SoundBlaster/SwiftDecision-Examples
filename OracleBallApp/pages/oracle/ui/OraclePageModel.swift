@@ -181,6 +181,14 @@ final class OraclePageModel {
     }
   }
 
+  func setDragFeedbackActive(_ isActive: Bool) {
+    if isActive {
+      haptics.startDragFeedback()
+    } else {
+      haptics.stopDragFeedback()
+    }
+  }
+
   func repeatQuestion(_ question: String) {
     self.question = question
     submit()

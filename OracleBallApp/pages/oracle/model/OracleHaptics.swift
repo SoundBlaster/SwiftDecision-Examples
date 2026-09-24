@@ -57,6 +57,8 @@ protocol OracleHapticFeedback {
   func play(_ cue: OracleHapticCue)
   func startShakeFeedback()
   func stopShakeFeedback()
+  func startDragFeedback()
+  func stopDragFeedback()
 }
 
 @MainActor
@@ -69,6 +71,7 @@ final class OracleHaptics: OracleHapticFeedback {
   private var submissionCueEndTime: TimeInterval = 0
   private var deferredResultTask: Task<Void, Never>?
   private var shakePlayer: CHHapticPatternPlayer?
+  private var dragPlayer: CHHapticPatternPlayer?
 
   init() {
     guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else {
@@ -134,6 +137,33 @@ final class OracleHaptics: OracleHapticFeedback {
     guard let shakePlayer else { return }
     try? shakePlayer.stop(atTime: CHHapticTimeImmediate)
     self.shakePlayer = nil
+  }
+
+  func startDragFeedback() {
+    guard dragPlayer == nil, let engine else { return }
+    let event = CHHapticEvent(
+      eventType: .hapticContinuous,
+      parameters: [
+        CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.10),
+        CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.18),
+      ],
+      relativeTime: 0,
+      duration: 30)
+    do {
+      let pattern = try CHHapticPattern(events: [event], parameters: [])
+      try engine.start()
+      let player = try engine.makePlayer(with: pattern)
+      try player.start(atTime: CHHapticTimeImmediate)
+      dragPlayer = player
+    } catch {
+      // Haptic availability must not affect ball interaction.
+    }
+  }
+
+  func stopDragFeedback() {
+    guard let dragPlayer else { return }
+    try? dragPlayer.stop(atTime: CHHapticTimeImmediate)
+    self.dragPlayer = nil
   }
 
   private func playImmediately(_ cue: OracleHapticCue) {

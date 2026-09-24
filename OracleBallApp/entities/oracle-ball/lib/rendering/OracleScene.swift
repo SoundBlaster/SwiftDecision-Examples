@@ -1,3 +1,4 @@
+import OraclePresentation
 import RealityKit
 import UIKit
 
@@ -132,6 +133,19 @@ final class OracleScene {
 
   func setShakeEnabled(_ enabled: Bool) {
     motion.setShakeEnabled(enabled)
+  }
+
+  func dragBall(translation: SIMD2<Float>, viewportSide: Float) {
+    guard var state = root.components[OracleMotionComponent.self] else { return }
+    state.dragTarget = OracleDragMotion.target(
+      translation: translation, viewportSide: viewportSide)
+    root.components.set(state)
+  }
+
+  func releaseBall() {
+    guard var state = root.components[OracleMotionComponent.self] else { return }
+    state.dragTarget = .zero
+    root.components.set(state)
   }
 
   func beginWaiting(request: Int) {

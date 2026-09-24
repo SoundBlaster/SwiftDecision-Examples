@@ -76,6 +76,10 @@ final class OracleRevealSystem: System {
       let sampledTilt = state.input.sample()
       state.tilt = state.reduceMotion ? .zero : OracleParallax.smooth(
         current: state.tilt, target: sampledTilt, deltaTime: dt)
+      state.dragMotion = OracleDragMotion.advance(
+        state: state.dragMotion,
+        target: state.reduceMotion ? .zero : state.dragTarget,
+        deltaTime: dt)
       let tilt = state.tilt
       // A moving viewpoint reveals the rim, glass and plate at different depths.
       let position = SIMD3<Float>(tilt.x * 0.8, tilt.y * 0.6, 3.55)
@@ -83,6 +87,8 @@ final class OracleRevealSystem: System {
       let time = Float(state.elapsed)
       // Move the complete ball together; the camera and ground halo stay fixed.
       state.ball.position.y = state.reduceMotion ? 0 : 0.025 * sin(time * 0.9)
+      state.ball.orientation = simd_quatf(angle: state.dragMotion.rotation.x, axis: [0, 1, 0])
+        * simd_quatf(angle: state.dragMotion.rotation.y, axis: [1, 0, 0])
       let drift: SIMD2<Float> = state.reduceMotion ? .zero
         : [0.10 * sin(time * 0.23), 0.045 * sin(time * 0.3)]
       state.lighting.orientation = simd_quatf(angle: tilt.x * 0.9 + drift.x, axis: [0, 1, 0])

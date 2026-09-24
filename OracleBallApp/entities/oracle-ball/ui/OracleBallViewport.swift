@@ -9,6 +9,7 @@ struct OracleBallViewport: View {
   let onClear: () -> Void
   let onShake: () -> Void
   let onShakeActivityChanged: (Bool) -> Void
+  let onDragActivityChanged: (Bool) -> Void
   var isPaused = false
   var isShakeEnabled = true
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -72,15 +73,38 @@ struct OracleBallViewport: View {
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: shouldPauseScene)
       renderer?.setShakeEnabled(isShakeEnabled)
     }
-    .onDisappear { renderer?.setEnvironment(reduceMotion: reduceMotion, paused: true) }
+    .onDisappear {
+      renderer?.releaseBall()
+      onDragActivityChanged(false)
+      renderer?.setEnvironment(reduceMotion: reduceMotion, paused: true)
+    }
     .onChange(of: shouldPauseScene) { _, paused in
+      if paused {
+        renderer?.releaseBall()
+        onDragActivityChanged(false)
+      }
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: paused)
     }
     .onChange(of: isShakeEnabled) { _, enabled in
       renderer?.setShakeEnabled(enabled)
     }
     .contentShape(Rectangle())
-    .onTapGesture(perform: onClear)
+    .overlay {
+      OracleBallGestureLayer(
+        onTap: onClear,
+        onDragBegan: { onDragActivityChanged(true) },
+        onDragChanged: { translation, size in
+          renderer?.dragBall(
+            translation: [Float(translation.x), Float(translation.y)],
+            viewportSide: Float(min(size.width, size.height)))
+        },
+        onDragEnded: {
+          renderer?.releaseBall()
+          onDragActivityChanged(false)
+        }
+      )
+      .accessibilityHidden(true)
+    }
     .overlay {
       if renderFailed {
         ContentUnavailableView(
@@ -93,7 +117,7 @@ struct OracleBallViewport: View {
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Magic 8 Ball")
     .accessibilityValue(answer.replacingOccurrences(of: "\n", with: " "))
-    .accessibilityHint("Tap to clear the question and answer")
+    .accessibilityHint("Drag with one finger to tilt. Tap to clear.")
     .accessibilityAddTraits(.isButton)
     .accessibilityAction(.default, onClear)
   }
