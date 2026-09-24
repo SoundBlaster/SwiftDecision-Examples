@@ -6,7 +6,7 @@ final class OracleKeyboardDismissalUITests: XCTestCase {
     let app = XCUIApplication()
     app.launch()
 
-    let questionField = app.textFields["Question for the oracle"]
+    let questionField = app.textFields["oracle.question.input"]
     XCTAssertTrue(questionField.waitForExistence(timeout: 5))
 
     questionField.tap()
@@ -33,7 +33,7 @@ final class OracleKeyboardDismissalUITests: XCTestCase {
     let app = XCUIApplication()
     app.launch()
 
-    let questionField = app.textFields["Question for the oracle"]
+    let questionField = app.textFields["oracle.question.input"]
     XCTAssertTrue(questionField.waitForExistence(timeout: 5))
     questionField.tap()
 

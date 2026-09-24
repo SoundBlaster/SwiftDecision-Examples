@@ -6,6 +6,9 @@ options:
 packages:
   SwiftDecisionExamples:
     path: .
+  NestedA11yIDs:
+    url: https://github.com/SoundBlaster/NestedA11yIDs.git
+    from: 1.0.0
 targets:
   CityChainApp:
     type: application
@@ -37,6 +40,8 @@ targets:
         product: OracleGame
       - package: SwiftDecisionExamples
         product: OracleHistory
+      - package: NestedA11yIDs
+        product: NestedA11yIDs
     settings:
       base:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
