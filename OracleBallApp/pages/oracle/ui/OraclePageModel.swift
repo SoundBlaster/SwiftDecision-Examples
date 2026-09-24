@@ -156,6 +156,7 @@ final class OraclePageModel {
       return
     }
 
+    question = ""
     requestTask?.cancel()
     requestTask = nil
     requestID += 1
@@ -169,7 +170,7 @@ final class OraclePageModel {
       source: .offlineFixture)
     answerRequestID = requestID
     terminalRequestID = 0
-    statusMessage = nil
+    statusMessage = "Random answer"
   }
 
   func repeatQuestion(_ question: String) {
