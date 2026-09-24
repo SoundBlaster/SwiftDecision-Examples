@@ -73,8 +73,9 @@ final class OracleRevealSystem: System {
       }
       let dt = max(0, min(context.deltaTime, 0.1))
       state.elapsed += dt
+      let sampledTilt = state.input.sample()
       state.tilt = state.reduceMotion ? .zero : OracleParallax.smooth(
-        current: state.tilt, target: state.input.sample(), deltaTime: dt)
+        current: state.tilt, target: sampledTilt, deltaTime: dt)
       let tilt = state.tilt
       // A moving viewpoint reveals the rim, glass and plate at different depths.
       let position = SIMD3<Float>(tilt.x * 0.8, tilt.y * 0.6, 3.55)

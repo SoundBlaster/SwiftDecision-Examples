@@ -11,7 +11,13 @@ final class OracleScene {
   private let incoming: ModelEntity
   private var lastRequest = -1
 
-  init(answer: String, reduceMotion: Bool, paused: Bool) async throws {
+  init(
+    answer: String,
+    reduceMotion: Bool,
+    paused: Bool,
+    shakeEnabled: Bool,
+    onShake: @escaping () -> Void
+  ) async throws {
     root.name = "Oracle scene"
     let camera = PerspectiveCamera()
     camera.camera.fieldOfViewInDegrees = 40
@@ -90,7 +96,9 @@ final class OracleScene {
     root.components.set(OracleMotionComponent(
       input: motion, ball: ball, camera: camera, lighting: lighting, contour: contour,
       reduceMotion: reduceMotion, isPaused: paused))
-    motion.setActive(!paused && !reduceMotion)
+    motion.setShakeHandler(onShake)
+    motion.setShakeEnabled(shakeEnabled)
+    motion.setActive(!paused)
     root.isEnabled = !paused
   }
 
@@ -101,7 +109,7 @@ final class OracleScene {
     if paused {
       root.isEnabled = false
     }
-    motion.setActive(!paused && !reduceMotion)
+    motion.setActive(!paused)
     if var state = field.components[OracleFieldComponent.self] {
       state.reduceMotion = reduceMotion
       state.isPaused = paused
@@ -118,6 +126,10 @@ final class OracleScene {
       plate.components.set(state)
     }
     root.isEnabled = !paused
+  }
+
+  func setShakeEnabled(_ enabled: Bool) {
+    motion.setShakeEnabled(enabled)
   }
 
   func beginWaiting(request: Int) {

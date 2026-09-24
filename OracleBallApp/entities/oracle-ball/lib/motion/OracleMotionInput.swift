@@ -1,4 +1,5 @@
 import CoreMotion
+import Foundation
 import OraclePresentation
 import UIKit
 import simd
@@ -9,6 +10,17 @@ final class OracleMotionInput {
   private let manager = CMMotionManager()
   private var neutral: simd_quatf?
   private var orientation = UIDeviceOrientation.portrait
+  private var onShake: (() -> Void)?
+  private var isShakeEnabled = true
+  private var lastShakeTime: TimeInterval = 0
+
+  func setShakeHandler(_ handler: @escaping () -> Void) {
+    onShake = handler
+  }
+
+  func setShakeEnabled(_ enabled: Bool) {
+    isShakeEnabled = enabled
+  }
 
   func setActive(_ active: Bool) {
     guard active, manager.isDeviceMotionAvailable else {
@@ -24,6 +36,7 @@ final class OracleMotionInput {
 
   func sample() -> SIMD2<Float> {
     guard let motion = manager.deviceMotion else { return .zero }
+    detectShake(using: motion)
     let currentOrientation = UIDevice.current.orientation
     if currentOrientation.isPortrait || currentOrientation.isLandscape,
        currentOrientation != orientation {
@@ -43,6 +56,19 @@ final class OracleMotionInput {
     case .portraitUpsideDown: return -tilt
     default: return tilt
     }
+  }
+
+  private func detectShake(using motion: CMDeviceMotion) {
+    guard isShakeEnabled else { return }
+    let acceleration = motion.userAcceleration
+    let magnitude = sqrt(
+      acceleration.x * acceleration.x
+        + acceleration.y * acceleration.y
+        + acceleration.z * acceleration.z)
+    let now = ProcessInfo.processInfo.systemUptime
+    guard magnitude >= 2.0, now - lastShakeTime >= 1.0 else { return }
+    lastShakeTime = now
+    onShake?()
   }
 
   isolated deinit { manager.stopDeviceMotionUpdates() }

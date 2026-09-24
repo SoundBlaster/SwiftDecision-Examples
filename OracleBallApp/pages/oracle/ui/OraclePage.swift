@@ -45,7 +45,9 @@ struct OraclePage: View {
               answerRequestID: model.answerRequestID,
               terminalRequestID: model.terminalRequestID,
               onClear: model.clearQuestionAndAnswer,
-              isPaused: isShowingInfo && infoSheetDetent == .large)
+              onShake: model.handleShake,
+              isPaused: isShowingInfo && infoSheetDetent == .large,
+              isShakeEnabled: !isShowingInfo)
               .frame(width: viewportSide, height: viewportSide)
               .id("oracle-ball-viewport")
               .accessibilityLabel(
