@@ -12,6 +12,7 @@ struct OracleBallViewport: View {
   let onDragActivityChanged: (Bool) -> Void
   var isPaused = false
   var isShakeEnabled = true
+  @ScaledMetric(relativeTo: .body) private var answerFontScale: CGFloat = 1
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.scenePhase) private var scenePhase
   @State private var renderer: OracleScene?
@@ -32,6 +33,7 @@ struct OracleBallViewport: View {
       do {
         let scene = try await OracleScene(
           answer: answer,
+          answerFontScale: answerFontScale,
           reduceMotion: reduceMotion,
           paused: shouldPauseScene,
           shakeEnabled: isShakeEnabled,
@@ -72,6 +74,14 @@ struct OracleBallViewport: View {
     .onChange(of: terminalRequestID) { _, _ in
       guard let renderer, requestID > 0, terminalRequestID == requestID else { return }
       renderer.cancelWaiting(request: requestID)
+    }
+    .onChange(of: answerFontScale) { _, scale in
+      guard let renderer else { return }
+      do {
+        try renderer.setAnswerFontScale(scale, answer: answer)
+      } catch {
+        renderFailed = true
+      }
     }
     .onAppear {
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: shouldPauseScene)

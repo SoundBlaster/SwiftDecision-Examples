@@ -4,6 +4,7 @@ import NestedA11yIDs
 struct AskOracleField: View {
   @Binding var text: String
   @FocusState.Binding var isFocused: Bool
+  @ScaledMetric(relativeTo: .body) private var submitButtonSize: CGFloat = 44
   let isSubmitting: Bool
   let onSubmit: () -> Void
 
@@ -40,7 +41,7 @@ struct AskOracleField: View {
               .transition(.opacity.combined(with: .scale(scale: 0.8)))
           }
         }
-        .frame(width: 44, height: 44)
+        .frame(width: submitButtonSize, height: submitButtonSize)
         .foregroundStyle(.white)
         .background(
           LinearGradient(

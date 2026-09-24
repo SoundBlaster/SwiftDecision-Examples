@@ -12,7 +12,7 @@ enum OracleAnswerTexture {
 
   private static let context = CIContext()
 
-  static func make(answer: String) throws -> Pair {
+  static func make(answer: String, fontScale: CGFloat = 1) throws -> Pair {
     let size = CGSize(width: 768, height: 768)
     let format = UIGraphicsImageRendererFormat()
     format.scale = 1
@@ -44,13 +44,29 @@ enum OracleAnswerTexture {
       paragraph.lineSpacing = 8
       // Bound caller text; long explanations belong outside the viewport.
       let label = String(answer.prefix(48))
-      let fontSize: CGFloat = label.count <= 5 ? 100 : (label.count > 24 ? 45 : 58)
-      let attributes: [NSAttributedString.Key: Any] = [
-        .font: UIFont.systemFont(ofSize: fontSize, weight: .medium),
+      let baseFontSize: CGFloat = label.count <= 5 ? 100 : (label.count > 24 ? 45 : 58)
+      let fontSize = baseFontSize * max(fontScale, 0.5)
+      let rect = CGRect(x: 112, y: 175, width: 544, height: 245)
+      let requestedFont = UIFont.systemFont(ofSize: fontSize, weight: .medium)
+      let requestedAttributes: [NSAttributedString.Key: Any] = [
+        .font: requestedFont,
         .foregroundColor: UIColor(red: 0.89, green: 0.88, blue: 1, alpha: 1),
         .paragraphStyle: paragraph,
       ]
-      let rect = CGRect(x: 112, y: 175, width: 544, height: 245)
+      let measured = (label as NSString).boundingRect(
+        with: rect.size,
+        options: [.usesLineFragmentOrigin, .usesFontLeading],
+        attributes: requestedAttributes,
+        context: nil)
+      let fitScale = min(
+        1,
+        min(rect.width / max(measured.width, 1), rect.height / max(measured.height, 1)))
+      let fittedFont = UIFont.systemFont(ofSize: fontSize * fitScale, weight: .medium)
+      let attributes: [NSAttributedString.Key: Any] = [
+        .font: fittedFont,
+        .foregroundColor: UIColor(red: 0.89, green: 0.88, blue: 1, alpha: 1),
+        .paragraphStyle: paragraph,
+      ]
       (label as NSString).draw(in: rect, withAttributes: attributes)
     }
     guard let sharpImage = image.cgImage else { throw OracleRenderError.textureCreation }

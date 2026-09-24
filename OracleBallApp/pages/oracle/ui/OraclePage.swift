@@ -89,16 +89,19 @@ struct OraclePage: View {
       .overlay(alignment: .bottom) {
         VStack(spacing: 12) {
           Text(model.statusMessage ?? model.answerStatus)
-            .font(.caption2.weight(.medium))
+            .font(.caption.weight(.medium))
             .tracking(0.5)
             .foregroundStyle(.white.opacity(0.34))
             .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
             .accessibilityLabel(model.statusMessage ?? model.answerStatus)
 
           Text("AI MAGIC 8-BALL  ·  ASK WITH INTENT")
-            .font(.system(size: 9, weight: .medium, design: .rounded))
+            .font(.caption2.weight(.medium))
             .tracking(1.4)
             .foregroundStyle(.white.opacity(0.3))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: 420)
         .frame(maxWidth: .infinity)
@@ -184,19 +187,22 @@ struct OraclePage: View {
 
 private struct OracleHeader: View {
   let onInfo: () -> Void
+  @ScaledMetric(relativeTo: .body) private var sparkSize: CGFloat = 16
+  @ScaledMetric(relativeTo: .body) private var settingsButtonSize: CGFloat = 44
 
   var body: some View {
     HStack {
       OracleSpark()
         .fill(.white.opacity(0.9))
-        .frame(width: 16, height: 16)
+        .frame(width: sparkSize, height: sparkSize)
         .shadow(color: .oracleLavender.opacity(0.8), radius: 8)
         .accessibilityHidden(true)
 
-      Text("A I   M A G I C   8 - B A L L")
-        .font(.system(size: 11, weight: .semibold, design: .rounded))
-        .tracking(1.2)
+      Text("AI MAGIC 8-BALL")
+        .font(.caption.weight(.semibold))
+        .tracking(1.4)
         .foregroundStyle(.white.opacity(0.66))
+        .fixedSize(horizontal: false, vertical: true)
 
       Spacer()
 
@@ -204,7 +210,7 @@ private struct OracleHeader: View {
         Image(systemName: "info.circle")
           .font(.body.weight(.medium))
           .foregroundStyle(.white.opacity(0.55))
-          .frame(width: 44, height: 44)
+          .frame(width: settingsButtonSize, height: settingsButtonSize)
       }
       .buttonStyle(.plain)
       .accessibilityLabel("Oracle settings")
