@@ -12,42 +12,66 @@ struct OraclePipelineDetailView: View {
         detailValue("Answer", value: entry.answer, tint: .oracleLavender)
         detailValue("Decision", value: entry.mode)
         detailValue("Provider", value: entry.source)
+        detailValue("Timestamp", value: entry.createdAt.formatted(date: .abbreviated, time: .shortened))
       }
 
       if let pipeline = entry.pipeline, !pipeline.isEmpty {
         ForEach(pipeline) { stage in
           Section(header: Text(stage.title)) {
             if let summary = stage.summary {
-              Label("Selected: \(summary)", systemImage: "arrow.turn.down.right")
+              Label(summary, systemImage: "info.circle")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(Color.oracleLavender)
             }
 
-            ForEach(Array(stage.decisionEvents.enumerated()), id: \.offset) { _, event in
-              HStack(spacing: 10) {
-                Image(systemName: "arrow.triangle.branch")
-                  .foregroundStyle(Color.oracleLavender)
-                  .frame(width: 18)
-                VStack(alignment: .leading, spacing: 3) {
-                  Text(event.stage.pipelineDisplayName)
-                    .font(.subheadline)
-                  if let detail = event.detail, !detail.isEmpty {
-                    Text(detail)
-                      .font(.caption)
-                      .foregroundStyle(.secondary)
-                  }
-                }
-                Spacer(minLength: 0)
+            ForEach(stage.details ?? []) { detail in
+              HStack(alignment: .top, spacing: 10) {
+                Text(detail.label)
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+                  .frame(width: 120, alignment: .leading)
+                Text(detail.value)
+                  .font(.caption.weight(.medium))
+                  .fixedSize(horizontal: false, vertical: true)
+                  .frame(maxWidth: .infinity, alignment: .leading)
               }
               .accessibilityElement(children: .combine)
             }
 
-            ForEach(Array(stage.specificationEvents.enumerated()), id: \.offset) { index, event in
-              specificationRow(event, depth: depth(of: event, in: stage.specificationEvents))
-                .id("\(stage.id)-\(index)")
+            if let orderedTrace = stage.orderedTrace, !orderedTrace.isEmpty {
+              Text("Ordered within this decision call")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+              ForEach(orderedTrace) { event in
+                timelineRow(event, events: orderedTrace)
+              }
+            } else {
+              ForEach(Array(stage.decisionEvents.enumerated()), id: \.offset) { _, event in
+                HStack(spacing: 10) {
+                  Image(systemName: "arrow.triangle.branch")
+                    .foregroundStyle(Color.oracleLavender)
+                    .frame(width: 18)
+                  VStack(alignment: .leading, spacing: 3) {
+                    Text(event.stage.pipelineDisplayName)
+                      .font(.subheadline)
+                    if let detail = event.detail, !detail.isEmpty {
+                      Text(detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                  }
+                  Spacer(minLength: 0)
+                }
+                .accessibilityElement(children: .combine)
+              }
+
+              ForEach(Array(stage.specificationEvents.enumerated()), id: \.offset) { index, event in
+                specificationRow(event, depth: depth(of: event, in: stage.specificationEvents))
+                  .id("\(stage.id)-\(index)")
+              }
             }
 
-            if stage.decisionEvents.isEmpty && stage.specificationEvents.isEmpty {
+            if stage.decisionEvents.isEmpty && stage.specificationEvents.isEmpty && (stage.orderedTrace?.isEmpty ?? true) {
               Label("No trace events", systemImage: "minus.circle")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -112,6 +136,63 @@ struct OraclePipelineDetailView: View {
     .accessibilityElement(children: .combine)
   }
 
+  private func timelineRow(
+    _ event: OraclePipelineTimelineEvent,
+    events: [OraclePipelineTimelineEvent]
+  ) -> some View {
+    let isSpecification = event.kind == .specification
+    let kind = isSpecification ? "Rule check" : "Flow"
+    var metadata = [kind]
+    if let outcome = event.outcome { metadata.append(outcome) }
+    if let duration = event.durationNanoseconds { metadata.append(duration.pipelineDuration) }
+    metadata.append("at +\(event.elapsedNanoseconds.pipelineOffset)")
+
+    return HStack(alignment: .top, spacing: 10) {
+      Image(systemName: isSpecification ? symbol(for: event.outcome ?? "") : lifecycleSymbol(for: event.name))
+        .foregroundStyle(isSpecification ? color(for: event.outcome ?? "") : Color.oracleLavender)
+        .frame(width: 18)
+      VStack(alignment: .leading, spacing: 3) {
+        Text(event.name.pipelineDisplayName)
+          .font(.subheadline)
+          .fixedSize(horizontal: false, vertical: true)
+        Text(metadata.joined(separator: " · "))
+          .font(.caption2)
+          .foregroundStyle(.secondary)
+        if let detail = event.detail, !detail.isEmpty {
+          Text(detail)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      Spacer(minLength: 0)
+    }
+    .padding(.leading, CGFloat(depth(of: event, in: events)) * 14)
+    .accessibilityElement(children: .combine)
+  }
+
+  private func depth(of event: OraclePipelineTimelineEvent, in events: [OraclePipelineTimelineEvent]) -> Int {
+    let parents = Dictionary(uniqueKeysWithValues: events.map { ($0.id, $0.parentID) })
+    var depth = 0
+    var parent = event.parentID
+    var visited: Set<UInt64> = []
+    while let id = parent, visited.insert(id).inserted {
+      depth += 1
+      parent = parents[id] ?? nil
+    }
+    return depth
+  }
+
+  private func lifecycleSymbol(for name: String) -> String {
+    switch name {
+    case "Request validated", "Output validated": "checkmark.seal"
+    case "Policy selected": "arrow.triangle.branch"
+    case "Inference started", "Inference completed": "sparkles"
+    case "Decision resolved": "arrow.uturn.forward"
+    default: "point.3.connected.trianglepath.dotted"
+    }
+  }
+
   private func depth(of event: OracleSpecificationTraceStep, in events: [OracleSpecificationTraceStep]) -> Int {
     let parents = Dictionary(uniqueKeysWithValues: events.map { ($0.id, $0.parentID) })
     var depth = 0
@@ -161,6 +242,14 @@ private extension UInt64 {
     let milliseconds = Double(self) / 1_000_000
     if milliseconds < 1 {
       return "<1 ms"
+    }
+    return String(format: "%.1f ms", milliseconds)
+  }
+
+  var pipelineOffset: String {
+    let milliseconds = Double(self) / 1_000_000
+    if milliseconds < 1 {
+      return String(format: "%.0f μs", Double(self) / 1_000)
     }
     return String(format: "%.1f ms", milliseconds)
   }

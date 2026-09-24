@@ -315,11 +315,15 @@ private struct OracleInfoSheet: View {
             .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 8))
 
           if historyEntries.isEmpty {
-            Text("No questions yet")
-              .font(.subheadline)
-              .foregroundStyle(.secondary)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
+            VStack(alignment: .leading, spacing: 5) {
+              Text("No questions yet")
+                .font(.subheadline.weight(.medium))
+              Text("Your questions and answers will appear here.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .listRowInsets(EdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20))
           } else {
             ForEach(historyEntries) { entry in
               NavigationLink {
@@ -328,22 +332,24 @@ private struct OracleInfoSheet: View {
                 OracleHistoryRow(entry: entry)
               }
               .tint(.oracleLavender)
-                .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
-                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                  Button {
-                    dismiss()
-                    onRepeatHistoryEntry(entry.question)
-                  } label: {
-                    Label("Repeat", systemImage: "arrow.clockwise")
-                  }
-                  .tint(.oracleLavender)
+              .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
+              .listRowSeparator(.visible, edges: .bottom)
+              .listRowSeparatorTint(.white.opacity(0.12))
+              .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                Button {
+                  dismiss()
+                  onRepeatHistoryEntry(entry.question)
+                } label: {
+                  Label("Repeat", systemImage: "arrow.clockwise")
                 }
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                  Button(role: .destructive) {
-                    onDeleteHistoryEntry(entry.id)
-                  } label: {
-                    Label("Delete", systemImage: "trash")
-                  }
+                .tint(.oracleLavender)
+              }
+              .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button(role: .destructive) {
+                  onDeleteHistoryEntry(entry.id)
+                } label: {
+                  Label("Delete", systemImage: "trash")
+                }
               }
             }
           }
@@ -447,7 +453,13 @@ private struct OracleHistoryRow: View {
 
       HStack(spacing: 8) {
         Text(entry.mode)
+        Text("·")
+        Text(entry.source)
+          .lineLimit(1)
+          .truncationMode(.middle)
+        Spacer(minLength: 4)
         Text(entry.createdAt, format: .dateTime.month(.abbreviated).day().hour().minute())
+          .lineLimit(1)
       }
       .font(.caption2)
       .foregroundStyle(.secondary)

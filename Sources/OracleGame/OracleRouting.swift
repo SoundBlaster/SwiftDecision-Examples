@@ -2,6 +2,12 @@ import Foundation
 
 struct OracleChoicePlan: Sendable, Hashable {
   let options: [String]
+  let extractionDescription: String
+
+  init(options: [String], extractionDescription: String = "No alternatives extracted") {
+    self.options = options
+    self.extractionDescription = extractionDescription
+  }
 }
 
 struct OracleRoutingContext: Sendable {
@@ -53,8 +59,14 @@ enum OracleChoicePlanner {
     }
     body = removeLeadingPhrases(from: body)
 
+    let ageCandidates = ageAlternatives(in: normalized)
+    let initialCandidates = ageCandidates?.options ?? splitCandidates(body)
+    let extractionDescription = ageCandidates?.description
+      ?? separators.first(where: { matchingText.range(of: $0) != nil })
+        .map { "Split on ‘\($0.trimmingCharacters(in: .whitespaces))’" }
+      ?? "Comma-separated alternatives"
     let candidates = normalizeInterrogativeCandidates(
-      splitCandidates(body),
+      initialCandidates,
       body: body)
       .map(cleanCandidate)
       .filter { !$0.isEmpty }
@@ -65,7 +77,29 @@ enum OracleChoicePlanner {
     guard (2 ... 5).contains(unique.count) else {
       return OracleChoicePlan(options: [])
     }
-    return OracleChoicePlan(options: unique)
+    return OracleChoicePlan(options: unique, extractionDescription: extractionDescription)
+  }
+
+  private static func ageAlternatives(
+    in question: String
+  ) -> (options: [String], description: String)? {
+    let lowercased = question.lowercased()
+    let isAgeQuestion = lowercased.contains("year old")
+      || lowercased.contains("years old")
+      || lowercased.contains("my age")
+      || lowercased.hasPrefix("i'm ")
+      || lowercased.hasPrefix("i am ")
+    guard isAgeQuestion,
+          let expression = try? NSRegularExpression(
+            pattern: #"\b(\d{1,3})\s+(?:or|and)\s+(\d{1,3})\b"#,
+            options: [.caseInsensitive]),
+          let match = expression.firstMatch(in: question, range: NSRange(question.startIndex..., in: question)),
+          let firstRange = Range(match.range(at: 1), in: question),
+          let secondRange = Range(match.range(at: 2), in: question)
+    else {
+      return nil
+    }
+    return ([String(question[firstRange]), String(question[secondRange])], "Age-number alternatives")
   }
 
   static func asksForProbability(_ question: String) -> Bool {
