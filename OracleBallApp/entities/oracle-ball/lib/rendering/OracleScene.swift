@@ -91,9 +91,16 @@ final class OracleScene {
       input: motion, ball: ball, camera: camera, lighting: lighting, contour: contour,
       reduceMotion: reduceMotion, isPaused: paused))
     motion.setActive(!paused && !reduceMotion)
+    root.isEnabled = !paused
   }
 
   func setEnvironment(reduceMotion: Bool, paused: Bool) {
+    // Disable before changing component state when pausing, and re-enable only after
+    // every animation component has been resumed. Keep this outside component guards
+    // so a missing component can never leave the whole scene disabled.
+    if paused {
+      root.isEnabled = false
+    }
     motion.setActive(!paused && !reduceMotion)
     if var state = field.components[OracleFieldComponent.self] {
       state.reduceMotion = reduceMotion
@@ -105,10 +112,12 @@ final class OracleScene {
       state.isPaused = paused
       root.components.set(state)
     }
-    guard var state = plate.components[OracleRevealComponent.self] else { return }
-    state.reduceMotion = reduceMotion
-    state.isPaused = paused
-    plate.components.set(state)
+    if var state = plate.components[OracleRevealComponent.self] {
+      state.reduceMotion = reduceMotion
+      state.isPaused = paused
+      plate.components.set(state)
+    }
+    root.isEnabled = !paused
   }
 
   func beginWaiting(request: Int) {

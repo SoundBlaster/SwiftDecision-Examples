@@ -43,7 +43,8 @@ struct OraclePage: View {
               answer: model.answer.displayText,
               requestID: model.requestID,
               answerRequestID: model.answerRequestID,
-              terminalRequestID: model.terminalRequestID)
+              terminalRequestID: model.terminalRequestID,
+              isPaused: isShowingInfo && infoSheetDetent == .large)
               .frame(width: viewportSide, height: viewportSide)
               .id("oracle-ball-viewport")
               .accessibilityLabel(
