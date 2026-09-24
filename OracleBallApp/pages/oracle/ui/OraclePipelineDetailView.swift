@@ -1,6 +1,7 @@
 import SwiftUI
 import OracleHistory
 import OracleGame
+import NestedA11yIDs
 
 struct OraclePipelineDetailView: View {
   let entry: OracleHistoryEntry
@@ -98,6 +99,7 @@ struct OraclePipelineDetailView: View {
     .listStyle(.insetGrouped)
     .navigationBarTitle("Decision pipeline", displayMode: .inline)
     .navigationBarHidden(false)
+    .a11yRoot("oracle.pipeline")
   }
 
   private func detailValue(_ title: String, value: String, tint: Color = .primary) -> some View {
@@ -112,6 +114,7 @@ struct OraclePipelineDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     .padding(.vertical, 2)
+    .nestedAccessibilityIdentifier(title.lowercased().replacingOccurrences(of: " ", with: "-"))
   }
 
   private func specificationRow(_ event: OracleSpecificationTraceStep, depth: Int) -> some View {

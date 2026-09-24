@@ -9,17 +9,21 @@ final class OracleScene {
   private let plate = Entity()
   private let field: Entity
   private let motion = OracleMotionInput()
+  private let face: ModelEntity
   private let incoming: ModelEntity
   private var lastRequest = -1
+  private var answerFontScale: CGFloat
 
   init(
     answer: String,
+    answerFontScale: CGFloat,
     reduceMotion: Bool,
     paused: Bool,
     shakeEnabled: Bool,
     onShake: @escaping () -> Void,
     onShakeActivityChanged: @escaping (Bool) -> Void
   ) async throws {
+    self.answerFontScale = answerFontScale
     root.name = "Oracle scene"
     let camera = PerspectiveCamera()
     camera.camera.fieldOfViewInDegrees = 40
@@ -65,14 +69,17 @@ final class OracleScene {
     ball.addChild(cavity)
 
     let faceMesh = try OracleMesh.triangle()
-    let material = try OracleMaterials.face(textures: OracleAnswerTexture.make(answer: answer))
-    let face = ModelEntity(mesh: faceMesh, materials: [material])
-    face.name = "AnswerFace"
-    plate.addChild(face)
-    incoming = ModelEntity(mesh: faceMesh, materials: [material])
-    incoming.name = "IncomingFace"
-    incoming.isEnabled = false
-    plate.addChild(incoming)
+    let material = try OracleMaterials.face(
+      textures: OracleAnswerTexture.make(answer: answer, fontScale: answerFontScale))
+    let answerFace = ModelEntity(mesh: faceMesh, materials: [material])
+    answerFace.name = "AnswerFace"
+    face = answerFace
+    plate.addChild(answerFace)
+    let incomingFace = ModelEntity(mesh: faceMesh, materials: [material])
+    incomingFace.name = "IncomingFace"
+    incomingFace.isEnabled = false
+    incoming = incomingFace
+    plate.addChild(incomingFace)
     let edges = ModelEntity(
       mesh: try OracleMesh.triangleSides(), materials: [try OracleMaterials.edge()])
     edges.name = "PlateEdges"
@@ -135,6 +142,15 @@ final class OracleScene {
     motion.setShakeEnabled(enabled)
   }
 
+  func setAnswerFontScale(_ scale: CGFloat, answer: String) throws {
+    guard scale != answerFontScale else { return }
+    let material = try OracleMaterials.face(
+      textures: OracleAnswerTexture.make(answer: answer, fontScale: scale))
+    face.model?.materials = [material]
+    incoming.model?.materials = [material]
+    answerFontScale = scale
+  }
+
   func dragBall(translation: SIMD2<Float>, viewportSide: Float) {
     guard var state = root.components[OracleMotionComponent.self] else { return }
     state.dragTarget = OracleDragMotion.target(
@@ -169,7 +185,8 @@ final class OracleScene {
   func present(answer: String, request: Int) throws {
     guard request == lastRequest else { return }
     incoming.model?.materials = [
-      try OracleMaterials.face(textures: OracleAnswerTexture.make(answer: answer))
+      try OracleMaterials.face(
+        textures: OracleAnswerTexture.make(answer: answer, fontScale: answerFontScale))
     ]
     guard var state = plate.components[OracleRevealComponent.self] else { return }
     state.answerReady = true

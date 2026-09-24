@@ -1,8 +1,10 @@
 import SwiftUI
+import NestedA11yIDs
 
 struct AskOracleField: View {
   @Binding var text: String
   @FocusState.Binding var isFocused: Bool
+  @ScaledMetric(relativeTo: .body) private var submitButtonSize: CGFloat = 44
   let isSubmitting: Bool
   let onSubmit: () -> Void
 
@@ -24,6 +26,7 @@ struct AskOracleField: View {
         .onSubmit(submit)
         .accessibilityLabel("Question for the oracle")
         .accessibilityHint("Type a question, or submit an empty field to replay the demo")
+        .nestedAccessibilityIdentifier("input")
 
       Button(action: submit) {
         ZStack {
@@ -38,7 +41,7 @@ struct AskOracleField: View {
               .transition(.opacity.combined(with: .scale(scale: 0.8)))
           }
         }
-        .frame(width: 44, height: 44)
+        .frame(width: max(44, submitButtonSize), height: max(44, submitButtonSize))
         .foregroundStyle(.white)
         .background(
           LinearGradient(
@@ -57,6 +60,7 @@ struct AskOracleField: View {
         isSubmitting
           ? "The oracle is preparing an answer"
           : "The oracle chooses the answer format automatically")
+      .nestedAccessibilityIdentifier("submit")
     }
     .padding(.leading, 18)
     .padding(.trailing, 7)
@@ -68,5 +72,6 @@ struct AskOracleField: View {
     }
     .shadow(color: .black.opacity(0.28), radius: 18, y: 8)
     .animation(.easeOut(duration: 0.18), value: isFocused)
+    .nestedAccessibilityIdentifier("question")
   }
 }

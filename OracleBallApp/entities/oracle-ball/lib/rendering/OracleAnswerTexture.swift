@@ -12,7 +12,7 @@ enum OracleAnswerTexture {
 
   private static let context = CIContext()
 
-  static func make(answer: String) throws -> Pair {
+  static func make(answer: String, fontScale: CGFloat = 1) throws -> Pair {
     let size = CGSize(width: 768, height: 768)
     let format = UIGraphicsImageRendererFormat()
     format.scale = 1
@@ -44,13 +44,20 @@ enum OracleAnswerTexture {
       paragraph.lineSpacing = 8
       // Bound caller text; long explanations belong outside the viewport.
       let label = String(answer.prefix(48))
-      let fontSize: CGFloat = label.count <= 5 ? 100 : (label.count > 24 ? 45 : 58)
+      let baseFontSize: CGFloat = label.count <= 5 ? 100 : (label.count > 24 ? 45 : 58)
+      let fontSize = baseFontSize * max(fontScale, 0.5)
+      let rect = CGRect(x: 112, y: 175, width: 544, height: 245)
+      let fittedFontSize = largestFontSize(
+        fitting: label,
+        maximumSize: fontSize,
+        in: rect,
+        paragraph: paragraph)
+      let fittedFont = UIFont.systemFont(ofSize: fittedFontSize, weight: .medium)
       let attributes: [NSAttributedString.Key: Any] = [
-        .font: UIFont.systemFont(ofSize: fontSize, weight: .medium),
+        .font: fittedFont,
         .foregroundColor: UIColor(red: 0.89, green: 0.88, blue: 1, alpha: 1),
         .paragraphStyle: paragraph,
       ]
-      let rect = CGRect(x: 112, y: 175, width: 544, height: 245)
       (label as NSString).draw(in: rect, withAttributes: attributes)
     }
     guard let sharpImage = image.cgImage else { throw OracleRenderError.textureCreation }
@@ -65,6 +72,37 @@ enum OracleAnswerTexture {
       sharp: TextureResource(image: sharpImage, options: .init(semantic: .color)),
       blurred: TextureResource(image: blurredImage, options: .init(semantic: .color))
     )
+  }
+
+  private static func largestFontSize(
+    fitting text: String,
+    maximumSize: CGFloat,
+    in rect: CGRect,
+    paragraph: NSParagraphStyle
+  ) -> CGFloat {
+    var lowerBound: CGFloat = 1
+    var upperBound = maximumSize
+
+    for _ in 0..<16 {
+      let candidate = (lowerBound + upperBound) / 2
+      let attributes: [NSAttributedString.Key: Any] = [
+        .font: UIFont.systemFont(ofSize: candidate, weight: .medium),
+        .paragraphStyle: paragraph,
+      ]
+      let measured = (text as NSString).boundingRect(
+        with: rect.size,
+        options: [.usesLineFragmentOrigin, .usesFontLeading],
+        attributes: attributes,
+        context: nil)
+
+      if measured.width <= rect.width && measured.height <= rect.height {
+        lowerBound = candidate
+      } else {
+        upperBound = candidate
+      }
+    }
+
+    return lowerBound
   }
 }
 
