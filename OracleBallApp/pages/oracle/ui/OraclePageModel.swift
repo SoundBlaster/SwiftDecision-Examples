@@ -17,7 +17,7 @@ final class OraclePageModel {
   var mode: OracleMode = .automatic
   var answer = OracleAnswer(
     mode: .noul,
-    displayText: "Definitely\nyes",
+    displayText: OracleAnswerPhrases.random(for: true),
     confidence: 0.87,
     source: .offlineFixture)
   var requestID = 0
@@ -165,7 +165,7 @@ final class OraclePageModel {
     let value = Bool.random()
     answer = OracleAnswer(
       mode: .noul,
-      displayText: value ? "Definitely\nyes" : "Definitely\nno",
+      displayText: OracleAnswerPhrases.random(for: value),
       noulValue: value,
       source: .offlineFixture)
     answerRequestID = requestID

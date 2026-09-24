@@ -32,6 +32,37 @@ public enum OracleAnswerSource: Hashable, Sendable {
   case offlineFixture
 }
 
+/// Varied display copy for binary answers, grouped by their underlying Boolean value.
+public enum OracleAnswerPhrases {
+  public static let affirmative = [
+    "Yes, odds\nlook good",
+    "Good signs\nahead",
+    "A favorable\nturn",
+    "Green light\nahead",
+    "The path looks\nbright",
+    "A strong\nyes",
+    "Fortune favors\nthis",
+    "Your chances\nlook good",
+  ]
+
+  public static let negative = [
+    "No, not this\ntime",
+    "Odds lean\nagainst it",
+    "Best to pause\nfor now",
+    "A dim\noutlook",
+    "Not in your\nfavor",
+    "Try another\ndirection",
+    "A firm\nno",
+    "Wait for better\ntiming",
+  ]
+
+  /// Returns a randomly selected phrase without changing the underlying decision.
+  public static func random(for value: Bool) -> String {
+    let phrases = value ? affirmative : negative
+    return phrases.randomElement() ?? (value ? "A strong\nyes" : "A firm\nno")
+  }
+}
+
 /// Optional metadata a backend can expose without relying on SwiftDecision traces.
 public protocol OracleBackendMetadata: DecisionBackend {
   var modelIdentifier: String { get }
@@ -703,7 +734,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       return try await makeEvaluation(
         request: request,
         mode: .noul,
-        displayText: result.value.map { $0 ? "Definitely\nyes" : "Probably\nno" },
+        displayText: result.value.map(OracleAnswerPhrases.random(for:)),
         noulValue: result.value,
         result: result,
         details: distributionDetails(
@@ -733,8 +764,8 @@ public final class OracleGameEngine: @unchecked Sendable {
         displayText: result.value.map {
           if isDynamicChoice { return $0 }
           switch $0 {
-          case "yes": return "Definitely\nyes"
-          case "no": return "Probably\nno"
+          case "yes": return OracleAnswerPhrases.random(for: true)
+          case "no": return OracleAnswerPhrases.random(for: false)
           default: return "Ask again\nlater"
           }
         },
