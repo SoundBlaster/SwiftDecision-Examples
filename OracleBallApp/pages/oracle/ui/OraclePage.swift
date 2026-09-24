@@ -9,7 +9,6 @@ struct OraclePage: View {
   @State private var infoSheetDetent: PresentationDetent = .medium
   @FocusState private var isQuestionFocused: Bool
   @State private var questionFieldFrame: CGRect = .zero
-  @AppStorage("oracle.keepsBallSizeWhileTyping") private var keepsBallSizeWhileTyping = true
   @State private var initialBallViewportSide: CGFloat?
 
   init(model: OraclePageModel = OraclePageModel()) {
@@ -24,7 +23,7 @@ struct OraclePage: View {
       let fixedViewportSide = min(
         initialBallViewportSide ?? responsiveViewportSide,
         max(1, proxy.size.width - 16))
-      let viewportSide = keepsBallSizeWhileTyping ? fixedViewportSide : responsiveViewportSide
+      let viewportSide = fixedViewportSide
 
       ZStack {
         OracleCosmicBackground()
