@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SoundBlaster/SpecificationCore.git",
       "state" : {
-        "revision" : "2394671f82ce42bbaebcc11d1c1a05a53022fe2f",
-        "version" : "2.0.0"
+        "revision" : "9b5fc40c16677e868856d0b24b70019cd5ea4687",
+        "version" : "2.1.0"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SoundBlaster/SwiftDecision.git",
       "state" : {
-        "revision" : "2a0a99bc64b6e7e949529c20af0da53220f2e1d7",
-        "version" : "0.4.0"
+        "revision" : "344db600d95260712c601de6adb0ad26794c0e7b",
+        "version" : "0.5.0"
       }
     },
     {

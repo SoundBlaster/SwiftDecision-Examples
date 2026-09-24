@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import UIKit
 import OracleGame
 import OracleHistory
 
@@ -9,6 +10,8 @@ struct OraclePage: View {
   @State private var infoSheetDetent: PresentationDetent = .medium
   @FocusState private var isQuestionFocused: Bool
   @State private var questionFieldFrame: CGRect = .zero
+  @State private var isKeyboardVisible = false
+  @State private var bottomDescriptionHeight: CGFloat = 52
   @State private var initialBallViewportSide: CGFloat?
 
   init(model: OraclePageModel = OraclePageModel()) {
@@ -24,74 +27,93 @@ struct OraclePage: View {
         initialBallViewportSide ?? responsiveViewportSide,
         max(1, proxy.size.width - 16))
       let viewportSide = fixedViewportSide
+      // The RealityKit scene has animated field rings below BallRoot; offset the viewport
+      // slightly so the sphere itself, rather than the full scene bounds, reads as centered.
+      let sceneCompositionOffset = viewportSide * 0.06
 
       ZStack {
         OracleCosmicBackground()
 
-        ScrollView {
-          VStack(spacing: 0) {
-            OracleHeader {
-              infoSheetDetent = .medium
-              isShowingInfo = true
-            }
-              .padding(.top, 10)
+        OracleBallViewport(
+          answer: model.answer.displayText,
+          requestID: model.requestID,
+          answerRequestID: model.answerRequestID,
+          terminalRequestID: model.terminalRequestID,
+          onClear: model.clearQuestionAndAnswer,
+          onShake: model.handleShake,
+          onShakeActivityChanged: model.setShakeFeedbackActive,
+          onDragActivityChanged: model.setDragFeedbackActive,
+          isPaused: isShowingInfo && infoSheetDetent == .large,
+          isShakeEnabled: !isShowingInfo)
+          .frame(width: viewportSide, height: viewportSide)
+          .id("oracle-ball-viewport")
+          .accessibilityLabel(
+            "Oracle answer: \(model.answer.displayText.replacingOccurrences(of: "\n", with: " "))")
+          .offset(y: sceneCompositionOffset)
 
-            Spacer(minLength: 4)
-
-            OracleBallViewport(
-              answer: model.answer.displayText,
-              requestID: model.requestID,
-              answerRequestID: model.answerRequestID,
-              terminalRequestID: model.terminalRequestID,
-              onClear: model.clearQuestionAndAnswer,
-              onShake: model.handleShake,
-              onShakeActivityChanged: model.setShakeFeedbackActive,
-              onDragActivityChanged: model.setDragFeedbackActive,
-              isPaused: isShowingInfo && infoSheetDetent == .large,
-              isShakeEnabled: !isShowingInfo)
-              .frame(width: viewportSide, height: viewportSide)
-              .id("oracle-ball-viewport")
-              .accessibilityLabel(
-                "Oracle answer: \(model.answer.displayText.replacingOccurrences(of: "\n", with: " "))")
-            .frame(width: viewportSide, height: viewportSide)
-            .frame(maxWidth: .infinity)
-
-            Spacer(minLength: 4)
-
-            VStack(spacing: 12) {
-              AskOracleField(
-                text: $model.question,
-                isFocused: $isQuestionFocused,
-                isSubmitting: model.isSubmitting,
-                onSubmit: model.submit)
-                .onGeometryChange(for: CGRect.self) { geometry in
-                  geometry.frame(in: .named("oraclePage"))
-                } action: { frame in
-                  questionFieldFrame = frame
-                }
-              Text(model.statusMessage ?? model.answerStatus)
-                .font(.caption2.weight(.medium))
-                .tracking(0.5)
-                .foregroundStyle(.white.opacity(0.34))
-                .multilineTextAlignment(.center)
-                .accessibilityLabel(model.statusMessage ?? model.answerStatus)
-            }
-            .frame(maxWidth: 420)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 16)
-
-            Text("AI MAGIC 8-BALL  ·  ASK WITH INTENT")
-              .font(.system(size: 9, weight: .medium, design: .rounded))
-              .tracking(1.4)
-              .foregroundStyle(.white.opacity(0.3))
-              .padding(.top, 12)
-              .padding(.bottom, 8)
-          }
-          .frame(minHeight: availableHeight)
+        OracleHeader {
+          infoSheetDetent = .medium
+          isShowingInfo = true
         }
-        .scrollIndicators(.hidden)
-        .scrollBounceBehavior(.basedOnSize)
-        .scrollDismissesKeyboard(.interactively)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(.top, 10)
+      }
+      .safeAreaInset(edge: .bottom, spacing: 0) {
+        AskOracleField(
+          text: $model.question,
+          isFocused: $isQuestionFocused,
+          isSubmitting: model.isSubmitting,
+          onSubmit: model.submit)
+          .onGeometryChange(for: CGRect.self) { geometry in
+            geometry.frame(in: .named("oraclePage"))
+          } action: { frame in
+            questionFieldFrame = frame
+          }
+          .frame(maxWidth: 420)
+          .frame(maxWidth: .infinity)
+          .padding(.horizontal, 16)
+          .padding(.top, 12)
+          .padding(.bottom, isKeyboardVisible ? 8 : bottomDescriptionHeight + 12)
+          .background {
+            LinearGradient(
+              colors: [.black.opacity(0.18), .black.opacity(0.78)],
+              startPoint: .top,
+              endPoint: .bottom)
+              .ignoresSafeArea(edges: .bottom)
+          }
+      }
+      .overlay(alignment: .bottom) {
+        VStack(spacing: 12) {
+          Text(model.statusMessage ?? model.answerStatus)
+            .font(.caption2.weight(.medium))
+            .tracking(0.5)
+            .foregroundStyle(.white.opacity(0.34))
+            .multilineTextAlignment(.center)
+            .accessibilityLabel(model.statusMessage ?? model.answerStatus)
+
+          Text("AI MAGIC 8-BALL  ·  ASK WITH INTENT")
+            .font(.system(size: 9, weight: .medium, design: .rounded))
+            .tracking(1.4)
+            .foregroundStyle(.white.opacity(0.3))
+        }
+        .frame(maxWidth: 420)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+        .onGeometryChange(for: CGFloat.self) { geometry in
+          geometry.size.height
+        } action: { height in
+          bottomDescriptionHeight = height
+        }
+        .background {
+          LinearGradient(
+            colors: [.black.opacity(0), .black.opacity(0.72)],
+            startPoint: .top,
+            endPoint: .bottom)
+            .ignoresSafeArea(edges: .bottom)
+        }
+        .allowsHitTesting(false)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
       }
       .contentShape(Rectangle())
       .coordinateSpace(name: "oraclePage")
@@ -107,6 +129,16 @@ struct OraclePage: View {
         guard initialBallViewportSide == nil else { return }
         initialBallViewportSide = max(
           1, min(size.width - 16, max(180, size.height - 260)))
+      }
+      .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+        withAnimation(.easeOut(duration: 0.2)) {
+          isKeyboardVisible = true
+        }
+      }
+      .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+        withAnimation(.easeOut(duration: 0.2)) {
+          isKeyboardVisible = false
+        }
       }
     }
     .preferredColorScheme(.dark)
