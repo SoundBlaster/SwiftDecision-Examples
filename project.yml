@@ -118,7 +118,6 @@ targets:
       properties:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
-          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).WidgetExtension
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: YES
