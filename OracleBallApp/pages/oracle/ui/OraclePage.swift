@@ -6,6 +6,7 @@ import OracleHistory
 import NestedA11yIDs
 
 struct OraclePage: View {
+  @Environment(\.scenePhase) private var scenePhase
   @State private var model: OraclePageModel
   @State private var isShowingInfo = false
   @State private var infoSheetDetent: PresentationDetent = .medium
@@ -164,6 +165,13 @@ struct OraclePage: View {
         onClearHistory: model.clearHistory)
         .presentationDetents([.medium, .large], selection: $infoSheetDetent)
         .presentationDragIndicator(.visible)
+    }
+    .onOpenURL { url in
+      guard url.scheme == "oracleball", url.host == "random" else { return }
+      model.handleWidgetPrediction()
+    }
+    .onChange(of: scenePhase) { _, phase in
+      if phase == .active { model.refreshHistory() }
     }
   }
 

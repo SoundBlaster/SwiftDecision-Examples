@@ -40,6 +40,8 @@ targets:
     sources:
       - path: OracleBallApp
     dependencies:
+      - target: OracleWidgetsExtension
+        embed: true
       - package: SwiftDecisionExamples
         product: OraclePresentation
       - package: SwiftDecisionExamples
@@ -48,15 +50,34 @@ targets:
         product: OracleHistory
       - package: NestedA11yIDs
         product: NestedA11yIDs
+    entitlements:
+      path: OracleBallApp/OracleBallApp.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.soundblaster.oracleball
+    info:
+      path: OracleBallApp/Info.plist
+      properties:
+        CFBundleDisplayName: Oracle
+        NSMotionUsageDescription: Phone motion brings the oracle scene to life.
+        UILaunchStoryboardName: LaunchScreen
+        "UISupportedInterfaceOrientations~iphone":
+          - UIInterfaceOrientationPortrait
+        "UISupportedInterfaceOrientations~ipad":
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CFBundleURLTypes:
+          - CFBundleURLName: com.soundblaster.oracleball
+            CFBundleURLSchemes:
+              - oracleball
     settings:
       base:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
-        INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
-        INFOPLIST_KEY_CFBundleDisplayName: Oracle
-        INFOPLIST_KEY_NSMotionUsageDescription: Phone motion brings the oracle scene to life.
+        CODE_SIGN_ENTITLEMENTS: OracleBallApp/OracleBallApp.entitlements
+        DEVELOPMENT_TEAM: P8T2366K8X
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball
         SWIFT_VERSION: "6.0"
@@ -78,5 +99,39 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball.uitests
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+  OracleWidgetsExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: OracleWidgets
+        excludes:
+          - Info.plist
+    dependencies:
+      - package: SwiftDecisionExamples
+        product: OracleGame
+      - package: SwiftDecisionExamples
+        product: OracleHistory
+    entitlements:
+      path: OracleWidgetsExtension.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.soundblaster.oracleball
+    info:
+      path: OracleWidgets/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: YES
+        CODE_SIGN_ENTITLEMENTS: OracleWidgetsExtension.entitlements
+        DEVELOPMENT_TEAM: P8T2366K8X
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball.widgets
+        SKIP_INSTALL: YES
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
