@@ -16,34 +16,42 @@ struct InstantPredictionWidget: Widget {
 
 private struct InstantPredictionWidgetView: View {
   let entry: OracleWidgetEntry
+  @Environment(\.widgetFamily) private var family
+
+  private var isSmall: Bool { family == .systemSmall }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
+    VStack(alignment: .leading, spacing: isSmall ? 8 : 10) {
       Label("INSTANT PREDICTION", systemImage: "sparkles")
-        .font(.caption.weight(.semibold))
-        .tracking(1.1)
+        .font((isSmall ? Font.caption2 : Font.caption).weight(.semibold))
+        .tracking(isSmall ? 0.5 : 1.1)
         .foregroundStyle(.white.opacity(0.65))
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
 
       Spacer(minLength: 0)
 
       Text(entry.answer ?? "Ask the oracle")
-        .font(.title2.weight(.semibold))
+        .font((isSmall ? Font.headline : Font.title2).weight(.semibold))
         .foregroundStyle(.white)
-        .lineLimit(3)
-        .minimumScaleFactor(0.75)
+        .lineLimit(isSmall ? 2 : 3)
+        .minimumScaleFactor(0.65)
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityAddTraits(.updatesFrequently)
 
       Button(intent: GenerateInstantPredictionIntent()) {
         Label(entry.answer == nil ? "Reveal" : "Ask again", systemImage: "arrow.clockwise")
-          .font(.subheadline.weight(.semibold))
+          .font((isSmall ? Font.caption : Font.subheadline).weight(.semibold))
           .foregroundStyle(.white)
+          .lineLimit(1)
+          .minimumScaleFactor(0.75)
       }
       .buttonStyle(.plain)
-      .padding(.horizontal, 12)
-      .padding(.vertical, 8)
+      .padding(.horizontal, isSmall ? 10 : 12)
+      .padding(.vertical, isSmall ? 6 : 8)
       .background(.white.opacity(0.12), in: Capsule())
     }
-    .padding(16)
+    .padding(isSmall ? 12 : 16)
     .containerBackground(for: .widget) {
       LinearGradient(
         colors: [Color(red: 0.09, green: 0.06, blue: 0.28), Color(red: 0.015, green: 0.02, blue: 0.09)],

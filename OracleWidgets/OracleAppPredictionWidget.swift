@@ -13,23 +13,33 @@ struct OracleAppPredictionWidget: Widget {
 }
 
 private struct OracleAppPredictionWidgetView: View {
+  @Environment(\.widgetFamily) private var family
+
+  private var isSmall: Bool { family == .systemSmall }
+
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
+    VStack(alignment: .leading, spacing: isSmall ? 8 : 12) {
       Image(systemName: "sparkles")
-        .font(.title2)
+        .font(isSmall ? .title3 : .title2)
         .foregroundStyle(Color(red: 0.72, green: 0.53, blue: 1))
 
-      Spacer(minLength: 0)
+      Spacer(minLength: isSmall ? 4 : 0)
 
       Text("Ask the Oracle")
-        .font(.title3.weight(.semibold))
+        .font((isSmall ? Font.headline : Font.title3).weight(.semibold))
         .foregroundStyle(.white)
+        .lineLimit(2)
+        .minimumScaleFactor(0.75)
+        .fixedSize(horizontal: false, vertical: true)
 
       Label("Reveal in the ball", systemImage: "arrow.up.right")
-        .font(.caption.weight(.medium))
+        .font((isSmall ? Font.caption2 : Font.caption).weight(.medium))
         .foregroundStyle(.white.opacity(0.62))
+        .lineLimit(2)
+        .minimumScaleFactor(0.75)
+        .fixedSize(horizontal: false, vertical: true)
     }
-    .padding(16)
+    .padding(isSmall ? 12 : 16)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     .containerBackground(for: .widget) {
       LinearGradient(
