@@ -38,13 +38,14 @@ final class OraclePageModel {
   init(
     engine: OracleGameEngine? = nil,
     credentialsStore: OracleCredentialsStore = OracleCredentialsStore(),
-    historyStore: OracleHistoryStore = OracleHistoryStore(),
+    historyStore: OracleHistoryStore? = nil,
     haptics: (any OracleHapticFeedback)? = nil)
   {
     self.credentialsStore = credentialsStore
-    self.historyStore = historyStore
+    let resolvedHistoryStore = historyStore ?? Self.makeHistoryStore()
+    self.historyStore = resolvedHistoryStore
     self.haptics = haptics ?? OracleHaptics()
-    historyEntries = historyStore.entries
+    historyEntries = resolvedHistoryStore.entries
     if let engine {
       self.engine = engine
       provider = .offline
@@ -173,6 +174,30 @@ final class OraclePageModel {
 
     question = ""
     performSubmission(isRandomSimulation: true, playSubmissionHaptic: false)
+  }
+
+  func handleWidgetPrediction() {
+    question = ""
+    performSubmission(isRandomSimulation: true, playSubmissionHaptic: false)
+  }
+
+  func refreshHistory() {
+    historyEntries = historyStore.entries
+  }
+
+  private static func makeHistoryStore() -> OracleHistoryStore {
+    let storageKey = "com.soundblaster.oracleball.question-history"
+    guard let sharedDefaults = UserDefaults(suiteName: "group.com.soundblaster.oracleball") else {
+      return OracleHistoryStore()
+    }
+
+    if sharedDefaults.data(forKey: storageKey) == nil,
+       let existingHistory = UserDefaults.standard.data(forKey: storageKey)
+    {
+      sharedDefaults.set(existingHistory, forKey: storageKey)
+    }
+
+    return OracleHistoryStore(defaults: sharedDefaults)
   }
 
   private func questionIsEmpty(_ question: String) -> Bool {
