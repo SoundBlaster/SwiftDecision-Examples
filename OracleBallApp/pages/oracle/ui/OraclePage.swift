@@ -9,6 +9,7 @@ struct OraclePage: View {
   @Environment(\.scenePhase) private var scenePhase
   @State private var model: OraclePageModel
   @State private var isShowingInfo = false
+  @State private var shouldFocusQuestionAfterInfoDismissal = false
   @State private var infoSheetDetent: PresentationDetent = .medium
   @FocusState private var isQuestionFocused: Bool
   @State private var questionFieldFrame: CGRect = .zero
@@ -171,7 +172,7 @@ struct OraclePage: View {
     }
     .a11yRoot("oracle")
     .preferredColorScheme(.dark)
-    .sheet(isPresented: $isShowingInfo) {
+    .sheet(isPresented: $isShowingInfo, onDismiss: focusQuestionAfterInfoDismissal) {
       OracleInfoSheet(
         apiKey: model.configuredAPIKey,
         providerDescription: model.providerDescription,
@@ -187,6 +188,12 @@ struct OraclePage: View {
     .onOpenURL { url in
       guard url.scheme == "oracleball", url.host == "random" else { return }
       model.handleWidgetPrediction()
+      if isShowingInfo {
+        shouldFocusQuestionAfterInfoDismissal = true
+        isShowingInfo = false
+      } else {
+        focusQuestionField()
+      }
     }
     .onChange(of: scenePhase) { _, phase in
       if phase == .active { model.refreshHistory() }
@@ -196,6 +203,19 @@ struct OraclePage: View {
   private func openSettings() {
     infoSheetDetent = .medium
     isShowingInfo = true
+  }
+
+  private func focusQuestionAfterInfoDismissal() {
+    guard shouldFocusQuestionAfterInfoDismissal else { return }
+    shouldFocusQuestionAfterInfoDismissal = false
+    focusQuestionField()
+  }
+
+  private func focusQuestionField() {
+    Task { @MainActor in
+      await Task.yield()
+      isQuestionFocused = true
+    }
   }
 
   private func keyboardReachesBottomEdge(
