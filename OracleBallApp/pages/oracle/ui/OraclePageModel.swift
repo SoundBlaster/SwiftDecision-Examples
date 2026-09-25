@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import OracleGame
 import OracleHistory
+import SpecificationCore
 import SwiftDecision
 
 @MainActor
@@ -105,7 +106,10 @@ final class OraclePageModel {
   }
 
   func submit() {
-    guard !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+    let questionIsEmpty = PredicateSpec<String>(description: "Question input is empty") {
+      $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    guard !questionIsEmpty.isSatisfiedBy(question) else {
       handleShake()
       return
     }
