@@ -26,7 +26,7 @@ using namespace metal;
         + transform[2].xyz * localNormal.z / dot(transform[2].xyz, transform[2].xyz));
     // A flatter optical surface broadens the reflected arcs without changing the glass mesh.
     float3 windowNormal = normalize(transform[2].xyz);
-    normal = normalize(mix(windowNormal, normal, 0.55));
+    normal = normalize(mix(windowNormal, normal, 0.40));
     float3 ray = reflect(-view, normal);
     float4 rings = params.uniforms().custom_parameter();
     float glow = 0;
