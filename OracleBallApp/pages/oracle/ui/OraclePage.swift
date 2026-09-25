@@ -28,8 +28,11 @@ struct OraclePage: View {
       let widthLimitedViewportSide = min(
         initialBallViewportSide ?? responsiveViewportSide,
         max(1, proxy.size.width - 16))
-      // Keep the initial ball size stable when the keyboard changes the available height.
-      let viewportSide = widthLimitedViewportSide
+      // Keep the initial size while typing, but fit the current viewport when the
+      // keyboard is hidden and the device layout changes (for example, on iPad rotation).
+      let viewportSide = isKeyboardVisible
+        ? widthLimitedViewportSide
+        : min(widthLimitedViewportSide, max(1, availableHeight - 260))
       // The RealityKit scene has animated field rings below BallRoot; offset the viewport
       // slightly so the sphere itself, rather than the full scene bounds, reads as centered.
       let sceneCompositionOffset = viewportSide * 0.06
