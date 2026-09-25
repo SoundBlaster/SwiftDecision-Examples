@@ -22,8 +22,11 @@ struct OraclePipelineDetailView: View {
         ForEach(pipeline) { stage in
           Section(header: Text(localizedPipelineText(stage.title))) {
             if let summary = stage.summary {
-              Label(localizedPipelineText(summary), systemImage: "info.circle")
-                .font(.caption.weight(.medium))
+              Label {
+                monospacedMetricText(localizedPipelineText(summary), style: .caption, weight: .medium)
+              } icon: {
+                Image(systemName: "info.circle")
+              }
                 .foregroundStyle(Color.oracleLavender)
             }
 
@@ -33,8 +36,7 @@ struct OraclePipelineDetailView: View {
                   .font(.caption)
                   .foregroundStyle(.secondary)
                   .frame(width: 120, alignment: .leading)
-                Text(localizedDetailValue(detail))
-                  .font(.caption.weight(.medium))
+                monospacedMetricText(localizedDetailValue(detail), style: .caption, weight: .medium)
                   .fixedSize(horizontal: false, vertical: true)
                   .frame(maxWidth: .infinity, alignment: .leading)
               }
@@ -58,8 +60,7 @@ struct OraclePipelineDetailView: View {
                     Text(localizedPipelineText(event.stage.pipelineDisplayName))
                       .font(.subheadline)
                     if let detail = event.detail, !detail.isEmpty {
-                      Text(localizedPipelineText(detail))
-                        .font(.caption)
+                      monospacedMetricText(localizedPipelineText(detail), style: .caption)
                         .foregroundStyle(.secondary)
                     }
                   }
@@ -109,11 +110,18 @@ struct OraclePipelineDetailView: View {
       Text(localizedPipelineText(title))
         .font(.caption)
         .foregroundStyle(.secondary)
-      Text(value)
-        .font(.body)
-        .foregroundStyle(tint)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .leading)
+      if title == "Timestamp" || title == "Answer" {
+        monospacedMetricText(value, style: .body)
+          .foregroundStyle(tint)
+          .fixedSize(horizontal: false, vertical: true)
+          .frame(maxWidth: .infinity, alignment: .leading)
+      } else {
+        Text(value)
+          .font(.body)
+          .foregroundStyle(tint)
+          .fixedSize(horizontal: false, vertical: true)
+          .frame(maxWidth: .infinity, alignment: .leading)
+      }
     }
     .padding(.vertical, 2)
     .nestedAccessibilityIdentifier(title.lowercased().replacingOccurrences(of: " ", with: "-"))
@@ -130,7 +138,7 @@ struct OraclePipelineDetailView: View {
           .fixedSize(horizontal: false, vertical: true)
         HStack(spacing: 8) {
           Text(localizedPipelineText(event.outcome))
-          Text(event.durationNanoseconds.pipelineDuration)
+          monospacedMetricText(event.durationNanoseconds.pipelineDuration, style: .caption2)
         }
         .font(.caption2)
         .foregroundStyle(.secondary)
@@ -160,12 +168,10 @@ struct OraclePipelineDetailView: View {
         Text(isSpecification ? localizedSpecificationDisplayName(event.name) : localizedPipelineText(event.name.pipelineDisplayName))
           .font(.subheadline)
           .fixedSize(horizontal: false, vertical: true)
-      Text(metadata.joined(separator: " · "))
-          .font(.caption2)
+        monospacedMetricText(metadata.joined(separator: " · "), style: .caption2)
           .foregroundStyle(.secondary)
         if let detail = event.detail, !detail.isEmpty {
-          Text(localizedPipelineText(detail))
-            .font(.caption)
+          monospacedMetricText(localizedPipelineText(detail), style: .caption)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
         }
@@ -253,6 +259,32 @@ private func localizedSpecificationDisplayName(_ name: String) -> String {
     return localizedPipelineText("Oracle request rules")
   }
   return localizedPipelineText(name.pipelineDisplayName)
+}
+
+private func monospacedMetricText(
+  _ value: String,
+  style: Font.TextStyle,
+  weight: Font.Weight = .regular
+) -> Text {
+  var attributed = AttributedString(value)
+  let pattern = #"(?<![\p{L}\p{N}_])(?:[<>≤≥]\s*)?\d+(?:[ \u00A0\u202F]\d{3})*(?:[.,]\d+)?(?:\s*(?:ms|μs|µs|us|%|options?|мс|мкс|с|вариант(?:а|ов)?))?(?![\p{L}\p{N}_])"#
+  guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+    return Text(value).font(.system(style, weight: weight))
+  }
+
+  let matches = regex.matches(in: value, range: NSRange(value.startIndex..., in: value))
+  for match in matches {
+    guard
+      let stringRange = Range(match.range, in: value),
+      let lowerBound = AttributedString.Index(stringRange.lowerBound, within: attributed),
+      let upperBound = AttributedString.Index(stringRange.upperBound, within: attributed)
+    else {
+      continue
+    }
+    attributed[lowerBound..<upperBound].font = .system(style, design: .monospaced).weight(weight)
+  }
+
+  return Text(attributed).font(.system(style, weight: weight))
 }
 
 private extension String {
