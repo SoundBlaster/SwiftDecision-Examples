@@ -35,7 +35,7 @@ public enum OracleAnswerSource: Hashable, Sendable {
 
 /// Varied display copy for binary answers, grouped by their underlying Boolean value.
 public enum OracleAnswerPhrases {
-  public static let affirmative = [
+  private static let affirmativeSource = [
     "Yes, odds\nlook good",
     "Good signs\nahead",
     "A favorable\nturn",
@@ -46,7 +46,7 @@ public enum OracleAnswerPhrases {
     "Your chances\nlook good",
   ]
 
-  public static let negative = [
+  private static let negativeSource = [
     "No, not this\ntime",
     "Odds lean\nagainst it",
     "Best to pause\nfor now",
@@ -57,11 +57,18 @@ public enum OracleAnswerPhrases {
     "Wait for better\ntiming",
   ]
 
+  public static var affirmative: [String] { affirmativeSource.map(oracleLocalized) }
+  public static var negative: [String] { negativeSource.map(oracleLocalized) }
+
   /// Returns a randomly selected phrase without changing the underlying decision.
   public static func random(for value: Bool) -> String {
     let phrases = value ? affirmative : negative
-    return phrases.randomElement() ?? (value ? "A strong\nyes" : "A firm\nno")
+    return phrases.randomElement() ?? oracleLocalized(value ? "A strong\nyes" : "A firm\nno")
   }
+}
+
+func oracleLocalized(_ key: String) -> String {
+  String(localized: String.LocalizationValue(key), bundle: .module)
 }
 
 /// Optional metadata a backend can expose without relying on SwiftDecision traces.
@@ -358,7 +365,7 @@ enum OracleUnsupportedResponses {
   ]
 
   static func random() -> String {
-    messages.randomElement() ?? messages[0]
+    messages.randomElement().map(oracleLocalized) ?? oracleLocalized(messages[0])
   }
 }
 
@@ -844,7 +851,7 @@ public final class OracleGameEngine: @unchecked Sendable {
           switch $0 {
           case "yes": return OracleAnswerPhrases.random(for: true)
           case "no": return OracleAnswerPhrases.random(for: false)
-          default: return "Ask again\nlater"
+          default: return oracleLocalized("Ask again\nlater")
           }
         },
         result: result,

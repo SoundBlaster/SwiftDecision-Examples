@@ -16,7 +16,7 @@ struct CityTurnRow: View {
       VStack(alignment: .leading) {
         Text(city.name)
           .font(.body.weight(.medium))
-        Text(speaker)
+        Text(String(localized: String.LocalizationValue(speaker)))
           .font(.caption)
           .foregroundStyle(.secondary)
       }
@@ -26,7 +26,7 @@ struct CityTurnRow: View {
       Text(city.lastLetter.map(String.init) ?? "—")
         .font(.caption.weight(.semibold).monospaced())
         .foregroundStyle(.tint)
-        .accessibilityLabel("Next letter: \(city.lastLetter.map(String.init) ?? "unknown")")
+        .accessibilityLabel(String(format: String(localized: "Next letter: %@"), city.lastLetter.map(String.init) ?? String(localized: "unknown")))
     }
     .padding(.vertical, 10)
     .accessibilityElement(children: .combine)

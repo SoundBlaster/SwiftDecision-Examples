@@ -68,14 +68,14 @@ final class OraclePageModel {
   var providerDescription: String {
     switch provider {
     case .offline:
-      "Jev not configured · offline fixture"
+      String(localized: "Jev not configured · offline fixture")
     case let .jev(model):
-      "Jev configured · live \(model)"
+      String(format: String(localized: "Jev configured · live %@"), locale: .current, model)
     }
   }
 
   var answerStatus: String {
-    "\(answer.mode.rawValue) · \(providerDescription)"
+    "\(String(localized: String.LocalizationValue(answer.mode.rawValue))) · \(providerDescription)"
   }
 
   @discardableResult
