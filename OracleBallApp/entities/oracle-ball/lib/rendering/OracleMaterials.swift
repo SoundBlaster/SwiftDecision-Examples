@@ -22,6 +22,15 @@ enum OracleMaterials {
     return material
   }
 
+  static func cavity() -> UnlitMaterial {
+    var material = UnlitMaterial(
+      color: UIColor(red: 0.013, green: 0.019, blue: 0.078, alpha: 1))
+    material.blending = .opaque
+    // The shared shell mesh faces outward; only its inside should draw this material.
+    material.faceCulling = .front
+    return material
+  }
+
   static func glass() -> PhysicallyBasedMaterial {
     var material = PhysicallyBasedMaterial()
     material.baseColor = .init(tint: UIColor(red: 0.11, green: 0.075, blue: 0.22, alpha: 1))
