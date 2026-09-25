@@ -1645,7 +1645,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "проверка запроса"
+            "value": "Проверка запроса"
           }
         }
       }
@@ -1662,7 +1662,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "маршрутизация по политике"
+            "value": "Маршрутизация по политике"
           }
         }
       }
@@ -1679,7 +1679,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "ответ модели"
+            "value": "Ответ модели"
           }
         }
       }
@@ -1696,7 +1696,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "проверка результата"
+            "value": "Проверка результата"
           }
         }
       }
@@ -1713,7 +1713,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "минимальная вероятность"
+            "value": "Минимальная вероятность"
           }
         }
       }
@@ -1730,7 +1730,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "минимальная уверенность"
+            "value": "Минимальная уверенность"
           }
         }
       }
@@ -1747,7 +1747,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "политика принятия"
+            "value": "Политика принятия"
           }
         }
       }
@@ -1764,7 +1764,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "асинхронное условие"
+            "value": "Асинхронное условие"
           }
         }
       }
@@ -1781,7 +1781,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "правило 1"
+            "value": "Правило 1"
           }
         }
       }
@@ -1798,7 +1798,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "правило 2"
+            "value": "Правило 2"
           }
         }
       }
@@ -1815,7 +1815,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "правило 3"
+            "value": "Правило 3"
           }
         }
       }
@@ -1832,7 +1832,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "правило 4"
+            "value": "Правило 4"
           }
         }
       }
