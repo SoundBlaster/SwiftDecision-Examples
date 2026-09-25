@@ -56,8 +56,7 @@ struct OraclePage: View {
           .offset(y: sceneCompositionOffset)
 
         OracleHeader {
-          infoSheetDetent = .medium
-          isShowingInfo = true
+          openSettings()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.top, 10)
@@ -130,6 +129,16 @@ struct OraclePage: View {
             guard isQuestionFocused, !questionFieldFrame.contains(tap.location) else { return }
             isQuestionFocused = false
           })
+      .simultaneousGesture(
+        DragGesture(minimumDistance: 36, coordinateSpace: .named("oraclePage"))
+          .onEnded { gesture in
+            let startsInLowerHalf = gesture.startLocation.y >= proxy.size.height / 2
+            let isUpwardSwipe = gesture.translation.height <= -56
+            let isMostlyVertical = abs(gesture.translation.width) < abs(gesture.translation.height)
+            guard startsInLowerHalf, isUpwardSwipe, isMostlyVertical else { return }
+            isQuestionFocused = false
+            openSettings()
+          })
       .onGeometryChange(for: CGSize.self) { geometry in
         geometry.size
       } action: { size in
@@ -165,6 +174,11 @@ struct OraclePage: View {
         .presentationDetents([.medium, .large], selection: $infoSheetDetent)
         .presentationDragIndicator(.visible)
     }
+  }
+
+  private func openSettings() {
+    infoSheetDetent = .medium
+    isShowingInfo = true
   }
 
   private func keyboardReachesBottomEdge(
