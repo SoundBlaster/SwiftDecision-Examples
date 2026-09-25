@@ -11,6 +11,7 @@ struct OraclePage: View {
   @State private var infoSheetDetent: PresentationDetent = .medium
   @FocusState private var isQuestionFocused: Bool
   @State private var questionFieldFrame: CGRect = .zero
+  @State private var ballViewportFrame: CGRect = .zero
   @State private var isKeyboardVisible = false
   @State private var bottomDescriptionHeight: CGFloat = 52
   @State private var initialBallViewportSide: CGFloat?
@@ -51,6 +52,11 @@ struct OraclePage: View {
           isShakeEnabled: !isShowingInfo)
           .frame(width: viewportSide, height: viewportSide)
           .id("oracle-ball-viewport")
+          .onGeometryChange(for: CGRect.self) { geometry in
+            geometry.frame(in: .named("oraclePage"))
+          } action: { frame in
+            ballViewportFrame = frame
+          }
           .accessibilityLabel(
             "Oracle answer: \(model.answer.displayText.replacingOccurrences(of: "\n", with: " "))")
           .offset(y: sceneCompositionOffset)
@@ -135,7 +141,9 @@ struct OraclePage: View {
             let startsInLowerHalf = gesture.startLocation.y >= proxy.size.height / 2
             let isUpwardSwipe = gesture.translation.height <= -56
             let isMostlyVertical = abs(gesture.translation.width) < abs(gesture.translation.height)
-            guard startsInLowerHalf, isUpwardSwipe, isMostlyVertical else { return }
+            let startsOnFreeArea = !ballViewportFrame.contains(gesture.startLocation)
+              && !questionFieldFrame.contains(gesture.startLocation)
+            guard startsInLowerHalf, startsOnFreeArea, isUpwardSwipe, isMostlyVertical else { return }
             isQuestionFocused = false
             openSettings()
           })
