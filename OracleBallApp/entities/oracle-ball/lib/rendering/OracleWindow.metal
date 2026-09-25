@@ -24,6 +24,9 @@ using namespace metal;
         transform[0].xyz * localNormal.x / dot(transform[0].xyz, transform[0].xyz)
         + transform[1].xyz * localNormal.y / dot(transform[1].xyz, transform[1].xyz)
         + transform[2].xyz * localNormal.z / dot(transform[2].xyz, transform[2].xyz));
+    // A flatter optical surface broadens the reflected arcs without changing the glass mesh.
+    float3 windowNormal = normalize(transform[2].xyz);
+    normal = normalize(mix(windowNormal, normal, 0.55));
     float3 ray = reflect(-view, normal);
     float4 rings = params.uniforms().custom_parameter();
     float glow = 0;
@@ -32,6 +35,9 @@ using namespace metal;
     for (uint index = 0; index < 2; ++index) {
         float radius = rings[index * 2];
         float opacity = rings[index * 2 + 1];
+        // Lift the faint tail while retaining the ring's peak and exact zero endpoints.
+        // The subtle reflection otherwise becomes invisible before the source ring does.
+        float reflectedOpacity = 0.56 * sqrt(saturate(opacity / 0.56));
         // Same world-space height as OracleField.place; field stays at the scene origin.
         float height = -1.08 + (radius - 0.54) * 0.72;
         float distance = (height - position.y) / denominator;
@@ -41,7 +47,7 @@ using namespace metal;
         float core = exp(-pow(radialDistance / width, 2.0));
         float halo = exp(-pow(radialDistance / 0.035, 2.0));
         if (ray.y < -0.001 && distance > 0) {
-            glow += (core * 0.7 + halo * 0.3) * opacity;
+            glow += (core * 0.7 + halo * 0.3) * reflectedOpacity;
         }
     }
     float fresnel = 0.18 + 0.82 * pow(1.0 - saturate(dot(normal, view)), 5.0);
