@@ -563,7 +563,6 @@ public final class OracleGameEngine: @unchecked Sendable {
 
     let selectedLabel = distribution.selectedValue.map { $0 ? "True" : "False" } ?? "Unknown"
     let probabilities = "True \(percentage(distribution.trueProbability)) · False \(percentage(distribution.falseProbability))"
-    let sampleOutcomes = distribution.outcomes.map { $0 ? "T" : "F" }.joined()
     let generationStage = OraclePipelineStage(
       id: "Random response simulation",
       title: "Random response simulation",
@@ -573,7 +572,6 @@ public final class OracleGameEngine: @unchecked Sendable {
         traceDetail("true-count", "True outcomes", String(distribution.trueCount)),
         traceDetail("false-count", "False outcomes", String(distribution.falseCount)),
         traceDetail("probabilities", "Probabilities", probabilities),
-        traceDetail("sample-outcomes", "Sample outcomes (T/F)", sampleOutcomes),
       ],
       specificationEvents: OraclePipelineTraceRecorder.namedRuleDetails(
         from: randomTraceRecorder.events,

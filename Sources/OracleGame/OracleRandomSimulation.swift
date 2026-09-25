@@ -50,7 +50,6 @@ struct OracleRandomBooleanDistributionSpecification: DecisionSpec {
 
   func decide(_ context: Any) -> OracleBooleanDistribution? {
     let sample = OracleRandomBooleanSpecification(generate: generate)
-      .traced("Random Boolean sample")
     let outcomes = (0 ..< Self.sampleCount).map { _ in
       sample.isSatisfiedBy(context)
     }
