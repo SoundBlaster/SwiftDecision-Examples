@@ -497,7 +497,7 @@ private struct OracleHistoryRow: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
-      Text(entry.question)
+      Text(entry.question.isEmpty ? String(localized: "Random answer") : entry.question)
         .font(.subheadline.weight(.medium))
         .foregroundStyle(.primary)
         .fixedSize(horizontal: false, vertical: true)

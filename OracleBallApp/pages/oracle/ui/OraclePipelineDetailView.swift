@@ -9,7 +9,9 @@ struct OraclePipelineDetailView: View {
   var body: some View {
     List {
       Section(header: Text("Question and answer")) {
-        detailValue("Question", value: entry.question)
+        detailValue(
+          "Question",
+          value: entry.question.isEmpty ? String(localized: "Random answer") : entry.question)
         detailValue("Answer", value: entry.answer, tint: .oracleLavender)
         detailValue("Decision", value: entry.mode)
         detailValue("Provider", value: entry.source)
