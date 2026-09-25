@@ -31,7 +31,7 @@ private struct OracleAppPredictionWidgetView: View {
     }
     .padding(16)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-    .background {
+    .containerBackground(for: .widget) {
       LinearGradient(
         colors: [Color(red: 0.09, green: 0.06, blue: 0.28), Color(red: 0.015, green: 0.02, blue: 0.09)],
         startPoint: .topLeading,

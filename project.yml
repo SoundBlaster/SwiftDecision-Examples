@@ -52,6 +52,9 @@ targets:
         product: NestedA11yIDs
     entitlements:
       path: OracleBallApp/OracleBallApp.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.soundblaster.oracleball
     info:
       path: OracleBallApp/Info.plist
       properties:
@@ -107,8 +110,15 @@ targets:
         product: OracleHistory
     entitlements:
       path: OracleWidgetsExtension.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.soundblaster.oracleball
     info:
       path: OracleWidgets/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).WidgetExtension
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: YES

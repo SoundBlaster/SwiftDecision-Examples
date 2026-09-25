@@ -10,7 +10,8 @@ import SwiftDecision
 final class OraclePageModel {
   private(set) var engine: OracleGameEngine
   private let credentialsStore: OracleCredentialsStore
-  private let historyStore: OracleHistoryStore
+  private var historyStore: OracleHistoryStore
+  private let usesSharedHistoryStore: Bool
   private let haptics: any OracleHapticFeedback
 
   var question = ""
@@ -42,6 +43,7 @@ final class OraclePageModel {
     haptics: (any OracleHapticFeedback)? = nil)
   {
     self.credentialsStore = credentialsStore
+    usesSharedHistoryStore = historyStore == nil
     let resolvedHistoryStore = historyStore ?? Self.makeHistoryStore()
     self.historyStore = resolvedHistoryStore
     self.haptics = haptics ?? OracleHaptics()
@@ -182,6 +184,9 @@ final class OraclePageModel {
   }
 
   func refreshHistory() {
+    if usesSharedHistoryStore {
+      historyStore = Self.makeHistoryStore()
+    }
     historyEntries = historyStore.entries
   }
 
@@ -196,6 +201,7 @@ final class OraclePageModel {
     {
       sharedDefaults.set(existingHistory, forKey: storageKey)
     }
+    UserDefaults.standard.removeObject(forKey: storageKey)
 
     return OracleHistoryStore(defaults: sharedDefaults)
   }
