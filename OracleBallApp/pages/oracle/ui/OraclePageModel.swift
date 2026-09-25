@@ -105,6 +105,11 @@ final class OraclePageModel {
   }
 
   func submit() {
+    guard !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      handleShake()
+      return
+    }
+
     requestTask?.cancel()
     requestID += 1
     let requestID = requestID
