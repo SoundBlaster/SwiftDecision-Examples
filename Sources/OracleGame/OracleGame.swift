@@ -29,6 +29,7 @@ public struct OracleRequest: Hashable, Sendable {
 
 public enum OracleAnswerSource: Hashable, Sendable {
   case model(identifier: String)
+  case simulated(identifier: String)
   case offlineFixture
 }
 
@@ -482,6 +483,7 @@ private extension DecisionTraceEvent.Stage {
 /// conformance is intentional: specifications are immutable after initialization.
 public final class OracleGameEngine: @unchecked Sendable {
   private let decisionEngine: DecisionEngine
+  private let configuration: DecisionEngine.Configuration
   private let intentClassifier: OracleIntentClassifier
   private let requestPolicy = OracleRequestPolicy()
   private let answerValidation: AnyAsyncSpecification<OracleAnswer>
@@ -496,6 +498,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     fallbackEnabled: Bool = true
   ) {
     decisionEngine = DecisionEngine(backend: backend, configuration: configuration)
+    self.configuration = configuration
     self.fallbackEnabled = fallbackEnabled
     intentClassifier = OracleIntentClassifier(
       engine: decisionEngine,
@@ -542,6 +545,73 @@ public final class OracleGameEngine: @unchecked Sendable {
 
   public func answer(for request: OracleRequest) async throws -> OracleOutcome {
     try await answerWithTrace(for: request).outcome
+  }
+
+  /// Generates a simulated binary answer from 100 random Boolean samples.
+  /// A tied distribution produces an explicit unknown answer.
+  public func randomAnswerWithTrace() async throws -> OracleTracedOutcome {
+    let randomTraceRecorder = SpecificationTraceRecorder()
+    let distributionSpecification = OracleRandomBooleanDistributionSpecification()
+      .traced("Random Boolean distribution")
+    guard let distribution = SpecificationTraceRuntime.decide(
+      distributionSpecification,
+      "random answer" as Any,
+      recordingTo: randomTraceRecorder
+    ) else {
+      throw OracleGameError.noPolicy
+    }
+
+    let selectedLabel = distribution.selectedValue.map { $0 ? "True" : "False" } ?? "Unknown"
+    let probabilities = "True \(percentage(distribution.trueProbability)) · False \(percentage(distribution.falseProbability))"
+    let generationStage = OraclePipelineStage(
+      id: "Random response simulation",
+      title: "Random response simulation",
+      summary: "\(OracleRandomBooleanDistributionSpecification.sampleCount) samples · \(selectedLabel)",
+      details: [
+        traceDetail("sample-count", "Sample count", String(distribution.outcomes.count)),
+        traceDetail("true-count", "True outcomes", String(distribution.trueCount)),
+        traceDetail("false-count", "False outcomes", String(distribution.falseCount)),
+        traceDetail("probabilities", "Probabilities", probabilities),
+      ],
+      specificationEvents: OraclePipelineTraceRecorder.namedRuleDetails(
+        from: randomTraceRecorder.events,
+        names: ["Random Boolean distribution"]))
+
+    let randomPolicies = DecisionPolicies(
+      noul: DecisionPolicy(minimumProbability: 0.5, minimumConfidence: 0),
+      choice: configuration.policies.choice,
+      score: configuration.policies.score)
+    let randomConfiguration = DecisionEngine.Configuration(
+      policies: randomPolicies,
+      timeout: configuration.timeout,
+      traceMode: configuration.traceMode)
+    let randomBackend = ClosureDecisionBackend { _ in
+      DecisionPrediction(
+        probabilities: [distribution.falseProbability, distribution.trueProbability],
+        modelIdentifier: "random-spec")
+    }
+    let randomDecisionEngine = DecisionEngine(
+      backend: randomBackend,
+      configuration: randomConfiguration)
+    let result = try await randomDecisionEngine.noul(
+      statement: "Simulate a random Oracle answer",
+      context: "100 random Boolean samples",
+      fallback: nil)
+
+    let selectedValue = distribution.selectedValue
+    let evaluation = try await makeEvaluation(
+      request: OracleRequest(question: "Random answer", mode: .noul),
+      mode: .noul,
+      displayText: selectedValue.map(OracleAnswerPhrases.random(for:)) ?? "Unknown",
+      noulValue: selectedValue,
+      result: result,
+      details: [
+        traceDetail("selected-option", "Selected option", selectedLabel),
+        traceDetail("probabilities", "Probabilities", probabilities),
+      ],
+      sourceOverride: .simulated(identifier: "Random specification"))
+
+    return try await resolve(evaluation, appendingTo: [generationStage])
   }
 
   public func answerWithTrace(for request: OracleRequest) async throws -> OracleTracedOutcome {
@@ -634,6 +704,14 @@ public final class OracleGameEngine: @unchecked Sendable {
       evaluation = try await evaluate(request, selection: selection)
     }
 
+    return try await resolve(evaluation, appendingTo: pipeline)
+  }
+
+  private func resolve(
+    _ evaluation: OracleEvaluation,
+    appendingTo existingPipeline: [OraclePipelineStage]
+  ) async throws -> OracleTracedOutcome {
+    var pipeline = existingPipeline
     pipeline.append(contentsOf: evaluation.pipeline)
     let resolutionRecorder = SpecificationTraceRecorder()
     guard let routed = try await SpecificationTraceRuntime.decideAsync(
@@ -809,7 +887,8 @@ public final class OracleGameEngine: @unchecked Sendable {
     displayText: String?,
     noulValue: Bool? = nil,
     result: DecisionResult<Value>,
-    details: [OraclePipelineDetail] = []
+    details: [OraclePipelineDetail] = [],
+    sourceOverride: OracleAnswerSource? = nil
   ) async throws -> OracleEvaluation {
     let decisionTraceStage = decisionStage("Answer decision", result: result, details: details)
     switch result.outcome {
@@ -837,9 +916,9 @@ public final class OracleGameEngine: @unchecked Sendable {
           skippedAnswerValidationStage(reason: "No display-ready answer was produced."),
         ])
     }
-    let source: OracleAnswerSource = backendIdentifier == "offline-fixture"
+    let source: OracleAnswerSource = sourceOverride ?? (backendIdentifier == "offline-fixture"
       ? .offlineFixture
-      : .model(identifier: backendIdentifier)
+      : .model(identifier: backendIdentifier))
     let answer = OracleAnswer(
       mode: mode ?? request.mode,
       displayText: displayText,

@@ -53,6 +53,8 @@ public struct OracleHistoryEntry: Codable, Hashable, Identifiable, Sendable {
     switch source {
     case .offlineFixture:
       "Offline"
+    case let .simulated(identifier):
+      identifier
     case let .model(identifier):
       identifier
     }

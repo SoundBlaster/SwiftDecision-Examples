@@ -9,7 +9,9 @@ struct OraclePipelineDetailView: View {
   var body: some View {
     List {
       Section(header: Text("Question and answer")) {
-        detailValue("Question", value: entry.question)
+        detailValue(
+          "Question",
+          value: entry.question.isEmpty ? String(localized: "Random answer") : entry.question)
         detailValue("Answer", value: entry.answer, tint: .oracleLavender)
         detailValue("Decision", value: entry.mode)
         detailValue("Provider", value: entry.source)
@@ -230,13 +232,15 @@ struct OraclePipelineDetailView: View {
 
 private extension String {
   var pipelineDisplayName: String {
-    enumerated().reduce(into: "") { result, pair in
+    let displayName = enumerated().reduce(into: "") { result, pair in
       let character = pair.element
       if character.isUppercase, pair.offset > 0 {
         result.append(" ")
       }
       result.append(character)
     }
+    guard let firstCharacter = displayName.first else { return displayName }
+    return firstCharacter.uppercased() + displayName.dropFirst()
   }
 }
 

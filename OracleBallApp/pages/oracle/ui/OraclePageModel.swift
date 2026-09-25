@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import OracleGame
 import OracleHistory
+import SpecificationCore
 import SwiftDecision
 
 @MainActor
@@ -105,6 +106,13 @@ final class OraclePageModel {
   }
 
   func submit() {
+    performSubmission(isRandomSimulation: questionIsEmpty(question))
+  }
+
+  private func performSubmission(
+    isRandomSimulation: Bool,
+    playSubmissionHaptic: Bool = true
+  ) {
     requestTask?.cancel()
     requestID += 1
     let requestID = requestID
@@ -112,11 +120,16 @@ final class OraclePageModel {
     let engine = engine
     isSubmitting = true
     statusMessage = nil
-    haptics.play(.submit)
+    if playSubmissionHaptic { haptics.play(.submit) }
 
     requestTask = Task { [weak self, engine] in
       do {
-        let tracedOutcome = try await engine.answerWithTrace(for: request)
+        let tracedOutcome: OracleTracedOutcome
+        if isRandomSimulation {
+          tracedOutcome = try await engine.randomAnswerWithTrace()
+        } else {
+          tracedOutcome = try await engine.answerWithTrace(for: request)
+        }
         guard let self else { return }
         guard self.requestID == requestID else { return }
         switch tracedOutcome.outcome {
@@ -129,10 +142,12 @@ final class OraclePageModel {
           self.historyEntries = self.historyStore.entries
           self.answerRequestID = requestID
           self.terminalRequestID = 0
-          self.statusMessage = nil
-          self.haptics.play(
-            answer.mode == .unsupported || answer.noulValue == false
-              ? .negativeResult : .positiveResult)
+          self.statusMessage = isRandomSimulation ? String(localized: "Random answer") : nil
+          if answer.mode == .unsupported || answer.noulValue == false {
+            self.haptics.play(.negativeResult)
+          } else if answer.noulValue == true || answer.mode != .noul {
+            self.haptics.play(.positiveResult)
+          }
         case let .abstained(reason):
           self.terminalRequestID = requestID
           self.statusMessage = reason
@@ -151,26 +166,20 @@ final class OraclePageModel {
   }
 
   func handleShake() {
-    guard question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+    guard questionIsEmpty(question) else {
       submit()
       return
     }
 
     question = ""
-    requestTask?.cancel()
-    requestTask = nil
-    requestID += 1
-    isSubmitting = false
+    performSubmission(isRandomSimulation: true, playSubmissionHaptic: false)
+  }
 
-    let value = Bool.random()
-    answer = OracleAnswer(
-      mode: .noul,
-      displayText: OracleAnswerPhrases.random(for: value),
-      noulValue: value,
-      source: .offlineFixture)
-    answerRequestID = requestID
-    terminalRequestID = 0
-    statusMessage = "Random answer"
+  private func questionIsEmpty(_ question: String) -> Bool {
+    let specification = PredicateSpec<String>(description: "Question input is empty") {
+      $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    return specification.isSatisfiedBy(question)
   }
 
   func setShakeFeedbackActive(_ isActive: Bool) {
