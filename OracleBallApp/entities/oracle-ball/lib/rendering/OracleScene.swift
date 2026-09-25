@@ -101,6 +101,16 @@ final class OracleScene {
     glass.position.z = 0.874
     glass.name = "WindowGlass"
     ball.addChild(glass)
+    let reflection = ModelEntity(
+      mesh: .generateSphere(radius: 0.492), materials: [try OracleMaterials.ringReflection()])
+    reflection.scale = glass.scale
+    reflection.position.z = 0.876
+    reflection.name = "Field reflection on glass"
+    ball.addChild(reflection)
+    if var fieldState = field.components[OracleFieldComponent.self] {
+      fieldState.windowReflection = reflection
+      field.components.set(fieldState)
+    }
     let lighting = try await OracleLighting.install(on: ball)
     root.components.set(OracleMotionComponent(
       input: motion, ball: ball, camera: camera, lighting: lighting, contour: contour,

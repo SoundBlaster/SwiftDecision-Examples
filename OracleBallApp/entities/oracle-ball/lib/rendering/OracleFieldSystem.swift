@@ -28,6 +28,19 @@ final class OracleFieldSystem: System {
           pulse.components.set(OpacityComponent(opacity: 0.56 * glow * glow))
         }
       }
+      if let reflection = state.windowReflection,
+        var model = reflection.model,
+        var material = model.materials.first as? CustomMaterial {
+        // Two radius/opacity pairs describe the same pulses drawn in the scene.
+        var rings = SIMD4<Float>.zero
+        for (index, pulse) in state.pulses.prefix(2).enumerated() {
+          rings[index * 2] = pulse.scale.x
+          rings[index * 2 + 1] = pulse.components[OpacityComponent.self]?.opacity ?? 0
+        }
+        material.custom.value = rings
+        model.materials = [material]
+        reflection.model = model
+      }
       field.components.set(state)
     }
   }
