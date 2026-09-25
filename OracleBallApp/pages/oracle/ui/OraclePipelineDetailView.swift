@@ -222,7 +222,7 @@ struct OraclePipelineDetailView: View {
     case "Not satisfied", "No match", "Не выполнено", "Нет совпадения": "xmark.circle"
     case "Skipped", "Пропущено": "forward.end.circle"
     case "Cancelled", "Отменено": "xmark.circle.fill"
-    default: outcome.hasPrefix("Failed") ? "exclamationmark.circle.fill" : "circle"
+    default: isFailedOutcome(outcome) ? "exclamationmark.circle.fill" : "circle"
     }
   }
 
@@ -231,8 +231,12 @@ struct OraclePipelineDetailView: View {
     case "Satisfied", "Selected", "Выполнено", "Выбрано": .green
     case "Not satisfied", "No match", "Skipped", "Не выполнено", "Нет совпадения", "Пропущено": .secondary
     case "Cancelled", "Отменено": .orange
-    default: outcome.hasPrefix("Failed") ? .red : .secondary
+    default: isFailedOutcome(outcome) ? .red : .secondary
     }
+  }
+
+  private func isFailedOutcome(_ outcome: String) -> Bool {
+    outcome.hasPrefix("Failed") || outcome.hasPrefix("Ошибка:")
   }
 }
 
@@ -241,13 +245,106 @@ private func localizedPipelineText(_ value: String) -> String {
      let count = Int(value[match].split(separator: " ").first ?? "") {
     return String(format: String(localized: "%d options extracted"), locale: .current, count)
   }
+
+  if let match = value.range(of: #"^Найдено вариантов: (\d+)$"#, options: .regularExpression),
+     let count = value[match].split(separator: " ").last.flatMap({ Int($0) }) {
+    return String(format: String(localized: "%d options extracted"), locale: .current, count)
+  }
+
+  if value.hasPrefix("Failed: ") || value.hasPrefix("Ошибка: ") {
+    let message = String(value.drop(while: { $0 != ":" }).dropFirst().drop(while: { $0 == " " }))
+    return String(format: String(localized: "Failed: %@"), locale: .current, message)
+  }
+
+  if value.hasPrefix("Split on ‘"), value.hasSuffix("’") {
+    let separator = String(value.dropFirst("Split on ‘".count).dropLast())
+    return String(format: String(localized: "Split on ‘%@’"), locale: .current, separator)
+  }
+
+  if value.contains(" · ") {
+    return value
+      .components(separatedBy: " · ")
+      .map(localizedPipelineText)
+      .joined(separator: " · ")
+  }
+
+  if let legacyKey = legacyRussianPipelineKeys[value] {
+    return String(localized: String.LocalizationValue(legacyKey))
+  }
+
+  if let match = value.range(of: #"^(.*?)\s+(\d+(?:[.,]\d+)?%)$"#, options: .regularExpression) {
+    let pieces = value[match].split(separator: " ", maxSplits: 1)
+    if pieces.count == 2 {
+      let label = String(localized: String.LocalizationValue(String(pieces[0])))
+      return "\(label) \(pieces[1])"
+    }
+  }
+
   return String(localized: String.LocalizationValue(value))
 }
+
+private let legacyRussianPipelineKeys: [String: String] = [
+  "Проверка запроса": "request validation",
+  "проверка запроса": "request validation",
+  "Маршрутизация по политике": "policy routing",
+  "маршрутизация по политике": "policy routing",
+  "Ответ модели": "backend prediction",
+  "ответ модели": "backend prediction",
+  "Проверка результата": "output validation",
+  "проверка результата": "output validation",
+  "Минимальная вероятность": "minimum probability",
+  "Минимальная уверенность": "minimum confidence",
+  "Политика принятия": "acceptance policy",
+  "Асинхронное условие": "async predicate",
+  "Допустимость вопроса": "question eligibility",
+  "Проверка допустимости вопроса": "Question eligibility",
+  "Варианты выбора": "Choice alternatives",
+  "Маршрутизация запроса": "Request routing",
+  "Тип вопроса": "Question type",
+  "Выбор ответа": "Answer resolution",
+  "Проверка ответа": "Answer validation",
+  "Запрос проверен": "Request validated",
+  "Выбрана политика": "Policy selected",
+  "Начат вывод": "Inference started",
+  "Вывод завершён": "Inference completed",
+  "Результат проверен": "Output validated",
+  "Решение получено": "Decision resolved",
+  "Результат правила": "Rule result",
+  "Проверка правила": "Rule check",
+  "Этап процесса": "Flow",
+  "Выполнено": "Satisfied",
+  "Не выполнено": "Not satisfied",
+  "Выбрано": "Selected",
+  "Нет совпадения": "No match",
+  "Пропущено": "Skipped",
+  "Пропущена": "Skipped",
+  "Отменено": "Cancelled",
+  "Запрошен неподдерживаемый режим ответа": "unsupported answer mode requested",
+  "Вопрос не относится к поддерживаемым типам ответа": "question is outside the supported answer types",
+  "Не удалось извлечь варианты ответа": "choice alternatives could not be extracted",
+  "Варианты не найдены": "No options extracted",
+  "Да / Нет": "Noul",
+  "Выбор": "Choice",
+  "Оценка": "Score",
+  "Автоматически": "Automatic",
+  "Принят": "Accepted",
+  "Выбран запасной ответ": "Fallback selected",
+  "Использован запасной ответ": "Fallback used",
+  "Числовые варианты возраста": "Age-number alternatives",
+  "Варианты разделены запятыми": "Comma-separated alternatives",
+  "Ответ доступен": "Answer available",
+  "Запрошенный режим": "Requested mode",
+  "Выбранный маршрут": "Selected route",
+  "Причина": "Reason",
+  "Уверенность выбора": "Selected confidence",
+  "Доступен проверенный ответ; запасной ответ не использовался.": "A validated answer was available and no fallback was used.",
+  "Политика решения выбрала запасной ответ.": "The decision policy selected a fallback.",
+]
 
 private func localizedDetailValue(_ detail: OraclePipelineDetail) -> String {
   switch detail.id {
   case "requested-mode", "selected-route", "answer-available", "fallback-used", "answer-type",
-       "resolution-reason", "validation-reason", "extraction-rule":
+       "resolution-reason", "validation-reason", "extraction-rule", "intent-scores", "probabilities":
     localizedPipelineText(detail.value)
   default:
     detail.value
