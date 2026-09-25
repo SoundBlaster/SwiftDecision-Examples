@@ -25,7 +25,7 @@ struct GenerateInstantPredictionIntent: AppIntent {
     defaults.set(answer.displayText, forKey: OracleWidgetSharedState.answerKey)
     defaults.set(Date.now, forKey: OracleWidgetSharedState.updatedAtKey)
 
-    await MainActor.run {
+    _ = await MainActor.run {
       OracleHistoryStore(defaults: defaults).append(
         question: "Instant prediction",
         answer: answer,

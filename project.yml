@@ -61,6 +61,11 @@ targets:
         CFBundleDisplayName: Oracle
         NSMotionUsageDescription: Phone motion brings the oracle scene to life.
         UILaunchStoryboardName: LaunchScreen
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         CFBundleURLTypes:
           - CFBundleURLName: com.soundblaster.oracleball
             CFBundleURLSchemes:
