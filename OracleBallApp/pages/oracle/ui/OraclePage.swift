@@ -28,10 +28,8 @@ struct OraclePage: View {
       let widthLimitedViewportSide = min(
         initialBallViewportSide ?? responsiveViewportSide,
         max(1, proxy.size.width - 16))
-      let fixedViewportSide = isKeyboardVisible
-        ? widthLimitedViewportSide
-        : min(widthLimitedViewportSide, max(1, availableHeight - 260))
-      let viewportSide = fixedViewportSide
+      // Keep the initial ball size stable when the keyboard changes the available height.
+      let viewportSide = widthLimitedViewportSide
       // The RealityKit scene has animated field rings below BallRoot; offset the viewport
       // slightly so the sphere itself, rather than the full scene bounds, reads as centered.
       let sceneCompositionOffset = viewportSide * 0.06
@@ -186,8 +184,10 @@ struct OraclePage: View {
 
     let overlapsHorizontally = keyboardFrame.minX < containerFrame.maxX
       && keyboardFrame.maxX > containerFrame.minX
+    // SwiftUI may resize the root to end exactly at the keyboard top.
+    // Treat that shared edge as an intersection so the field uses keyboard spacing.
     let reachesBottom = keyboardFrame.maxY >= containerFrame.maxY - 1
-      && keyboardFrame.minY < containerFrame.maxY
+      && keyboardFrame.minY <= containerFrame.maxY + 1
     return overlapsHorizontally && reachesBottom
   }
 
