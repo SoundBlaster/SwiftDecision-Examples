@@ -187,6 +187,10 @@ struct OraclePage: View {
     .onOpenURL { url in
       guard url.scheme == "oracleball", url.host == "random" else { return }
       model.handleWidgetPrediction()
+      Task { @MainActor in
+        await Task.yield()
+        isQuestionFocused = true
+      }
     }
     .onChange(of: scenePhase) { _, phase in
       if phase == .active { model.refreshHistory() }
