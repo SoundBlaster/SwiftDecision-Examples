@@ -12,6 +12,7 @@ struct OraclePage: View {
   @State private var infoSheetDetent: PresentationDetent = .medium
   @FocusState private var isQuestionFocused: Bool
   @State private var questionFieldFrame: CGRect = .zero
+  @State private var ballViewportFrame: CGRect = .zero
   @State private var isKeyboardVisible = false
   @State private var bottomDescriptionHeight: CGFloat = 52
   @State private var initialBallViewportSide: CGFloat?
@@ -53,13 +54,17 @@ struct OraclePage: View {
           isShakeEnabled: !isShowingInfo)
           .frame(width: viewportSide, height: viewportSide)
           .id("oracle-ball-viewport")
+          .onGeometryChange(for: CGRect.self) { geometry in
+            geometry.frame(in: .named("oraclePage"))
+          } action: { frame in
+            ballViewportFrame = frame
+          }
           .accessibilityLabel(
             "Oracle answer: \(model.answer.displayText.replacingOccurrences(of: "\n", with: " "))")
           .offset(y: sceneCompositionOffset)
 
         OracleHeader {
-          infoSheetDetent = .medium
-          isShowingInfo = true
+          openSettings()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.top, 10)
@@ -132,6 +137,18 @@ struct OraclePage: View {
             guard isQuestionFocused, !questionFieldFrame.contains(tap.location) else { return }
             isQuestionFocused = false
           })
+      .simultaneousGesture(
+        DragGesture(minimumDistance: 36, coordinateSpace: .named("oraclePage"))
+          .onEnded { gesture in
+            let startsInLowerHalf = gesture.startLocation.y >= proxy.size.height / 2
+            let isUpwardSwipe = gesture.translation.height <= -56
+            let isMostlyVertical = abs(gesture.translation.width) < abs(gesture.translation.height)
+            let startsOnFreeArea = !ballViewportFrame.contains(gesture.startLocation)
+              && !questionFieldFrame.contains(gesture.startLocation)
+            guard startsInLowerHalf, startsOnFreeArea, isUpwardSwipe, isMostlyVertical else { return }
+            isQuestionFocused = false
+            openSettings()
+          })
       .onGeometryChange(for: CGSize.self) { geometry in
         geometry.size
       } action: { size in
@@ -174,6 +191,11 @@ struct OraclePage: View {
     .onChange(of: scenePhase) { _, phase in
       if phase == .active { model.refreshHistory() }
     }
+  }
+
+  private func openSettings() {
+    infoSheetDetent = .medium
+    isShowingInfo = true
   }
 
   private func keyboardReachesBottomEdge(
