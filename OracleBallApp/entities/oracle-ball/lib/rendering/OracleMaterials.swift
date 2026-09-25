@@ -49,6 +49,14 @@ enum OracleMaterials {
     return material
   }
 
+  static func ringReflection() throws -> CustomMaterial {
+    var material = try custom(named: "oracleRingReflection")
+    material.blending = .transparent(opacity: .init(floatLiteral: 1))
+    material.faceCulling = .back
+    material.custom.value = .zero
+    return material
+  }
+
   static func face(textures: OracleAnswerTexture.Pair) throws -> CustomMaterial {
     var material = try custom(named: "oracleFace")
     material.baseColor = .init(texture: .init(textures.sharp))
