@@ -24,7 +24,15 @@ enum OracleLighting {
         cg.fill(CGRect(x: 960, y: 140, width: 18, height: 230))
       }
     guard let cgImage = image.cgImage else { throw OracleRenderError.textureCreation }
-    let environment = try await EnvironmentResource(equirectangular: cgImage)
+    let environment: EnvironmentResource
+    if #available(iOS 27.0, *) {
+      // Keep the skybox texture required by modern EnvironmentResource lighting.
+      // This resource only supplies reflections; it does not render the scene background.
+      environment = try await EnvironmentResource(
+        equirectangular: cgImage, options: .init(skyboxMode: .preserve))
+    } else {
+      environment = try await EnvironmentResource(equirectangular: cgImage)
+    }
     let lighting = Entity()
     lighting.name = "Studio environment"
     var imageLight = ImageBasedLightComponent(source: .single(environment), intensityExponent: 1.3)
