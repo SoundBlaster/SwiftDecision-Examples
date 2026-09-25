@@ -17,15 +17,10 @@ using namespace metal;
 [[visible]] void oracleRingReflection(realitykit::surface_parameters params) {
     float3 position = params.geometry().world_position();
     float3 view = normalize(params.geometry().view_direction());
-    float4x4 transform = params.uniforms().model_to_world();
-    float3 localNormal = params.geometry().normal();
-    // Inverse-transpose normal transform for the nonuniformly flattened glass sphere.
-    float3 normal = normalize(
-        transform[0].xyz * localNormal.x / dot(transform[0].xyz, transform[0].xyz)
-        + transform[1].xyz * localNormal.y / dot(transform[1].xyz, transform[1].xyz)
-        + transform[2].xyz * localNormal.z / dot(transform[2].xyz, transform[2].xyz));
+    // RealityKit supplies this normal in world space, including BallRoot's drag rotation.
+    float3 normal = normalize(params.geometry().normal());
     // A flatter optical surface broadens the reflected arcs without changing the glass mesh.
-    float3 windowNormal = normalize(transform[2].xyz);
+    float3 windowNormal = normalize(params.uniforms().model_to_world()[2].xyz);
     normal = normalize(mix(windowNormal, normal, 0.40));
     float3 ray = reflect(-view, normal);
     float4 rings = params.uniforms().custom_parameter();
