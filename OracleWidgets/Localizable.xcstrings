@@ -2,57 +2,154 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Ask again" : {
+      "extractionState" : "stale",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask again" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Ещё раз" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask again"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ещё раз"
+          }
+        }
       }
     },
     "Ask the Oracle" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ask the Oracle" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Спросить оракула" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask the Oracle"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Спросить оракула"
+          }
+        }
+      }
+    },
+    "Instant prediction" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instant prediction"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мгновенное предсказание"
+          }
+        }
       }
     },
     "INSTANT PREDICTION" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "INSTANT PREDICTION" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "МГНОВЕННОЕ ПРЕДСКАЗАНИЕ" } }
-      }
-    },
-    "Instant prediction" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Instant prediction" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Мгновенное предсказание" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "INSTANT PREDICTION"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "МГНОВЕННОЕ ПРЕДСКАЗАНИЕ"
+          }
+        }
       }
     },
     "Open the Oracle and reveal a prediction in the magic ball." : {
+      "extractionState" : "stale",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open the Oracle and reveal a prediction in the magic ball." } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Откройте приложение и получите предсказание в шаре." } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Oracle and reveal a prediction in the magic ball."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Откройте приложение и получите предсказание в шаре."
+          }
+        }
       }
     },
     "Reveal" : {
+      "extractionState" : "stale",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reveal" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Узнать" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reveal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Узнать"
+          }
+        }
       }
     },
     "Reveal a prediction" : {
+      "extractionState" : "stale",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reveal a prediction" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Получить предсказание" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reveal a prediction"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Получить предсказание"
+          }
+        }
       }
     },
     "Reveal in the ball" : {
+      "extractionState" : "stale",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reveal in the ball" } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Узнать в шаре" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reveal in the ball"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Узнать в шаре"
+          }
+        }
       }
     },
     "The instant prediction widget displays a new random answer without opening the app." : {
+      "extractionState" : "stale",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The instant prediction widget displays a new random answer without opening the app." } },
-        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Получайте случайный ответ прямо на экране «Домой»." } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The instant prediction widget displays a new random answer without opening the app."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Получайте случайный ответ прямо на экране «Домой»."
+          }
+        }
       }
     }
   },
