@@ -36,7 +36,8 @@ final class OracleScene {
     let ball = Entity()
     ball.name = "BallRoot"
     root.addChild(ball)
-    let shell = ModelEntity(mesh: try OracleMesh.shell(), materials: [OracleMaterials.shell()])
+    let shellMesh = try OracleMesh.shell()
+    let shell = ModelEntity(mesh: shellMesh, materials: [OracleMaterials.shell()])
     shell.name = "Shell with open window"
     ball.addChild(shell)
 
@@ -60,11 +61,10 @@ final class OracleScene {
     innerRing.position.z = 0.84
     ball.addChild(innerRing)
 
-    // A back wall, well behind the entire plate travel, closes the view into the ball.
-    let dark = UnlitMaterial(color: UIColor(red: 0.013, green: 0.019, blue: 0.078, alpha: 1))
-    let cavity = ModelEntity(mesh: .generateSphere(radius: 0.8), materials: [dark])
-    cavity.scale = [1, 1, 0.015]
-    cavity.position.z = -0.25
+    // An inward-facing lining closes every sightline through the window when tilted.
+    // Reuse the open shell so the lining cannot cover the plate or seal the window.
+    let cavity = ModelEntity(mesh: shellMesh, materials: [OracleMaterials.cavity()])
+    cavity.scale = SIMD3<Float>(repeating: 0.998)
     cavity.name = "InnerBackground"
     ball.addChild(cavity)
 
