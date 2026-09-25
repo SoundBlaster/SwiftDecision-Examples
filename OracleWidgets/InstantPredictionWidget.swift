@@ -20,14 +20,31 @@ private struct InstantPredictionWidgetView: View {
 
   private var isSmall: Bool { family == .systemSmall }
 
-  var body: some View {
-    VStack(alignment: .leading, spacing: isSmall ? 8 : 10) {
+  @ViewBuilder
+  private var header: some View {
+    if isSmall {
+      HStack(alignment: .top, spacing: 6) {
+        Image(systemName: "sparkles")
+        Text("INSTANT PREDICTION")
+          .lineLimit(2)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      .font(.caption2.weight(.semibold))
+      .tracking(0.5)
+      .foregroundStyle(.white.opacity(0.65))
+    } else {
       Label("INSTANT PREDICTION", systemImage: "sparkles")
-        .font((isSmall ? Font.caption2 : Font.caption).weight(.semibold))
-        .tracking(isSmall ? 0.5 : 1.1)
+        .font(.caption.weight(.semibold))
+        .tracking(1.1)
         .foregroundStyle(.white.opacity(0.65))
         .lineLimit(1)
         .minimumScaleFactor(0.7)
+    }
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: isSmall ? 8 : 10) {
+      header
 
       Spacer(minLength: 0)
 
