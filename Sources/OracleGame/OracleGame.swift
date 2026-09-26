@@ -568,7 +568,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       throw OracleGameError.noPolicy
     }
 
-    let selectedLabel = distribution.selectedValue.map { $0 ? "True" : "False" } ?? "Unknown"
+    let selectedLabel = distribution.selectedValue.map { $0 ? "True" : "False" } ?? oracleLocalized("Unknown")
     let probabilities = "True \(percentage(distribution.trueProbability)) · False \(percentage(distribution.falseProbability))"
     let generationStage = OraclePipelineStage(
       id: "Random response simulation",
@@ -609,7 +609,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     let evaluation = try await makeEvaluation(
       request: OracleRequest(question: "Random answer", mode: .noul),
       mode: .noul,
-      displayText: selectedValue.map(OracleAnswerPhrases.random(for:)) ?? "Unknown",
+      displayText: selectedValue.map(OracleAnswerPhrases.random(for:)) ?? oracleLocalized("Unknown"),
       noulValue: selectedValue,
       result: result,
       details: [
