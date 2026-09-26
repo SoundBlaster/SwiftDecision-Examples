@@ -28,6 +28,11 @@ struct OracleBallViewport: View {
     "\(requestID)-\(renderer != nil)"
   }
 
+  private func finishDragInteraction() {
+    renderer?.releaseBall()
+    onDragEnded()
+  }
+
   var body: some View {
     RealityView { content in
       content.camera = .virtual
@@ -89,14 +94,12 @@ struct OracleBallViewport: View {
       renderer?.setShakeEnabled(isShakeEnabled)
     }
     .onDisappear {
-      renderer?.releaseBall()
-      onDragEnded()
+      finishDragInteraction()
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: true)
     }
     .onChange(of: shouldPauseScene) { _, paused in
       if paused {
-        renderer?.releaseBall()
-        onDragEnded()
+        finishDragInteraction()
       }
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: paused)
     }
@@ -113,10 +116,7 @@ struct OracleBallViewport: View {
             translation: [Float(translation.x), Float(translation.y)],
             viewportSide: Float(min(size.width, size.height)))
         },
-        onDragEnded: {
-          renderer?.releaseBall()
-          onDragEnded()
-        }
+        onDragEnded: finishDragInteraction
       )
       .accessibilityHidden(true)
     }
