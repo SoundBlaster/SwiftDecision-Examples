@@ -120,7 +120,7 @@
 		632F2811B6281ED49A08F2E4 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePage.swift; sourceTree = "<group>"; };
 		6B9F7144567D17541E66E983 /* InstantPredictionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantPredictionWidget.swift; sourceTree = "<group>"; };
-		7D2B12290F6ADAE2F1B1DBB2 /* CityChainApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CityChainApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7D2B12290F6ADAE2F1B1DBB2 /* CityChainApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CityChainApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8535B4FE08460A471C02ABCF /* OracleWidgetSharedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleWidgetSharedState.swift; sourceTree = "<group>"; };
 		87EE378652E67B4C681C7CEA /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		89D4C408255199F51C9E4D9E /* OracleHaptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleHaptics.swift; sourceTree = "<group>"; };
@@ -915,9 +915,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = P8T2366K8X;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "City Chain";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1036,9 +1038,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = P8T2366K8X;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "City Chain";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

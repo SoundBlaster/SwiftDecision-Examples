@@ -30,6 +30,7 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_CFBundleDisplayName: City Chain
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        DEVELOPMENT_TEAM: P8T2366K8X
         PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.citychain
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
