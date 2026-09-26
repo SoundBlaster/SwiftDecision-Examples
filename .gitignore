@@ -31,6 +31,7 @@ playground.xcworkspace
 
 .build/
 .swiftpm/
+.asc/metadata/review/
 
 # CocoaPods
 #
