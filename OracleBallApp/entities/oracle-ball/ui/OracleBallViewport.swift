@@ -9,7 +9,8 @@ struct OracleBallViewport: View {
   let onClear: () -> Void
   let onShake: () -> Void
   let onShakeActivityChanged: (Bool) -> Void
-  let onDragActivityChanged: (Bool) -> Void
+  let onDragEnded: () -> Void
+  let onDragMovement: () -> Void
   var isPaused = false
   var isShakeEnabled = true
   @ScaledMetric(relativeTo: .body) private var answerFontScale: CGFloat = 1
@@ -25,6 +26,26 @@ struct OracleBallViewport: View {
 
   private var rendererTaskID: String {
     "\(requestID)-\(renderer != nil)"
+  }
+
+  private func finishDragInteraction() {
+    renderer?.releaseBall()
+    onDragEnded()
+  }
+
+  private func updateBallDrag(_ translation: CGPoint, _ size: CGSize) {
+    renderer?.dragBall(
+      translation: [Float(translation.x), Float(translation.y)],
+      viewportSide: Float(min(size.width, size.height)))
+  }
+
+  private var ballGestureLayer: some View {
+    OracleBallGestureLayer(
+      onTap: onClear,
+      onDragChanged: updateBallDrag,
+      onDragMoved: onDragMovement,
+      onDragEnded: finishDragInteraction)
+      .accessibilityHidden(true)
   }
 
   var body: some View {
@@ -88,14 +109,12 @@ struct OracleBallViewport: View {
       renderer?.setShakeEnabled(isShakeEnabled)
     }
     .onDisappear {
-      renderer?.releaseBall()
-      onDragActivityChanged(false)
+      finishDragInteraction()
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: true)
     }
     .onChange(of: shouldPauseScene) { _, paused in
       if paused {
-        renderer?.releaseBall()
-        onDragActivityChanged(false)
+        finishDragInteraction()
       }
       renderer?.setEnvironment(reduceMotion: reduceMotion, paused: paused)
     }
@@ -103,22 +122,7 @@ struct OracleBallViewport: View {
       renderer?.setShakeEnabled(enabled)
     }
     .contentShape(Rectangle())
-    .overlay {
-      OracleBallGestureLayer(
-        onTap: onClear,
-        onDragBegan: { onDragActivityChanged(true) },
-        onDragChanged: { translation, size in
-          renderer?.dragBall(
-            translation: [Float(translation.x), Float(translation.y)],
-            viewportSide: Float(min(size.width, size.height)))
-        },
-        onDragEnded: {
-          renderer?.releaseBall()
-          onDragActivityChanged(false)
-        }
-      )
-      .accessibilityHidden(true)
-    }
+    .overlay { ballGestureLayer }
     .overlay {
       if renderFailed {
         ContentUnavailableView(

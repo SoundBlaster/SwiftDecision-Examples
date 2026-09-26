@@ -50,7 +50,8 @@ struct OraclePage: View {
           onClear: model.clearQuestionAndAnswer,
           onShake: model.handleShake,
           onShakeActivityChanged: model.setShakeFeedbackActive,
-          onDragActivityChanged: model.setDragFeedbackActive,
+          onDragEnded: model.stopDragFeedback,
+          onDragMovement: model.noteDragMovement,
           isPaused: isShowingInfo && infoSheetDetent == .large,
           isShakeEnabled: !isShowingInfo)
           .frame(width: viewportSide, height: viewportSide)
