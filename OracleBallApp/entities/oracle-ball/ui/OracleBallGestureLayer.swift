@@ -83,8 +83,8 @@ struct OracleBallGestureLayer: UIViewRepresentable {
         let deltaY = translation.y - lastTranslation.y
         if hypot(deltaX, deltaY) >= 0.5 {
           onDragMoved()
+          lastTranslation = translation
         }
-        lastTranslation = translation
         onDragChanged(translation, view.bounds.size)
       case .ended, .cancelled, .failed:
         guard isDragging else { return }
