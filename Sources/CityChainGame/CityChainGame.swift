@@ -101,6 +101,18 @@ public actor CityChainGame {
     )
   }
 
+  /// Starts a fresh round when there is no turn in progress.
+  public func reset() {
+    guard !isSubmissionInProgress else { return }
+    usedCities.removeAll(keepingCapacity: true)
+    usedCityIDs.removeAll(keepingCapacity: true)
+    requiredStartingLetter = nil
+    ending = nil
+    consecutiveMistakes = 0
+    cityHint = nil
+    validationSource = nil
+  }
+
   /// Validates a free-form city name and, when possible, asks the model for the computer's reply.
   public func submit(_ rawCity: String) async throws -> CityGameTurnResult {
     guard ending == nil else { return .gameAlreadyFinished }
@@ -156,7 +168,9 @@ public actor CityChainGame {
     if let validation {
       switch validation.outcome {
       case .accepted(true):
-        break
+        if let catalogCity = try await catalogMatch(for: playerCity) {
+          playerCity = catalogCity
+        }
       case .accepted(false):
         return try await recordMistake(.cityNotRecognized(playerCity))
       case .abstained(let reason):

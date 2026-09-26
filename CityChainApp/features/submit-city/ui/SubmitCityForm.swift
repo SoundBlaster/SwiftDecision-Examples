@@ -1,48 +1,63 @@
 import SwiftUI
 
 struct SubmitCityForm: View {
+  @Binding var text: String
   let isDisabled: Bool
   let isSubmitting: Bool
   let onSubmit: (String) async -> Bool
 
-  @State private var cityName = ""
-
   var body: some View {
-    HStack {
-      TextField("Enter any US city", text: $cityName)
-        .textFieldStyle(.roundedBorder)
+    HStack(spacing: 12) {
+      TextField("Type a city from the atlas", text: $text)
+        .font(.title3.weight(.medium))
+        .textFieldStyle(.plain)
         .textInputAutocapitalization(.words)
         .autocorrectionDisabled()
         .submitLabel(.go)
         .onSubmit(submit)
-        .accessibilityLabel("US city")
+        .accessibilityLabel("City name")
+        .accessibilityHint("Enter a city from the U.S. atlas")
 
       Button(action: submit) {
-        if isSubmitting {
-          ProgressView()
-            .frame(minWidth: 28, minHeight: 28)
-        } else {
-          Image(systemName: "arrow.up.circle.fill")
-            .font(.title)
-            .symbolRenderingMode(.hierarchical)
+        Group {
+          if isSubmitting {
+            ProgressView()
+              .tint(.white)
+          } else {
+            Image(systemName: "arrow.up")
+              .font(.title2.weight(.heavy))
+          }
         }
+        .frame(width: 52, height: 52)
+        .background(CityChainPalette.orange, in: Circle())
+        .foregroundStyle(.white)
+        .contentShape(Circle())
       }
       .buttonStyle(.plain)
-      .disabled(isDisabled || cityName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-      .accessibilityLabel("Submit city")
+      .disabled(isDisabled || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+      .accessibilityLabel("Send city")
+      .frame(minWidth: 52, minHeight: 52)
     }
-    .padding()
-    .frame(maxWidth: 640)
+    .padding(.leading, 18)
+    .padding(.trailing, 7)
+    .padding(.vertical, 7)
+    .background(.white, in: Capsule())
+    .overlay(Capsule().stroke(CityChainPalette.blue.opacity(0.16), lineWidth: 1))
+    .shadow(color: CityChainPalette.ink.opacity(0.12), radius: 16, y: 6)
+    .padding(.horizontal, 16)
+    .padding(.top, 12)
+    .padding(.bottom, 8)
+    .frame(maxWidth: 560)
     .frame(maxWidth: .infinity)
     .background(.regularMaterial)
   }
 
   private func submit() {
-    let city = cityName
-    guard !city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+    let cityName = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !cityName.isEmpty else { return }
     Task { @MainActor in
-      if await onSubmit(city) {
-        cityName = ""
+      if await onSubmit(cityName) {
+        text = ""
       }
     }
   }

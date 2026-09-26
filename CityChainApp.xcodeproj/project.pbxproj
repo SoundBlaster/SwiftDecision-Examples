@@ -46,6 +46,7 @@
 		AF6617E50ED31DA57800D22C /* OracleMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57250EFE799C3061E9C2760F /* OracleMesh.swift */; };
 		B8487555A70BD40DA8F7B8F0 /* AskOracleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A1AE4194E83ECDCE129A0C /* AskOracleField.swift */; };
 		BEEB7D3D5DEE34E208AFB5DF /* OracleCosmicBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6D0F2E9F233D95523F6AADE /* OracleCosmicBackground.swift */; };
+		BF23AC3BC60CF2B45B7B1383 /* CityChainPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = E582BA0751AE903CC90C13E2 /* CityChainPalette.swift */; };
 		C428D200A15D0227F94E7C98 /* OracleField.metal in Sources */ = {isa = PBXBuildFile; fileRef = 491709646E8608240F697179 /* OracleField.metal */; };
 		C5CBA2C9D15B3CECA29148AF /* OracleFieldComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB7FC53B3F1BD79B3963ABE /* OracleFieldComponent.swift */; };
 		C660E0BCF93CFFEAC6ED29E0 /* OracleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B702F06B496B0B161550F616 /* OracleField.swift */; };
@@ -147,6 +148,7 @@
 		D4C81B75995F2AFAA80302DE /* OracleFieldMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldMesh.swift; sourceTree = "<group>"; };
 		DEC372D3239535942E74F4DC /* OracleBallApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OracleBallApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFB09BAB95325736C5B21919 /* OracleAppPredictionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleAppPredictionWidget.swift; sourceTree = "<group>"; };
+		E582BA0751AE903CC90C13E2 /* CityChainPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainPalette.swift; sourceTree = "<group>"; };
 		EC3AE3527A1B74DEFEB8C3B4 /* OracleWidgetTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleWidgetTimeline.swift; sourceTree = "<group>"; };
 		EC4B8F1131B0DF0B3975D1D3 /* OracleFace.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleFace.metal; sourceTree = "<group>"; };
 		ECF602E9E75819274A5A4DAB /* OracleFieldSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldSystem.swift; sourceTree = "<group>"; };
@@ -337,6 +339,14 @@
 			path = features;
 			sourceTree = "<group>";
 		};
+		56A52EBC3D6831FED573F78B /* shared */ = {
+			isa = PBXGroup;
+			children = (
+				9FF9CE4C94802D8D546A8CEF /* ui */,
+			);
+			path = shared;
+			sourceTree = "<group>";
+		};
 		5A7D9BBDAE2001F67872F30C /* ui */ = {
 			isa = PBXGroup;
 			children = (
@@ -460,6 +470,7 @@
 				DC519239E23DE3286310650B /* entities */,
 				3E724B63D8BA68E67F16EC0B /* features */,
 				D70650C2949931B5B31235E0 /* pages */,
+				56A52EBC3D6831FED573F78B /* shared */,
 				36A6014BB75818EB0900353F /* widgets */,
 			);
 			path = CityChainApp;
@@ -471,6 +482,14 @@
 				8CAD9C413344AF26731F5A83 /* CityChainPageModel.swift */,
 			);
 			path = model;
+			sourceTree = "<group>";
+		};
+		9FF9CE4C94802D8D546A8CEF /* ui */ = {
+			isa = PBXGroup;
+			children = (
+				E582BA0751AE903CC90C13E2 /* CityChainPalette.swift */,
+			);
+			path = ui;
 			sourceTree = "<group>";
 		};
 		A3C7D57626A7082A4D8EFCE8 /* entrypoint */ = {
@@ -812,6 +831,7 @@
 				D811AB713A983C27ABB46B7F /* CityChainAppApp.swift in Sources */,
 				580EB72F3B3FF332583161E7 /* CityChainPage.swift in Sources */,
 				0C4CFA6FCD802F3DBBC3FE18 /* CityChainPageModel.swift in Sources */,
+				BF23AC3BC60CF2B45B7B1383 /* CityChainPalette.swift in Sources */,
 				CA7B6FB826C11092AB41EF8B /* CityTurnRow.swift in Sources */,
 				ED0E773E7B8A4DCBB13C7BB3 /* GameBoardWidget.swift in Sources */,
 				67A639B8B3CC8FD71BA3D81E /* SubmitCityForm.swift in Sources */,
@@ -896,6 +916,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "City Chain";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1016,6 +1037,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "City Chain";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
