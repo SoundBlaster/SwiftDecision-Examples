@@ -33,6 +33,21 @@ struct OracleBallViewport: View {
     onDragEnded()
   }
 
+  private func updateBallDrag(_ translation: CGPoint, _ size: CGSize) {
+    renderer?.dragBall(
+      translation: [Float(translation.x), Float(translation.y)],
+      viewportSide: Float(min(size.width, size.height)))
+  }
+
+  private var ballGestureLayer: some View {
+    OracleBallGestureLayer(
+      onTap: onClear,
+      onDragChanged: updateBallDrag,
+      onDragMoved: onDragMovement,
+      onDragEnded: finishDragInteraction)
+      .accessibilityHidden(true)
+  }
+
   var body: some View {
     RealityView { content in
       content.camera = .virtual
@@ -107,19 +122,7 @@ struct OracleBallViewport: View {
       renderer?.setShakeEnabled(enabled)
     }
     .contentShape(Rectangle())
-    .overlay {
-      OracleBallGestureLayer(
-        onTap: onClear,
-        onDragMoved: onDragMovement,
-        onDragChanged: { translation, size in
-          renderer?.dragBall(
-            translation: [Float(translation.x), Float(translation.y)],
-            viewportSide: Float(min(size.width, size.height)))
-        },
-        onDragEnded: finishDragInteraction
-      )
-      .accessibilityHidden(true)
-    }
+    .overlay { ballGestureLayer }
     .overlay {
       if renderFailed {
         ContentUnavailableView(
