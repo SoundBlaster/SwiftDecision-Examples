@@ -68,7 +68,6 @@ private struct InstantPredictionWidgetView: View {
       .padding(.vertical, isSmall ? 6 : 8)
       .background(.white.opacity(0.12), in: Capsule())
     }
-    .padding(isSmall ? 12 : 16)
     .containerBackground(for: .widget) {
       LinearGradient(
         colors: [Color(red: 0.09, green: 0.06, blue: 0.28), Color(red: 0.015, green: 0.02, blue: 0.09)],

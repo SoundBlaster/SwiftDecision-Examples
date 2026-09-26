@@ -39,7 +39,6 @@ private struct OracleAppPredictionWidgetView: View {
         .minimumScaleFactor(0.75)
         .fixedSize(horizontal: false, vertical: true)
     }
-    .padding(isSmall ? 12 : 16)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     .containerBackground(for: .widget) {
       LinearGradient(
