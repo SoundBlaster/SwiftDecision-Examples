@@ -4,15 +4,15 @@ import UIKit
 /// UIKit's pan recognizer lets the ball interaction explicitly accept one touch only.
 struct OracleBallGestureLayer: UIViewRepresentable {
   let onTap: () -> Void
-  let onDragBegan: () -> Void
   let onDragChanged: (CGPoint, CGSize) -> Void
+  let onDragMoved: () -> Void
   let onDragEnded: () -> Void
 
   func makeCoordinator() -> Coordinator {
     Coordinator(
       onTap: onTap,
-      onDragBegan: onDragBegan,
       onDragChanged: onDragChanged,
+      onDragMoved: onDragMoved,
       onDragEnded: onDragEnded)
   }
 
@@ -40,28 +40,29 @@ struct OracleBallGestureLayer: UIViewRepresentable {
 
   func updateUIView(_ view: UIView, context: Context) {
     context.coordinator.onTap = onTap
-    context.coordinator.onDragBegan = onDragBegan
     context.coordinator.onDragChanged = onDragChanged
+    context.coordinator.onDragMoved = onDragMoved
     context.coordinator.onDragEnded = onDragEnded
   }
 
   @MainActor
   final class Coordinator: NSObject {
     var onTap: () -> Void
-    var onDragBegan: () -> Void
     var onDragChanged: (CGPoint, CGSize) -> Void
+    var onDragMoved: () -> Void
     var onDragEnded: () -> Void
     private var isDragging = false
+    private var lastTranslation = CGPoint.zero
 
     init(
       onTap: @escaping () -> Void,
-      onDragBegan: @escaping () -> Void,
       onDragChanged: @escaping (CGPoint, CGSize) -> Void,
+      onDragMoved: @escaping () -> Void,
       onDragEnded: @escaping () -> Void
     ) {
       self.onTap = onTap
-      self.onDragBegan = onDragBegan
       self.onDragChanged = onDragChanged
+      self.onDragMoved = onDragMoved
       self.onDragEnded = onDragEnded
     }
 
@@ -74,10 +75,16 @@ struct OracleBallGestureLayer: UIViewRepresentable {
       switch recognizer.state {
       case .began:
         isDragging = true
-        onDragBegan()
+        lastTranslation = .zero
         fallthrough
       case .changed:
         let translation = recognizer.translation(in: view)
+        let deltaX = translation.x - lastTranslation.x
+        let deltaY = translation.y - lastTranslation.y
+        if hypot(deltaX, deltaY) >= 0.5 {
+          onDragMoved()
+        }
+        lastTranslation = translation
         onDragChanged(translation, view.bounds.size)
       case .ended, .cancelled, .failed:
         guard isDragging else { return }
