@@ -1,4 +1,5 @@
 import CityChainGame
+import Foundation
 import Observation
 
 @MainActor
