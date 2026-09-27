@@ -68,12 +68,22 @@ struct GameBoardWidget: View {
               LazyHStack(alignment: .top, spacing: 12) {
                 ForEach(Array(displayedTurns.enumerated()), id: \.element.element.id) { display in
                   let turn = display.element
-                  CityRouteStopCard(
-                    city: turn.element,
-                    turnNumber: turn.offset + 1,
-                    isPlayerTurn: turn.offset.isMultiple(of: 2),
-                    continuation: continuations.first { $0.sourceCity.id == turn.element.id })
-                    .id(turn.element.id)
+                  HStack(spacing: 12) {
+                    if display.offset > 0 {
+                      Image(systemName: latestStopFirst ? "arrow.left" : "arrow.right")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(CityChainPalette.blue)
+                        .frame(width: 28)
+                        .accessibilityHidden(true)
+                    }
+
+                    CityRouteStopCard(
+                      city: turn.element,
+                      turnNumber: turn.offset + 1,
+                      isPlayerTurn: turn.offset.isMultiple(of: 2),
+                      continuation: continuations.first { $0.sourceCity.id == turn.element.id })
+                      .id(turn.element.id)
+                  }
                 }
               }
               .padding(.vertical, 2)
