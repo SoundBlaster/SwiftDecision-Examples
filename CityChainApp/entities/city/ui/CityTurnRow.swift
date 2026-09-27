@@ -71,9 +71,10 @@ struct CityTurnRow: View {
             .foregroundStyle(CityChainPalette.blue)
         }
       }
+      .frame(minHeight: 84, alignment: .topLeading)
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.top, 2)
-      .padding(.bottom, isLastStop ? 0 : 24)
+      .padding(.bottom, 8)
 
       if !dynamicTypeSize.isAccessibilitySize {
         VStack(spacing: 4) {
@@ -88,7 +89,7 @@ struct CityTurnRow: View {
         .accessibilityLabel("Next letter: \(nextLetterLabel)")
       }
     }
-    .frame(minHeight: 148, alignment: .topLeading)
+    .fixedSize(horizontal: false, vertical: true)
     .accessibilityElement(children: .combine)
     .accessibilityValue("Stop \(turnNumber)")
   }

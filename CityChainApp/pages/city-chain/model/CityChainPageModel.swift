@@ -14,8 +14,10 @@ final class CityChainPageModel {
   private(set) var latestTurnPipeline: [CityGamePipelineStage] = []
   private(set) var isSubmitting = false
   private(set) var hasCommittedPlayerCityForCurrentTurn = false
+  private(set) var isScoutThinkingStopVisible = false
   private(set) var hasTurnFeedback = false
   private(set) var scoutPresentation = ScoutPresentation()
+  private var scoutThinkingStopDelayTask: Task<Void, Never>?
   var cityInput = ""
   var statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
 
@@ -57,6 +59,7 @@ final class CityChainPageModel {
     guard !isSubmitting else { return false }
     isSubmitting = true
     hasCommittedPlayerCityForCurrentTurn = false
+    isScoutThinkingStopVisible = false
     hasTurnFeedback = true
     // Let quick local rule failures return immediately without flashing the
     // thinking pose. Accepted turns stay in this pose while the engine works.
@@ -71,14 +74,28 @@ final class CityChainPageModel {
     }
     defer {
       thinkingTask.cancel()
+      scoutThinkingStopDelayTask?.cancel()
+      scoutThinkingStopDelayTask = nil
       isSubmitting = false
       hasCommittedPlayerCityForCurrentTurn = false
+      isScoutThinkingStopVisible = false
     }
 
     do {
       let tracedResult = try await game.submitWithTrace(cityName) { [weak self] committedSnapshot in
-        self?.snapshot = committedSnapshot
-        self?.hasCommittedPlayerCityForCurrentTurn = true
+        guard let self else { return }
+        self.snapshot = committedSnapshot
+        self.hasCommittedPlayerCityForCurrentTurn = true
+        self.scoutThinkingStopDelayTask?.cancel()
+        self.scoutThinkingStopDelayTask = Task { @MainActor [weak self] in
+          do {
+            try await Task.sleep(for: .milliseconds(450))
+          } catch {
+            return
+          }
+          guard !Task.isCancelled, let self, self.isSubmitting else { return }
+          self.isScoutThinkingStopVisible = true
+        }
       }
       let result = tracedResult.result
       let updatedSnapshot = await game.snapshot()

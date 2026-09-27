@@ -286,11 +286,12 @@ private struct CityScoutThinkingRow: View {
           .foregroundStyle(CityChainPalette.ink)
           .fixedSize(horizontal: false, vertical: true)
       }
+      .frame(minHeight: 84, alignment: .topLeading)
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.top, 2)
-      .padding(.bottom, isLastStop ? 0 : 24)
+      .padding(.bottom, 8)
     }
-    .frame(minHeight: 148, alignment: .topLeading)
+    .fixedSize(horizontal: false, vertical: true)
     .accessibilityElement(children: .combine)
   }
 }
