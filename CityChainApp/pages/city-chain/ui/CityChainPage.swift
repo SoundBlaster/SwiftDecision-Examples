@@ -208,12 +208,6 @@ private struct CityChainGamePane: View {
     .safeAreaInset(edge: .top, spacing: 0) {
       if !isFirstStop || isCityFocused {
         CityChainPinnedHeader(
-          presentation: model.scoutPresentation,
-          isExpanded: isExpanded,
-          requiredLetter: snapshot?.requiredStartingLetter,
-          isSubmitting: model.isSubmitting,
-          isFinished: snapshot?.isFinished == true,
-          continuation: snapshot?.letterContinuations.last,
           showsNewTrip: !isFirstStop && (snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true),
           isNewTripDisabled: model.isSubmitting,
           cityHints: suggestions,
@@ -306,12 +300,6 @@ private struct CityChainBottomControls: View {
 }
 
 private struct CityChainPinnedHeader: View {
-  let presentation: ScoutPresentation
-  let isExpanded: Bool
-  let requiredLetter: Character?
-  let isSubmitting: Bool
-  let isFinished: Bool
-  let continuation: CityLetterContinuation?
   let showsNewTrip: Bool
   let isNewTripDisabled: Bool
   let cityHints: [USCity]
@@ -365,25 +353,6 @@ private struct CityChainPinnedHeader: View {
 #endif
       }
 
-      Group {
-        if isExpanded {
-          CityTurnPrompt(
-            presentation: presentation,
-            requiredLetter: requiredLetter,
-            isSubmitting: isSubmitting,
-            isFinished: isFinished,
-            continuation: continuation)
-        } else {
-          CityPhoneTurnIndicator(
-            requiredLetter: requiredLetter,
-            isSubmitting: isSubmitting,
-            isFinished: isFinished)
-        }
-      }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .layoutPriority(-1)
-        .fixedSize(horizontal: false, vertical: true)
-
       if !dynamicTypeSize.isAccessibilitySize {
         Spacer(minLength: 0)
       }
@@ -391,38 +360,6 @@ private struct CityChainPinnedHeader: View {
     .padding(.horizontal, 12)
     .padding(.vertical, 6)
     .background(.regularMaterial)
-  }
-}
-
-private struct CityPhoneTurnIndicator: View {
-  let requiredLetter: Character?
-  let isSubmitting: Bool
-  let isFinished: Bool
-
-  var body: some View {
-    HStack(spacing: 8) {
-      if isSubmitting {
-        ProgressView()
-          .tint(CityChainPalette.teal)
-          .accessibilityHidden(true)
-      } else {
-        Image(systemName: isFinished ? "flag.checkered" : "textformat")
-          .foregroundStyle(CityChainPalette.teal)
-          .accessibilityHidden(true)
-      }
-
-      Text(status)
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(CityChainPalette.ink)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-    .accessibilityElement(children: .combine)
-  }
-
-  private var status: String {
-    if isFinished { return "Trip complete" }
-    if isSubmitting { return "Scout is thinking…" }
-    return requiredLetter.map { "Start with \($0)" } ?? "Pick your next city"
   }
 }
 
@@ -563,46 +500,6 @@ private struct CityTripHeader: View {
       .frame(maxWidth: .infinity, alignment: .leading)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
-  }
-}
-
-/// The large invitation is only for the first stop. During play, keep the route prominent.
-private struct CityTurnPrompt: View {
-  let presentation: ScoutPresentation
-  let requiredLetter: Character?
-  let isSubmitting: Bool
-  let isFinished: Bool
-  var continuation: CityLetterContinuation? = nil
-
-  var body: some View {
-    HStack(spacing: 10) {
-      ScoutView(presentation: presentation)
-        .frame(width: 56, height: 56)
-
-      VStack(alignment: .leading, spacing: 3) {
-        Text(isFinished ? "Trip complete" : (isSubmitting ? "City Scout's turn" : "Your turn"))
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(CityChainPalette.teal)
-        Text(instruction)
-          .font(.system(.headline, design: .rounded, weight: .bold))
-          .foregroundStyle(CityChainPalette.ink)
-          .fixedSize(horizontal: false, vertical: true)
-        if !isFinished, !isSubmitting, let explanation = continuation?.explanation {
-          Text(explanation)
-            .font(.caption)
-            .foregroundStyle(CityChainPalette.secondaryInk)
-            .fixedSize(horizontal: false, vertical: true)
-        }
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    .accessibilityElement(children: .combine)
-  }
-
-  private var instruction: String {
-    if isFinished { return "Ready for another adventure?" }
-    if isSubmitting { return "Looking for our next stop…" }
-    return requiredLetter.map { "Start with \($0)" } ?? "Pick your next city"
   }
 }
 
@@ -874,20 +771,6 @@ private struct CityChainPipelineDetailView: View {
 #Preview("Larger text") {
   CityChainPage(model: CityChainPageModel.preview())
     .environment(\.dynamicTypeSize, .accessibility1)
-}
-
-#Preview("Compact turn prompt") {
-  VStack(spacing: 22) {
-    CityTurnPrompt(
-      presentation: ScoutPresentation(), requiredLetter: "E",
-      isSubmitting: false, isFinished: false)
-    GameBoardWidget(cities: [
-      USCity("Austin", state: .texas, isStateCapital: true),
-      USCity("Nashville", state: .tennessee, isStateCapital: true),
-    ])
-  }
-  .padding(20)
-  .background(CityChainPalette.paper)
 }
 
 @available(iOS 18.0, *)
