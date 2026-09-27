@@ -171,7 +171,7 @@ struct CityChainGameTests {
       traced.pipeline.map(\.id)
         == [
           "player-preflight", "city-validation", "catalog-validation", "player-continuation",
-          "reply-candidates", "reply-plan", "computer-choice", "turn-commit",
+          "reply-candidates", "reply-plan", "computer-choice", "scout-thinking", "turn-commit",
           "computer-continuation",
         ])
 

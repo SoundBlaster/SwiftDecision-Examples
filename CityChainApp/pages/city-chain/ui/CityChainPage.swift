@@ -153,14 +153,13 @@ private struct CityChainGamePane: View {
   let onShowAtlas: () -> Void
   let onRequestNewTrip: () -> Void
   @State private var showsDecisionTrace = false
+  @State private var showsCityHintsPopover = false
   @FocusState.Binding var isCityFocused: Bool
   let feedbackMaxHeight: CGFloat
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var isCityHintsRevealed = false
 
   var body: some View {
-    let hidesCityHints = !isFirstStop && !isCityHintsRevealed
-
     ScrollViewReader { scrollProxy in
       ScrollView {
         VStack(spacing: 20) {
@@ -173,38 +172,12 @@ private struct CityChainGamePane: View {
             LetterPromptCard(snapshot: snapshot, isSubmitting: model.isSubmitting)
           }
 
-          if !suggestions.isEmpty {
-            ZStack {
+          if isFirstStop && !suggestions.isEmpty {
               CitySuggestionPicker(
                 cities: suggestions, selectedName: model.cityInput, isDisabled: model.isSubmitting
               ) { city in
                 model.cityInput = city.name
               }
-              .blur(radius: hidesCityHints ? 7 : 0)
-              .allowsHitTesting(!hidesCityHints)
-              .accessibilityHidden(hidesCityHints)
-
-              if hidesCityHints {
-                Button {
-                  withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-                    isCityHintsRevealed = true
-                  }
-                } label: {
-                  Label("Reveal city hints", systemImage: "eye")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(CityChainPalette.ink)
-                    .frame(maxWidth: .infinity, minHeight: 56)
-                    .background(.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                      RoundedRectangle(cornerRadius: 16)
-                        .strokeBorder(CityChainPalette.ink.opacity(0.12)))
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 16)
-                .accessibilityHint("Reveals suggested cities for this turn")
-              }
-            }
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: hidesCityHints)
           }
 
           if let snapshot {
@@ -237,6 +210,20 @@ private struct CityChainGamePane: View {
             continuation: snapshot?.letterContinuations.last,
             showsNewTrip: !isFirstStop && (snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true),
             isNewTripDisabled: model.isSubmitting,
+            cityHints: suggestions,
+            selectedCityName: model.cityInput,
+            areCityHintsHidden: !isCityHintsRevealed,
+            isCityHintsDisabled: model.isSubmitting,
+            showsCityHintsPopover: $showsCityHintsPopover,
+            onRevealCityHints: {
+              withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                isCityHintsRevealed = true
+              }
+            },
+            onSelectHint: { city in
+              model.cityInput = city.name
+              showsCityHintsPopover = false
+            },
             onShowAtlas: onShowAtlas,
             onRequestNewTrip: onRequestNewTrip,
             hasDecisionTrace: !model.latestTurnPipeline.isEmpty,
@@ -268,6 +255,7 @@ private struct CityChainGamePane: View {
       }
       .onChange(of: snapshot?.usedCities.count) { _, _ in
         isCityHintsRevealed = false
+        showsCityHintsPopover = false
         revealLatestStops(using: scrollProxy)
       }
       .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
@@ -353,6 +341,13 @@ private struct CityChainPinnedHeader: View {
   let continuation: CityLetterContinuation?
   let showsNewTrip: Bool
   let isNewTripDisabled: Bool
+  let cityHints: [USCity]
+  let selectedCityName: String
+  let areCityHintsHidden: Bool
+  let isCityHintsDisabled: Bool
+  @Binding var showsCityHintsPopover: Bool
+  let onRevealCityHints: () -> Void
+  let onSelectHint: (USCity) -> Void
   let onShowAtlas: () -> Void
   let onRequestNewTrip: () -> Void
   let hasDecisionTrace: Bool
@@ -370,6 +365,16 @@ private struct CityChainPinnedHeader: View {
           title: "City atlas", systemImage: "book.closed",
           hint: "Browse cities and find a name for your next turn",
           action: onShowAtlas)
+        if !cityHints.isEmpty {
+          CityHintsToolbarButton(
+            cities: cityHints,
+            selectedName: selectedCityName,
+            isDisabled: isCityHintsDisabled,
+            isHidden: areCityHintsHidden,
+            isPresented: $showsCityHintsPopover,
+            onReveal: onRevealCityHints,
+            onSelect: onSelectHint)
+        }
         if showsNewTrip {
           CityChainActionButton(
             title: "New trip", systemImage: "arrow.counterclockwise",
@@ -404,6 +409,74 @@ private struct CityChainPinnedHeader: View {
     .padding(.horizontal, 12)
     .padding(.vertical, 6)
     .background(.regularMaterial)
+  }
+}
+
+private struct CityHintsToolbarButton: View {
+  let cities: [USCity]
+  let selectedName: String
+  let isDisabled: Bool
+  let isHidden: Bool
+  @Binding var isPresented: Bool
+  let onReveal: () -> Void
+  let onSelect: (USCity) -> Void
+
+  var body: some View {
+    CityChainActionButton(
+      title: "City hints", systemImage: "lightbulb",
+      hint: isHidden ? "Open and reveal suggested cities for this turn" : "Open suggested cities for this turn",
+      isDisabled: isDisabled,
+      action: { isPresented = true })
+      .popover(isPresented: $isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+        CityHintsPopover(
+          cities: cities,
+          selectedName: selectedName,
+          isDisabled: isDisabled,
+          isHidden: isHidden,
+          onReveal: onReveal,
+          onSelect: onSelect)
+          .presentationCompactAdaptation(.popover)
+      }
+  }
+}
+
+private struct CityHintsPopover: View {
+  let cities: [USCity]
+  let selectedName: String
+  let isDisabled: Bool
+  let isHidden: Bool
+  let onReveal: () -> Void
+  let onSelect: (USCity) -> Void
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  var body: some View {
+    ZStack {
+      CitySuggestionPicker(cities: cities, selectedName: selectedName, isDisabled: isDisabled) {
+        onSelect($0)
+      }
+      .blur(radius: isHidden ? 7 : 0)
+      .allowsHitTesting(!isHidden)
+      .accessibilityHidden(isHidden)
+
+      if isHidden {
+        Button(action: onReveal) {
+          Label("Reveal city hints", systemImage: "eye")
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(CityChainPalette.ink)
+            .frame(maxWidth: .infinity, minHeight: 56)
+            .background(.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 16))
+            .overlay(
+              RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(CityChainPalette.ink.opacity(0.12)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Reveals suggested cities for this turn")
+      }
+    }
+    .padding(14)
+    .frame(width: 330)
+    .background(CityChainPalette.paper, in: RoundedRectangle(cornerRadius: 24))
+    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isHidden)
   }
 }
 
