@@ -42,6 +42,7 @@ struct CityChainPage: View {
             isFirstStop: isFirstStop, isExpanded: usesColumns,
             routesFeedbackToAtlas: usesColumns,
             onShowAtlas: { showsAtlas = true },
+            onShowMap: { showsMapDetailSheet = true },
             onRequestNewTrip: { showsNewTripConfirmation = true },
             isCityFocused: $isCityFocused)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -149,6 +150,7 @@ private struct CityChainGamePane: View {
   let isExpanded: Bool
   let routesFeedbackToAtlas: Bool
   let onShowAtlas: () -> Void
+  let onShowMap: () -> Void
   let onRequestNewTrip: () -> Void
   @State private var showsDecisionTrace = false
   @State private var showsCityHintsPopover = false
@@ -209,6 +211,7 @@ private struct CityChainGamePane: View {
       if !isFirstStop || isCityFocused {
         CityChainPinnedHeader(
           showsNewTrip: !isFirstStop && (snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true),
+          showsMapButton: !isExpanded,
           isNewTripDisabled: model.isSubmitting,
           cityHints: suggestions,
           selectedCityName: model.cityInput,
@@ -225,6 +228,7 @@ private struct CityChainGamePane: View {
             showsCityHintsPopover = false
           },
           onShowAtlas: onShowAtlas,
+          onShowMap: onShowMap,
           onRequestNewTrip: onRequestNewTrip,
           hasDecisionTrace: !model.latestTurnPipeline.isEmpty,
           onShowDecisionTrace: { showsDecisionTrace = true }
@@ -301,6 +305,7 @@ private struct CityChainBottomControls: View {
 
 private struct CityChainPinnedHeader: View {
   let showsNewTrip: Bool
+  let showsMapButton: Bool
   let isNewTripDisabled: Bool
   let cityHints: [USCity]
   let selectedCityName: String
@@ -310,6 +315,7 @@ private struct CityChainPinnedHeader: View {
   let onRevealCityHints: () -> Void
   let onSelectHint: (USCity) -> Void
   let onShowAtlas: () -> Void
+  let onShowMap: () -> Void
   let onRequestNewTrip: () -> Void
   let hasDecisionTrace: Bool
   let onShowDecisionTrace: () -> Void
@@ -326,6 +332,12 @@ private struct CityChainPinnedHeader: View {
           title: "City atlas", systemImage: "book.closed",
           hint: "Browse cities and find a name for your next turn",
           action: onShowAtlas)
+        if showsMapButton {
+          CityChainActionButton(
+            title: "Pocket Atlas map", systemImage: "map",
+            hint: "Open the route map",
+            action: onShowMap)
+        }
         if !cityHints.isEmpty {
           CityHintsToolbarButton(
             cities: cityHints,
