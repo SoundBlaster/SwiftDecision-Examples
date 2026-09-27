@@ -46,13 +46,16 @@ struct CityTurnRow: View {
           .foregroundStyle(CityChainPalette.ink)
           .fixedSize(horizontal: false, vertical: true)
 
-        Text(city.state.map { "\($0.name) · \($0.abbreviation)" } ?? "United States")
-          .font(.subheadline)
-          .foregroundStyle(CityChainPalette.secondaryInk)
-          .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 6) {
+          Text(city.state.map { "\($0.name) · \($0.abbreviation)" } ?? "United States")
+            .font(.subheadline)
+            .foregroundStyle(CityChainPalette.secondaryInk)
+            .lineLimit(1)
+            .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.75)
 
-        if city.isStateCapital {
-          CityCapitalBadge()
+          if city.isStateCapital {
+            CityCapitalBadge()
+          }
         }
 
         if let explanation = continuation?.explanation {
@@ -85,7 +88,7 @@ struct CityTurnRow: View {
         .accessibilityLabel("Next letter: \(nextLetterLabel)")
       }
     }
-    .fixedSize(horizontal: false, vertical: true)
+    .frame(minHeight: 148, alignment: .topLeading)
     .accessibilityElement(children: .combine)
     .accessibilityValue("Stop \(turnNumber)")
   }

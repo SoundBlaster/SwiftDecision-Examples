@@ -182,8 +182,7 @@ private struct CityChainGamePane: View {
             continuations: snapshot.letterContinuations,
             latestStopFirst: !snapshot.usedCities.isEmpty,
             isScoutThinking: model.hasCommittedPlayerCityForCurrentTurn
-              && model.scoutPresentation.pose == .thinking,
-            scoutPresentation: model.scoutPresentation)
+              && model.scoutPresentation.pose == .thinking)
         } else {
           ProgressView("Getting the atlas ready…")
             .tint(CityChainPalette.blue)

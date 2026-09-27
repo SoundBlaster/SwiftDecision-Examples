@@ -6,7 +6,6 @@ struct GameBoardWidget: View {
   var continuations: [CityLetterContinuation] = []
   var latestStopFirst = false
   var isScoutThinking = false
-  var scoutPresentation = ScoutPresentation()
   @State private var routeLayout: RoadTripLayout = .list
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -67,8 +66,6 @@ struct GameBoardWidget: View {
           LazyVStack(spacing: 0) {
             if latestStopFirst && isScoutThinking {
               CityScoutThinkingRow(
-                presentation: scoutPresentation,
-                turnNumber: cities.count + 1,
                 isLastStop: false)
                 .id(Self.thinkingStopID)
                 .transition(verticalInsertionTransition)
@@ -88,8 +85,6 @@ struct GameBoardWidget: View {
 
             if !latestStopFirst && isScoutThinking {
               CityScoutThinkingRow(
-                presentation: scoutPresentation,
-                turnNumber: cities.count + 1,
                 isLastStop: true)
                 .id(Self.thinkingStopID)
                 .transition(verticalInsertionTransition)
@@ -101,9 +96,7 @@ struct GameBoardWidget: View {
             ScrollView(.horizontal) {
               LazyHStack(alignment: .top, spacing: 12) {
                 if latestStopFirst && isScoutThinking {
-                  CityScoutThinkingCard(
-                    presentation: scoutPresentation,
-                    turnNumber: cities.count + 1)
+                  CityScoutThinkingCard()
                     .id(Self.thinkingStopID)
                     .transition(horizontalInsertionTransition)
                 }
@@ -136,9 +129,7 @@ struct GameBoardWidget: View {
                       .foregroundStyle(CityChainPalette.blue)
                       .frame(width: 28)
                       .accessibilityHidden(true)
-                    CityScoutThinkingCard(
-                      presentation: scoutPresentation,
-                      turnNumber: cities.count + 1)
+                    CityScoutThinkingCard()
                       .id(Self.thinkingStopID)
                       .transition(horizontalInsertionTransition)
                   }
@@ -225,13 +216,16 @@ private struct CityRouteStopCard: View {
         .lineLimit(2)
         .fixedSize(horizontal: false, vertical: true)
 
-      Text(city.state.map { "\($0.name) · \($0.abbreviation)" } ?? "United States")
-        .font(.subheadline)
-        .foregroundStyle(CityChainPalette.secondaryInk)
-        .lineLimit(2)
+      HStack(spacing: 6) {
+        Text(city.state.map { "\($0.name) · \($0.abbreviation)" } ?? "United States")
+          .font(.subheadline)
+          .foregroundStyle(CityChainPalette.secondaryInk)
+          .lineLimit(1)
+          .minimumScaleFactor(0.75)
 
-      if city.isStateCapital {
-        CityCapitalBadge()
+        if city.isStateCapital {
+          CityCapitalBadge()
+        }
       }
 
       if dynamicTypeSize.isAccessibilitySize {
@@ -261,20 +255,17 @@ private struct CityRouteStopCard: View {
 }
 
 private struct CityScoutThinkingRow: View {
-  let presentation: ScoutPresentation
-  let turnNumber: Int
   let isLastStop: Bool
 
   var body: some View {
     HStack(alignment: .top, spacing: 14) {
       VStack(spacing: 0) {
-        Text(turnNumber, format: .number)
-          .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
-          .foregroundStyle(CityChainPalette.teal)
-          .padding(10)
-          .frame(minWidth: 38, minHeight: 38)
+        ProgressView()
+          .controlSize(.small)
+          .tint(CityChainPalette.teal)
+          .frame(width: 38, height: 38)
           .background(CityChainPalette.mint, in: Circle())
-          .accessibilityHidden(true)
+          .accessibilityLabel("Scout is thinking")
 
         if !isLastStop {
           Rectangle()
@@ -285,48 +276,35 @@ private struct CityScoutThinkingRow: View {
         }
       }
 
-      HStack(spacing: 10) {
-        ScoutView(presentation: presentation)
-          .frame(width: 64, height: 64)
+      VStack(alignment: .leading, spacing: 6) {
+        Label("City Scout", systemImage: "binoculars.fill")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(CityChainPalette.teal)
 
-        VStack(alignment: .leading, spacing: 6) {
-          Label("City Scout", systemImage: "binoculars.fill")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(CityChainPalette.teal)
-
-          Text("One moment, I'm thinking!")
-            .font(.system(.title3, design: .rounded, weight: .bold))
-            .foregroundStyle(CityChainPalette.ink)
-            .fixedSize(horizontal: false, vertical: true)
-
-          ProgressView()
-            .tint(CityChainPalette.teal)
-            .accessibilityLabel("Thinking")
-        }
+        Text("One moment, I'm thinking!")
+          .font(.system(.title3, design: .rounded, weight: .bold))
+          .foregroundStyle(CityChainPalette.ink)
+          .fixedSize(horizontal: false, vertical: true)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.top, 2)
       .padding(.bottom, isLastStop ? 0 : 24)
     }
-    .fixedSize(horizontal: false, vertical: true)
+    .frame(minHeight: 148, alignment: .topLeading)
     .accessibilityElement(children: .combine)
-    .accessibilityValue("Stop \(turnNumber)")
   }
 }
 
 private struct CityScoutThinkingCard: View {
-  let presentation: ScoutPresentation
-  let turnNumber: Int
-
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 8) {
-        Text(turnNumber, format: .number)
-          .font(.subheadline.weight(.bold).monospacedDigit())
-          .foregroundStyle(CityChainPalette.teal)
+        ProgressView()
+          .controlSize(.small)
+          .tint(CityChainPalette.teal)
           .frame(width: 32, height: 32)
           .background(CityChainPalette.mint, in: Circle())
-          .accessibilityHidden(true)
+          .accessibilityLabel("Scout is thinking")
 
         Label("City Scout", systemImage: "binoculars.fill")
           .font(.caption.weight(.semibold))
@@ -334,21 +312,10 @@ private struct CityScoutThinkingCard: View {
           .lineLimit(1)
       }
 
-      HStack(spacing: 10) {
-        ScoutView(presentation: presentation)
-          .frame(width: 76, height: 76)
-
-        VStack(alignment: .leading, spacing: 8) {
-          Text("One moment, I'm thinking!")
-            .font(.system(.headline, design: .rounded, weight: .bold))
-            .foregroundStyle(CityChainPalette.ink)
-            .fixedSize(horizontal: false, vertical: true)
-
-          ProgressView()
-            .tint(CityChainPalette.teal)
-            .accessibilityLabel("Thinking")
-        }
-      }
+      Text("One moment, I'm thinking!")
+        .font(.system(.headline, design: .rounded, weight: .bold))
+        .foregroundStyle(CityChainPalette.ink)
+        .fixedSize(horizontal: false, vertical: true)
     }
     .frame(width: 220, alignment: .topLeading)
     .frame(minHeight: 196, alignment: .topLeading)
@@ -359,7 +326,6 @@ private struct CityScoutThinkingCard: View {
         .strokeBorder(CityChainPalette.ink.opacity(0.08), lineWidth: 1)
     }
     .accessibilityElement(children: .combine)
-    .accessibilityValue("Stop \(turnNumber)")
   }
 }
 
