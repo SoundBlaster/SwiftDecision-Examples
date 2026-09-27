@@ -1,144 +1,413 @@
 import CityChainGame
 import SwiftUI
+import UIKit
 
 struct CityChainPage: View {
   let model: CityChainPageModel
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @State private var showsNewTripConfirmation = false
+  @State private var showsAtlas = false
+  @State private var isMapDetailPresented = false
+  @State private var showsMapDetailSheet = false
+  @State private var selectedAtlasCity: USCity?
+  @Namespace private var atlasMapTransitionNamespace
+  @FocusState private var isCityFocused: Bool
 
   var body: some View {
     let snapshot = model.snapshot
     let suggestions = suggestedCities(for: snapshot)
+    let isFirstStop = snapshot?.usedCities.isEmpty != false && snapshot?.isFinished != true
 
     NavigationStack {
-      ZStack {
-        CityChainBackdrop()
+      GeometryReader { geometry in
+        let usesColumns = geometry.size.width >= 700 && !dynamicTypeSize.isAccessibilitySize
+        let layout = usesColumns
+          ? AnyLayout(HStackLayout(alignment: .top, spacing: 18))
+          : AnyLayout(VStackLayout(spacing: 0))
 
-        ScrollView {
-          VStack(spacing: 22) {
-            CityTripHeader()
-            LetterPromptCard(snapshot: snapshot, isSubmitting: model.isSubmitting)
-
-            if !suggestions.isEmpty && snapshot?.isFinished != true {
-              CitySuggestionPicker(
-                cities: suggestions, selectedName: model.cityInput, isDisabled: model.isSubmitting
-              ) { city in
-                model.cityInput = city.name
-              }
-            }
-
-            if let snapshot {
-              if model.hasTurnFeedback {
-                RoundStatusCard(
-                  message: model.isSubmitting ? "Looking for our next stop…" : model.statusMessage,
-                  isFinished: snapshot.isFinished)
-              }
-              GameBoardWidget(cities: snapshot.usedCities)
-            } else {
-              ProgressView("Getting the atlas ready…")
-                .tint(CityChainPalette.blue)
-                .frame(maxWidth: .infinity, minHeight: 180)
-            }
+        layout {
+          if usesColumns {
+            CityAtlasMapView(
+              visitedCities: snapshot?.usedCities ?? [],
+              presentation: model.scoutPresentation,
+              selectedCity: $selectedAtlasCity,
+              transitionNamespace: atlasMapTransitionNamespace,
+              onOpenMapDetail: openMapDetail,
+              feedbackMessage: model.hasTurnFeedback && !model.isSubmitting ? model.statusMessage : nil,
+              feedbackIsFinished: snapshot?.isFinished == true,
+              onDismissFeedback: model.dismissTurnFeedback)
+              .frame(maxWidth: .infinity, maxHeight: .infinity)
           }
-          .padding(.horizontal, 20)
-          .padding(.top, 18)
-          .padding(.bottom, 18)
-          .frame(maxWidth: 560)
-          .frame(maxWidth: .infinity)
+          CityChainGamePane(
+            model: model, snapshot: snapshot, suggestions: suggestions,
+            isFirstStop: isFirstStop, isExpanded: usesColumns,
+            routesFeedbackToAtlas: usesColumns,
+            onShowAtlas: { showsAtlas = true },
+            onRequestNewTrip: { showsNewTripConfirmation = true },
+            isCityFocused: $isCityFocused,
+            feedbackMaxHeight: max(44, geometry.size.height * 0.20))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .scrollIndicators(.hidden)
-        .scrollDismissesKeyboard(.interactively)
+        .padding(.horizontal, usesColumns ? 18 : 0)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(CityChainBackdrop())
       }
-      .safeAreaInset(edge: .bottom, spacing: 0) {
-        CityChainBottomControls(model: model, snapshot: snapshot)
+      .navigationDestination(isPresented: $isMapDetailPresented) {
+        cityMapDetailDestination
       }
-      .navigationTitle("City Chain")
-      .toolbarTitleDisplayMode(.inline)
-      .toolbar {
-        if snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true {
-          ToolbarItem(placement: .topBarTrailing) {
-            Button {
-              showsNewTripConfirmation = true
-            } label: {
-              Label("New trip", systemImage: "arrow.counterclockwise")
-                .labelStyle(.titleAndIcon)
-                .font(.subheadline.weight(.semibold))
-            }
-            .disabled(model.isSubmitting)
-          }
-        }
-      }
-      .confirmationDialog(
-        "Start a new road trip?", isPresented: $showsNewTripConfirmation, titleVisibility: .visible
-      ) {
-        Button("Start new trip") {
-          Task { await model.startNewRound() }
-        }
-        Button("Keep exploring", role: .cancel) {}
-      } message: {
-        Text("Your current route will be cleared.")
-      }
-      .animation(
-        reduceMotion ? nil : .smooth(duration: 0.25), value: snapshot?.requiredStartingLetter
-      )
-      .task { await model.load() }
+      .toolbar(.hidden, for: .navigationBar)
     }
+    .sheet(isPresented: $showsAtlas) {
+      CityAtlasView(snapshot: model.snapshot, isSubmitting: model.isSubmitting) { city in
+        model.cityInput = city.name
+      }
+      .toolbar(.visible, for: .navigationBar)
+    }
+    .sheet(isPresented: $showsMapDetailSheet) {
+      CityAtlasMapDetailView(
+        visitedCities: model.snapshot?.usedCities ?? [],
+        presentation: model.scoutPresentation,
+        selectedCity: $selectedAtlasCity)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+    .onChange(of: snapshot?.usedCities.last, initial: true) { _, latestCity in
+      selectedAtlasCity = latestCity
+    }
+    .onChange(of: model.scoutPresentation.reactionID) {
+      if model.scoutPresentation.pose == .tryAnother {
+        AccessibilityNotification.Announcement(model.statusMessage).post()
+      }
+    }
+    .confirmationDialog(
+      "Start a new road trip?", isPresented: $showsNewTripConfirmation, titleVisibility: .visible
+    ) {
+      Button("Start new trip") {
+        Task { await model.startNewRound() }
+      }
+      Button("Keep exploring", role: .cancel) {}
+    } message: {
+      Text("Your current route will be cleared.")
+    }
+    .animation(
+      reduceMotion ? nil : .smooth(duration: 0.25), value: snapshot?.requiredStartingLetter
+    )
+    .task { await model.load() }
     .preferredColorScheme(.light)
   }
 
   private func suggestedCities(for snapshot: CityGameSnapshot?) -> [USCity] {
     let catalog = USCityCatalog.standard.cities
-    guard let snapshot, let requiredLetter = snapshot.requiredStartingLetter else {
+    guard let snapshot else {
       let starterNames = ["Austin", "Boston", "Chicago"]
       return starterNames.compactMap { name in catalog.first { $0.name == name } }
     }
 
     let used = Set(snapshot.usedCities.map(\.id))
+    guard let requiredLetter = snapshot.requiredStartingLetter else {
+      if snapshot.usedCities.isEmpty {
+        let starterNames = ["Austin", "Boston", "Chicago"]
+        return starterNames.compactMap { name in catalog.first { $0.name == name } }
+      }
+      return Array(catalog.filter { !used.contains($0.id) }.prefix(4))
+    }
     return Array(
       catalog
         .filter { $0.firstLetter == requiredLetter && !used.contains($0.id) }
         .prefix(4))
+  }
+
+  private func openMapDetail() {
+    if #available(iOS 18.0, *) {
+      isMapDetailPresented = true
+    } else {
+      showsMapDetailSheet = true
+    }
+  }
+
+  @ViewBuilder
+  private var cityMapDetailDestination: some View {
+    if #available(iOS 18.0, *) {
+      cityMapDetail
+        .navigationTransition(
+          .zoom(sourceID: CityAtlasMapView.transitionSourceID, in: atlasMapTransitionNamespace))
+    } else {
+      cityMapDetail
+    }
+  }
+
+  private var cityMapDetail: some View {
+    CityAtlasMapDetailView(
+      visitedCities: model.snapshot?.usedCities ?? [],
+      presentation: model.scoutPresentation,
+      selectedCity: $selectedAtlasCity)
+  }
+}
+
+/// The same game pane is retained while AnyLayout changes around it, so its
+/// focus binding, input draft, scroll target and composer keep their identity.
+private struct CityChainGamePane: View {
+  @Bindable var model: CityChainPageModel
+  let snapshot: CityGameSnapshot?
+  let suggestions: [USCity]
+  let isFirstStop: Bool
+  let isExpanded: Bool
+  let routesFeedbackToAtlas: Bool
+  let onShowAtlas: () -> Void
+  let onRequestNewTrip: () -> Void
+  @FocusState.Binding var isCityFocused: Bool
+  let feedbackMaxHeight: CGFloat
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var isCityHintsRevealed = false
+
+  var body: some View {
+    let hidesCityHints = !isFirstStop && !isCityHintsRevealed
+
+    ScrollViewReader { scrollProxy in
+      ScrollView {
+        VStack(spacing: 20) {
+          if isFirstStop {
+            if !isCityFocused {
+              CityTripHeader(
+                presentation: model.scoutPresentation,
+                onShowAtlas: onShowAtlas)
+            }
+            LetterPromptCard(snapshot: snapshot, isSubmitting: model.isSubmitting)
+          }
+
+          if !suggestions.isEmpty {
+            ZStack {
+              CitySuggestionPicker(
+                cities: suggestions, selectedName: model.cityInput, isDisabled: model.isSubmitting
+              ) { city in
+                model.cityInput = city.name
+              }
+              .blur(radius: hidesCityHints ? 7 : 0)
+              .allowsHitTesting(!hidesCityHints)
+              .accessibilityHidden(hidesCityHints)
+
+              if hidesCityHints {
+                Button {
+                  withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                    isCityHintsRevealed = true
+                  }
+                } label: {
+                  Label("Reveal city hints", systemImage: "eye")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(CityChainPalette.ink)
+                    .frame(maxWidth: .infinity, minHeight: 56)
+                    .background(.white.opacity(0.96), in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                      RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(CityChainPalette.ink.opacity(0.12)))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
+                .accessibilityHint("Reveals suggested cities for this turn")
+              }
+            }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: hidesCityHints)
+          }
+
+          if !routesFeedbackToAtlas && model.hasTurnFeedback && !model.isSubmitting
+            && model.scoutPresentation.pose != .tryAnother {
+            CityTurnFeedbackView(
+              message: model.statusMessage,
+              presentation: model.scoutPresentation,
+              isFinished: snapshot?.isFinished == true,
+              onDismiss: model.dismissTurnFeedback)
+          }
+
+          if let snapshot {
+            GameBoardWidget(
+              cities: snapshot.usedCities,
+              continuations: snapshot.letterContinuations,
+              latestStopFirst: isExpanded && !snapshot.usedCities.isEmpty)
+          } else {
+            ProgressView("Getting the atlas ready…")
+              .tint(CityChainPalette.blue)
+              .frame(maxWidth: .infinity, minHeight: 180)
+          }
+
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
+        .frame(maxWidth: isExpanded ? 620 : .infinity)
+        .frame(maxWidth: .infinity)
+      }
+      .scrollIndicators(.hidden)
+      .scrollDismissesKeyboard(.interactively)
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .safeAreaInset(edge: .top, spacing: 0) {
+        if !isFirstStop || isCityFocused {
+          CityChainPinnedHeader(
+            presentation: model.scoutPresentation,
+            requiredLetter: snapshot?.requiredStartingLetter,
+            isSubmitting: model.isSubmitting,
+            isFinished: snapshot?.isFinished == true,
+            continuation: snapshot?.letterContinuations.last,
+            showsNewTrip: !isFirstStop && (snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true),
+            isNewTripDisabled: model.isSubmitting,
+            onShowAtlas: onShowAtlas,
+            onRequestNewTrip: onRequestNewTrip)
+        }
+      }
+      .safeAreaInset(edge: .bottom, spacing: 0) {
+        CityChainBottomControls(
+          model: model, snapshot: snapshot, isCityFocused: $isCityFocused,
+          showsFeedback: !routesFeedbackToAtlas,
+          feedbackMaxHeight: feedbackMaxHeight)
+      }
+      .onChange(of: isCityFocused) {
+        revealLatestStops(using: scrollProxy)
+      }
+      .onChange(of: snapshot?.usedCities.count) { _, _ in
+        isCityHintsRevealed = false
+      }
+      .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+        revealLatestStops(using: scrollProxy)
+      }
+    }
+  }
+
+  private func revealLatestStops(using proxy: ScrollViewProxy) {
+    guard isCityFocused, let currentCityID = snapshot?.usedCities.last?.id else { return }
+    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
+      proxy.scrollTo(currentCityID, anchor: .top)
+    }
   }
 }
 
 private struct CityChainBottomControls: View {
   @Bindable var model: CityChainPageModel
   let snapshot: CityGameSnapshot?
+  @FocusState.Binding var isCityFocused: Bool
+  let showsFeedback: Bool
+  let feedbackMaxHeight: CGFloat
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
-    if snapshot?.isFinished == true {
-      Button {
-        Task { await model.startNewRound() }
-      } label: {
-        Label("Play again", systemImage: "arrow.clockwise")
-          .font(.title3.weight(.bold))
-          .frame(maxWidth: .infinity, minHeight: 56)
-          .background(CityChainPalette.blue, in: Capsule())
-          .foregroundStyle(.white)
+    VStack(spacing: 0) {
+      if showsFeedback && model.hasTurnFeedback && !model.isSubmitting
+        && model.scoutPresentation.pose == .tryAnother {
+        CityTurnFeedbackView(
+          message: model.statusMessage,
+          presentation: model.scoutPresentation,
+          isFinished: false,
+          maximumHeight: feedbackMaxHeight,
+          onDismiss: model.dismissTurnFeedback)
+          .padding(.horizontal, 20)
+          .padding(.top, 8)
       }
-      .buttonStyle(.plain)
-      .padding(.horizontal, 20)
-      .padding(.top, 12)
-      .padding(.bottom, 8)
-      .frame(maxWidth: 560)
-      .frame(maxWidth: .infinity)
-      .background(.regularMaterial)
-    } else {
-      SubmitCityForm(
-        text: Binding(
-          get: { model.cityInput },
-          set: { model.cityInput = $0 }),
-        isDisabled: model.isSubmitting || snapshot == nil,
-        isSubmitting: model.isSubmitting,
-        onSubmit: { city in await model.submit(city) })
+
+      if snapshot?.isFinished == true {
+        Button {
+          Task { await model.startNewRound() }
+        } label: {
+          Label("Play again", systemImage: "arrow.clockwise")
+            .font(.title3.weight(.bold))
+            .frame(maxWidth: .infinity, minHeight: 56)
+            .background(CityChainPalette.blue, in: Capsule())
+            .foregroundStyle(.white)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+      } else {
+        SubmitCityForm(
+          text: Binding(
+            get: { model.cityInput },
+            set: { model.cityInput = $0 }),
+          isFocused: $isCityFocused,
+          isDisabled: model.isSubmitting || snapshot == nil,
+          isSubmitting: model.isSubmitting,
+          onSubmit: { city in await model.submit(city) })
+      }
     }
+    .frame(maxWidth: .infinity)
+    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: model.hasTurnFeedback)
+  }
+}
+
+private struct CityChainPinnedHeader: View {
+  let presentation: ScoutPresentation
+  let requiredLetter: Character?
+  let isSubmitting: Bool
+  let isFinished: Bool
+  let continuation: CityLetterContinuation?
+  let showsNewTrip: Bool
+  let isNewTripDisabled: Bool
+  let onShowAtlas: () -> Void
+  let onRequestNewTrip: () -> Void
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+  var body: some View {
+    let layout = dynamicTypeSize.isAccessibilitySize
+      ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+      : AnyLayout(HStackLayout(alignment: .center, spacing: 8))
+
+    layout {
+      HStack(spacing: 8) {
+        CityChainActionButton(
+          title: "City atlas", systemImage: "book.closed",
+          hint: "Browse cities and find a name for your next turn",
+          action: onShowAtlas)
+        if showsNewTrip {
+          CityChainActionButton(
+            title: "New trip", systemImage: "arrow.counterclockwise",
+            hint: "Start a new trip after confirmation",
+            isDisabled: isNewTripDisabled,
+            action: onRequestNewTrip)
+        }
+      }
+
+      CityTurnPrompt(
+        presentation: presentation,
+        requiredLetter: requiredLetter,
+        isSubmitting: isSubmitting,
+        isFinished: isFinished,
+        continuation: continuation)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .layoutPriority(-1)
+        .fixedSize(horizontal: false, vertical: true)
+
+      if !dynamicTypeSize.isAccessibilitySize {
+        Spacer(minLength: 0)
+      }
+    }
+    .padding(.horizontal, 12)
+    .padding(.vertical, 6)
+    .background(.regularMaterial)
+  }
+}
+
+private struct CityChainActionButton: View {
+  let title: String
+  let systemImage: String
+  let hint: String
+  var isDisabled = false
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      Image(systemName: systemImage)
+        .font(.system(size: 18, weight: .semibold))
+        .frame(width: 44, height: 44)
+        .background(CityChainPalette.paper.opacity(0.82), in: Circle())
+        .contentShape(Circle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(title)
+    .accessibilityHint(hint)
+    .disabled(isDisabled)
   }
 }
 
 private struct CityChainBackdrop: View {
   var body: some View {
     CityChainPalette.paper
-      .ignoresSafeArea()
       .overlay(alignment: .top) {
         LinearGradient(
           colors: [CityChainPalette.sky.opacity(0.7), .clear],
@@ -146,25 +415,33 @@ private struct CityChainBackdrop: View {
           endPoint: .bottom
         )
         .frame(height: 300)
-        .ignoresSafeArea(edges: .top)
         .allowsHitTesting(false)
       }
+      .ignoresSafeArea(.container)
   }
 }
 
 private struct CityTripHeader: View {
+  let presentation: ScoutPresentation
+  let onShowAtlas: () -> Void
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
   var body: some View {
-    HStack(alignment: .center, spacing: 14) {
-      Image(systemName: "map.fill")
-        .font(.system(.title, design: .rounded, weight: .semibold))
-        .foregroundStyle(CityChainPalette.blue)
-        .padding(15)
-        .background(.white, in: RoundedRectangle(cornerRadius: 20))
-        .rotationEffect(.degrees(-7))
-        .accessibilityHidden(true)
+    let layout = dynamicTypeSize.isAccessibilitySize
+      ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+      : AnyLayout(HStackLayout(alignment: .center, spacing: 8))
+
+    layout {
+      CityChainActionButton(
+        title: "City atlas", systemImage: "book.closed",
+        hint: "Browse cities and find a name for your next turn",
+        action: onShowAtlas)
+
+      ScoutView(presentation: presentation)
+        .frame(width: 124, height: 124)
 
       VStack(alignment: .leading, spacing: 4) {
-        Text("A little American adventure")
+        Text("Explore with Scout")
           .font(.caption.weight(.semibold))
           .foregroundStyle(CityChainPalette.blue)
         Text("Let's go places.")
@@ -172,9 +449,49 @@ private struct CityTripHeader: View {
           .foregroundStyle(CityChainPalette.ink)
           .fixedSize(horizontal: false, vertical: true)
       }
-      Spacer(minLength: 0)
+      .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+/// The large invitation is only for the first stop. During play, keep the route prominent.
+private struct CityTurnPrompt: View {
+  let presentation: ScoutPresentation
+  let requiredLetter: Character?
+  let isSubmitting: Bool
+  let isFinished: Bool
+  var continuation: CityLetterContinuation? = nil
+
+  var body: some View {
+    HStack(spacing: 10) {
+      ScoutView(presentation: presentation)
+        .frame(width: 56, height: 56)
+
+      VStack(alignment: .leading, spacing: 3) {
+        Text(isFinished ? "Trip complete" : (isSubmitting ? "City Scout's turn" : "Your turn"))
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(CityChainPalette.teal)
+        Text(instruction)
+          .font(.system(.headline, design: .rounded, weight: .bold))
+          .foregroundStyle(CityChainPalette.ink)
+          .fixedSize(horizontal: false, vertical: true)
+        if !isFinished, !isSubmitting, let explanation = continuation?.explanation {
+          Text(explanation)
+            .font(.caption)
+            .foregroundStyle(CityChainPalette.secondaryInk)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
     }
     .accessibilityElement(children: .combine)
+  }
+
+  private var instruction: String {
+    if isFinished { return "Ready for another adventure?" }
+    if isSubmitting { return "Looking for our next stop…" }
+    return requiredLetter.map { "Start with \($0)" } ?? "Pick your next city"
   }
 }
 
@@ -210,14 +527,16 @@ private struct LetterPromptCard: View {
         .font(.system(.title, design: .rounded, weight: .bold))
         .fixedSize(horizontal: false, vertical: true)
 
-        Text(
-          isFinished
-            ? "Every city is a new discovery. Ready for another adventure?"
-            : "Take turns with City Scout. The last letter leads to your next city."
-        )
-        .font(.subheadline)
-        .foregroundStyle(.white.opacity(0.85))
-        .fixedSize(horizontal: false, vertical: true)
+        if isFinished || snapshot?.usedCities.isEmpty != false {
+          Text(
+            isFinished
+              ? "Every city is a new discovery. Ready for another adventure?"
+              : "Take turns with City Scout. The last letter leads to your next city."
+          )
+          .font(.subheadline)
+          .foregroundStyle(.white.opacity(0.85))
+          .fixedSize(horizontal: false, vertical: true)
+        }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -324,33 +643,6 @@ private struct CitySuggestionCard: View {
   }
 }
 
-private struct RoundStatusCard: View {
-  let message: String
-  let isFinished: Bool
-
-  var body: some View {
-    HStack(alignment: .top, spacing: 12) {
-      Image(systemName: isFinished ? "trophy.fill" : "binoculars.fill")
-        .font(.title3)
-        .foregroundStyle(CityChainPalette.teal)
-        .padding(10)
-        .background(CityChainPalette.mint, in: RoundedRectangle(cornerRadius: 14))
-        .accessibilityHidden(true)
-      VStack(alignment: .leading, spacing: 5) {
-        Text(isFinished ? "What a trip!" : "City Scout")
-          .font(.system(.subheadline, design: .rounded, weight: .bold))
-        Text(message)
-          .font(.callout)
-          .fixedSize(horizontal: false, vertical: true)
-          .accessibilityAddTraits(.updatesFrequently)
-      }
-      .foregroundStyle(CityChainPalette.ink)
-      .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    .modifier(CityChainCard())
-  }
-}
-
 #Preview("First stop") {
   CityChainPage(model: AppDependencies().makePageModel())
 }
@@ -358,4 +650,39 @@ private struct RoundStatusCard: View {
 #Preview("Larger text") {
   CityChainPage(model: AppDependencies().makePageModel())
     .environment(\.dynamicTypeSize, .accessibility1)
+}
+
+#Preview("Compact turn prompt") {
+  VStack(spacing: 22) {
+    CityTurnPrompt(
+      presentation: ScoutPresentation(), requiredLetter: "E",
+      isSubmitting: false, isFinished: false)
+    GameBoardWidget(cities: [
+      USCity("Austin", state: .texas, isStateCapital: true),
+      USCity("Nashville", state: .tennessee, isStateCapital: true),
+    ])
+  }
+  .padding(20)
+  .background(CityChainPalette.paper)
+}
+
+@available(iOS 18.0, *)
+private struct StartedTripPreviewModifier: PreviewModifier {
+  typealias Context = CityChainPageModel
+
+  static func makeSharedContext() async throws -> CityChainPageModel {
+    let model = AppDependencies().makePageModel()
+    await model.load()
+    _ = await model.submit("Austin")
+    return model
+  }
+
+  func body(content: Content, context: CityChainPageModel) -> some View {
+    CityChainPage(model: context)
+  }
+}
+
+@available(iOS 18.0, *)
+#Preview("Pocket Atlas — started trip", traits: .modifier(StartedTripPreviewModifier())) {
+  EmptyView()
 }

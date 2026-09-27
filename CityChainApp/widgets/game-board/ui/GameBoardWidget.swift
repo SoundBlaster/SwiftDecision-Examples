@@ -3,6 +3,8 @@ import SwiftUI
 
 struct GameBoardWidget: View {
   let cities: [USCity]
+  var continuations: [CityLetterContinuation] = []
+  var latestStopFirst = false
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   var body: some View {
@@ -25,13 +27,18 @@ struct GameBoardWidget: View {
       if cities.isEmpty {
         EmptyRoadTripCard()
       } else {
+        let turns = Array(cities.enumerated())
+        let displayedTurns = latestStopFirst ? Array(turns.reversed()) : turns
         LazyVStack(spacing: 0) {
-          ForEach(Array(cities.enumerated()), id: \.element.id) { turn in
+          ForEach(Array(displayedTurns.enumerated()), id: \.element.element.id) { display in
+            let turn = display.element
             CityTurnRow(
               city: turn.element,
               turnNumber: turn.offset + 1,
               isPlayerTurn: turn.offset.isMultiple(of: 2),
-              isLastStop: turn.offset == cities.count - 1)
+              isLastStop: display.offset == displayedTurns.count - 1,
+              continuation: continuations.first { $0.sourceCity.id == turn.element.id })
+              .id(turn.element.id)
           }
         }
       }
@@ -55,6 +62,7 @@ private struct EmptyRoadTripCard: View {
           .frame(height: 22)
         Image(systemName: "car.side.fill")
           .foregroundStyle(CityChainPalette.teal)
+          .scaleEffect(x: -1, y: 1)
         RouteTrail()
           .stroke(
             CityChainPalette.blue.opacity(0.25),

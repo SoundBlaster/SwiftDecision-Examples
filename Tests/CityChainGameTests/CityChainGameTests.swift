@@ -102,6 +102,139 @@ struct CityChainGameTests {
     #expect(try await game.submit("Detroit") == .gameAlreadyFinished)
   }
 
+  @Test("Previous-letter continuation skips exhausted letters before finding a reply")
+  func previousAvailableLetterFindsAnEarlierLetter() async throws {
+    let backend = FixtureBackend()
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: backend),
+      catalog: catalog("Seattle"),
+      continuationPolicy: .previousAvailableLetter
+    )
+
+    let result = try await game.submit("Mesa")
+
+    #expect(
+      result
+        == .computerReplied(
+          playerCity: USCity("Mesa"),
+          computerCity: USCity("Seattle"),
+          selection: .onlyAvailableCity
+        ))
+    let snapshot = await game.snapshot()
+    let playerContinuation = try #require(snapshot.letterContinuations.first)
+    #expect(playerContinuation.startingLetter == "S")
+    #expect(playerContinuation.skippedLetters == ["A"])
+  }
+
+  @Test("Previous-letter continuation allows any reply when every letter is exhausted")
+  func previousAvailableLetterFallsBackToAnyLetter() async throws {
+    let backend = FixtureBackend()
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: backend),
+      catalog: catalog("Dover"),
+      continuationPolicy: .previousAvailableLetter
+    )
+
+    let result = try await game.submit("Mesa")
+
+    #expect(
+      result
+        == .computerReplied(
+          playerCity: USCity("Mesa"),
+          computerCity: USCity("Dover"),
+          selection: .onlyAvailableCity
+        ))
+    let snapshot = await game.snapshot()
+    let playerContinuation = try #require(snapshot.letterContinuations.first)
+    #expect(playerContinuation.startingLetter == nil)
+    #expect(playerContinuation.skippedLetters == ["A", "S", "E", "M"])
+  }
+
+  @Test("The traced submission exposes the ordered specification and decision stages")
+  func tracedSubmissionReportsPipelineAndChoiceDetails() async throws {
+    let backend = FixtureBackend(choiceIndex: 2)
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: backend),
+      catalog: catalog("Dover", "Detroit", "Durham", "Duluth", "Dublin", "Dayton")
+    )
+
+    let traced = try await game.submitWithTrace("Riverhead")
+
+    #expect(
+      traced.result
+        == .computerReplied(
+          playerCity: USCity("Riverhead"),
+          computerCity: USCity("Durham"),
+          selection: .acceptedByDecision(confidence: 0.96)
+        ))
+    #expect(
+      traced.pipeline.map(\.id)
+        == [
+          "player-preflight", "city-validation", "catalog-validation", "player-continuation",
+          "reply-candidates", "reply-plan", "computer-choice", "turn-commit",
+          "computer-continuation",
+        ])
+
+    let candidatesStage = try #require(traced.pipeline.first { $0.id == "reply-candidates" })
+    #expect(candidatesStage.events.contains { $0.name == "city.available-replies" })
+    let choiceStage = try #require(traced.pipeline.first { $0.id == "computer-choice" })
+    #expect(choiceStage.details.first { $0.id == "candidate-count" }?.value == "5")
+    #expect(choiceStage.details.first { $0.id == "selected-city" }?.value == "Durham")
+    #expect(choiceStage.details.first { $0.id == "confidence" }?.value == "96%")
+  }
+
+  @Test("Reset clears the route and allows another round")
+  func resetRestoresInitialState() async throws {
+    let backend = FixtureBackend()
+    let game = CityChainGame(decisions: DecisionEngine(backend: backend), catalog: catalog("Dover"))
+
+    let firstRound = try await game.submit("Riverhead")
+    guard case .computerReplied = firstRound else {
+      Issue.record("Expected a completed first turn before reset.")
+      return
+    }
+
+    await game.reset()
+    let resetSnapshot = await game.snapshot()
+    #expect(resetSnapshot.usedCities.isEmpty)
+    #expect(resetSnapshot.requiredStartingLetter == nil)
+    #expect(resetSnapshot.ending == nil)
+    #expect(resetSnapshot.consecutiveMistakes == 0)
+    #expect(resetSnapshot.cityHint == nil)
+    #expect(resetSnapshot.validationSource == nil)
+    #expect(resetSnapshot.letterContinuations.isEmpty)
+    #expect(!resetSnapshot.isSubmissionInProgress)
+    #expect(!resetSnapshot.isFinished)
+
+    #expect(
+      try await game.submit("Riverhead")
+        == .computerReplied(
+          playerCity: USCity("Riverhead"),
+          computerCity: USCity("Dover"),
+          selection: .onlyAvailableCity
+        ))
+  }
+
+  @Test("An invalid random fallback index safely selects the first candidate")
+  func invalidRandomFallbackIndexUsesFirstCandidate() async throws {
+    let backend = FixtureBackend(failChoice: true)
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: backend),
+      catalog: catalog("Dover", "Detroit"),
+      randomCandidateIndex: { $0.upperBound }
+    )
+
+    let result = try await game.submit("Riverhead")
+
+    #expect(
+      result
+        == .computerReplied(
+          playerCity: USCity("Riverhead"),
+          computerCity: USCity("Dover"),
+          selection: .randomFallback
+        ))
+  }
+
   @Test("A single legal computer reply is automatic and does not call Choice")
   func singleReplyIsSelectedWithoutInference() async throws {
     let backend = FixtureBackend()
@@ -326,16 +459,35 @@ struct CityChainGameTests {
     #expect(!snapshot.isSubmissionInProgress)
   }
 
-  @Test("The standard reply catalog contains all 50 capitals and 50 additional cities")
-  func standardCatalogHasOneHundredUniqueCities() {
+  @Test("Cancellation propagates and releases the submission gate without committing a city")
+  func cancellationLeavesStateUnchanged() async throws {
+    let backend = ClosureDecisionBackend { _ in throw CancellationError() }
+    let game = CityChainGame(decisions: DecisionEngine(backend: backend), catalog: catalog("Dover"))
+
+    do {
+      _ = try await game.submit("Riverhead")
+      Issue.record("Expected cancellation to propagate from the backend.")
+    } catch is CancellationError {
+      // Cancellation must remain cancellation instead of triggering local fallback.
+    } catch {
+      Issue.record("Expected CancellationError, got \(error).")
+    }
+
+    let snapshot = await game.snapshot()
+    #expect(snapshot.usedCities.isEmpty)
+    #expect(!snapshot.isSubmissionInProgress)
+  }
+
+  @Test("The standard reply catalog contains all 50 capitals and 100 additional cities")
+  func standardCatalogHasOneHundredFiftyUniqueCities() {
     #expect(USCityCatalog.stateCapitals.count == 50)
     #expect(USCityCatalog.majorCities.count == 50)
-    #expect(USCityCatalog.standard.cities.count == 100)
-    #expect(Set(USCityCatalog.standard.cities.map(\.id)).count == 100)
+    #expect(USCityCatalog.standard.cities.count == 150)
+    #expect(Set(USCityCatalog.standard.cities.map(\.id)).count == 150)
   }
 
   private func catalog(_ names: String...) -> USCityCatalog {
-    USCityCatalog(cities: names.map(USCity.init))
+    USCityCatalog(cities: names.map { USCity($0) })
   }
 }
 
@@ -435,7 +587,6 @@ private actor SuspendedNoulBackend: DecisionBackend {
       ))
   }
 }
-
 
 private actor RecordingJevTransport: JevHTTPTransport {
   private(set) var requestCount = 0

@@ -135,6 +135,8 @@ public struct USCity: Hashable, Identifiable, Sendable, CustomStringConvertible 
 
   public var lastLetter: Character? { latinLetters.last }
 
+  var continuationLetters: [Character] { Array(latinLetters.reversed()) }
+
   public var stateName: String? { state?.name }
 
   public var stateAbbreviation: String? { state?.abbreviation }
@@ -183,7 +185,7 @@ public struct USCityCatalog: Sendable {
     self.cities = uniqueCities
   }
 
-  public static let standard = USCityCatalog(cities: stateCapitals + majorCities)
+  public static let standard = USCityCatalog(cities: stateCapitals + majorCities + explorationCities)
 
   /// The 50 state capitals, in state-name order.
   public static let stateCapitals: [USCity] = [
@@ -292,6 +294,60 @@ public struct USCityCatalog: Sendable {
     USCity("Scottsdale", state: .arizona),
     USCity("Seattle", state: .washington),
   ]
+  /// More familiar cities and rare initial letters; verified against the 2025 Census Gazetteer.
+  public static let explorationCities: [USCity] = [
+    USCity("Akron", state: .ohio),
+    USCity("Allentown", state: .pennsylvania),
+    USCity("Anchorage", state: .alaska),
+    USCity("Bend", state: .oregon),
+    USCity("Billings", state: .montana),
+    USCity("Boulder", state: .colorado),
+    USCity("Charlotte", state: .northCarolina),
+    USCity("Chattanooga", state: .tennessee),
+    USCity("Colorado Springs", state: .colorado),
+    USCity("Dayton", state: .ohio),
+    USCity("Durham", state: .northCarolina),
+    USCity("Erie", state: .pennsylvania),
+    USCity("Eugene", state: .oregon),
+    USCity("Fairbanks", state: .alaska),
+    USCity("Fargo", state: .northDakota),
+    USCity("Fort Collins", state: .colorado),
+    USCity("Huntsville", state: .alabama),
+    USCity("Ithaca", state: .newYork),
+    USCity("Knoxville", state: .tennessee),
+    USCity("Las Vegas", state: .nevada),
+    USCity("Medford", state: .oregon),
+    USCity("Missoula", state: .montana),
+    USCity("Ogden", state: .utah),
+    USCity("Pasadena", state: .california),
+    USCity("Philadelphia", state: .pennsylvania),
+    USCity("Provo", state: .utah),
+    USCity("Quincy", state: .massachusetts),
+    USCity("Reno", state: .nevada),
+    USCity("Rochester", state: .newYork),
+    USCity("San Francisco", state: .california),
+    USCity("Santa Barbara", state: .california),
+    USCity("Santa Monica", state: .california),
+    USCity("Savannah", state: .georgia),
+    USCity("Sioux Falls", state: .southDakota),
+    USCity("Spokane", state: .washington),
+    USCity("Tacoma", state: .washington),
+    USCity("Toledo", state: .ohio),
+    USCity("Urbana", state: .illinois),
+    USCity("Utica", state: .newYork),
+    USCity("Vancouver", state: .washington),
+    USCity("Xenia", state: .ohio),
+    USCity("Yakima", state: .washington),
+    USCity("Yonkers", state: .newYork),
+    USCity("York", state: .pennsylvania),
+    USCity("Youngstown", state: .ohio),
+    USCity("Ypsilanti", state: .michigan),
+    USCity("Yreka", state: .california),
+    USCity("Yuma", state: .arizona),
+    USCity("Zanesville", state: .ohio),
+    USCity("Zephyrhills", state: .florida),
+  ]
+
 }
 
 private struct CatalogDeduplicationContext {

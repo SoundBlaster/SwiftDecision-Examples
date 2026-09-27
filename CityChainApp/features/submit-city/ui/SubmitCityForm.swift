@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SubmitCityForm: View {
   @Binding var text: String
-  @FocusState private var isFocused: Bool
+  @FocusState.Binding var isFocused: Bool
   @ScaledMetric(relativeTo: .title2) private var buttonSize = 52
   let isDisabled: Bool
   let isSubmitting: Bool
@@ -50,16 +50,14 @@ struct SubmitCityForm: View {
     .background(.white, in: RoundedRectangle(cornerRadius: 33))
     .overlay(
       RoundedRectangle(cornerRadius: 33).strokeBorder(
-        isFocused ? CityChainPalette.blue : CityChainPalette.ink.opacity(0.08),
-        lineWidth: isFocused ? 2 : 1)
+        CityChainPalette.ink.opacity(isFocused ? 0.36 : 0.10),
+        lineWidth: isFocused ? 1.5 : 1)
     )
-    .shadow(color: CityChainPalette.ink.opacity(0.08), radius: 16, y: 6)
+    .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
     .padding(.horizontal, 20)
     .padding(.top, 12)
     .padding(.bottom, 8)
-    .frame(maxWidth: 560)
     .frame(maxWidth: .infinity)
-    .background(.regularMaterial)
   }
 
   private func submit() {

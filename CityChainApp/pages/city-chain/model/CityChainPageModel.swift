@@ -8,8 +8,10 @@ final class CityChainPageModel {
   private let game: CityChainGame
 
   private(set) var snapshot: CityGameSnapshot?
+  private(set) var latestTurnPipeline: [CityGamePipelineStage] = []
   private(set) var isSubmitting = false
   private(set) var hasTurnFeedback = false
+  private(set) var scoutPresentation = ScoutPresentation()
   var cityInput = ""
   var statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
 
@@ -18,7 +20,13 @@ final class CityChainPageModel {
   }
 
   func load() async {
+    guard snapshot == nil else { return }
     snapshot = await game.snapshot()
+    scoutPresentation.present(.welcome)
+  }
+
+  func dismissTurnFeedback() {
+    hasTurnFeedback = false
   }
 
   func startNewRound() async {
@@ -26,24 +34,49 @@ final class CityChainPageModel {
     await game.reset()
     cityInput = ""
     hasTurnFeedback = false
+    latestTurnPipeline = []
     statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
     snapshot = await game.snapshot()
+    scoutPresentation.present(.welcome)
   }
 
   func submit(_ cityName: String) async -> Bool {
     guard !isSubmitting else { return false }
     isSubmitting = true
     hasTurnFeedback = true
-    defer { isSubmitting = false }
+    // Local rule failures can return immediately. Avoid flashing the thinking
+    // sprite between two corrective poses, without delaying the game result.
+    let thinkingTask = Task { @MainActor in
+      do {
+        try await Task.sleep(for: .milliseconds(300))
+      } catch {
+        return
+      }
+      guard !Task.isCancelled else { return }
+      scoutPresentation.present(.thinking)
+    }
+    defer {
+      thinkingTask.cancel()
+      isSubmitting = false
+    }
 
     do {
-      let result = try await game.submit(cityName)
+      let tracedResult = try await game.submitWithTrace(cityName)
+      latestTurnPipeline = tracedResult.pipeline
+      let result = tracedResult.result
       statusMessage = Self.message(for: result)
       snapshot = await game.snapshot()
-      return Self.didAcceptPlayerTurn(result)
+      let accepted = Self.didAcceptPlayerTurn(result)
+      scoutPresentation.present(accepted ? .celebration : .tryAnother)
+      return accepted
     } catch {
+      latestTurnPipeline.append(
+        CityGamePipelineStage(
+          id: "turn-error", title: "Turn error",
+          summary: "The turn failed with \(String(reflecting: type(of: error)))."))
       statusMessage = String(localized: "I can't check that city right now. Try a suggested city!")
       snapshot = await game.snapshot()
+      scoutPresentation.present(.tryAnother)
       return false
     }
   }
@@ -76,16 +109,19 @@ final class CityChainPageModel {
     case .computerReplied(let playerCity, let computerCity, let selection):
       switch selection {
       case .onlyAvailableCity:
-        return Self.format("Great job with %@! My only city was %@.", playerCity.name, computerCity.name)
+        return Self.format(
+          "Great job with %@! My only city was %@.", playerCity.name, computerCity.name)
       case .acceptedByDecision:
         return Self.format("Great job with %@! I choose %@.", playerCity.name, computerCity.name)
       case .fallbackByDecision:
         return Self.format("Great job with %@! I choose %@.", playerCity.name, computerCity.name)
       case .randomFallback:
-        return Self.format("Great job with %@! I picked %@ from my atlas.", playerCity.name, computerCity.name)
+        return Self.format(
+          "Great job with %@! I picked %@ from my atlas.", playerCity.name, computerCity.name)
       }
     case .playerWonNoAvailableReply(_, let startingLetter):
-      return Self.format("No more cities start with %@. You win this round!", String(startingLetter))
+      return Self.format(
+        "No more cities start with %@. You win this round!", String(startingLetter))
     case .playerWonBecauseComputerAbstained:
       return String(localized: "I can't think of a city. You win this round!")
     case .submissionInProgress:

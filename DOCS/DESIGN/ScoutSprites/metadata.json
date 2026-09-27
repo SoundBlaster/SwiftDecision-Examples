@@ -1,0 +1,85 @@
+{
+  "note": "Bounds are read-only measurements at alpha >= 128, not anatomical anchors. Images were not resampled or edited by this inspection.",
+  "assets": [
+    {
+      "file": "scout-avatar.png",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBoundsAlpha128": [
+        85,
+        243,
+        1174,
+        1078
+      ]
+    },
+    {
+      "file": "scout-celebration.png",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBoundsAlpha128": [
+        195,
+        83,
+        1159,
+        1193
+      ]
+    },
+    {
+      "file": "scout-thinking.png",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBoundsAlpha128": [
+        188,
+        127,
+        1093,
+        1192
+      ]
+    },
+    {
+      "file": "scout-try-another.png",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBoundsAlpha128": [
+        190,
+        83,
+        1196,
+        1193
+      ]
+    },
+    {
+      "file": "scout-welcome.png",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "visibleBoundsAlpha128": [
+        196,
+        83,
+        1158,
+        1191
+      ]
+    }
+  ]
+}

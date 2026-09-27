@@ -6,6 +6,12 @@ struct CityTurnRow: View {
   let turnNumber: Int
   let isPlayerTurn: Bool
   var isLastStop = false
+  var continuation: CityLetterContinuation? = nil
+
+  private var nextLetterLabel: String {
+    if let continuation { return continuation.startingLetter.map(String.init) ?? "Any" }
+    return city.lastLetter.map(String.init) ?? "Any"
+  }
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   var body: some View {
@@ -49,8 +55,15 @@ struct CityTurnRow: View {
           CityCapitalBadge()
         }
 
-        if dynamicTypeSize.isAccessibilitySize, let letter = city.lastLetter {
-          Text("Next letter: \(String(letter))")
+        if let explanation = continuation?.explanation {
+          Text(explanation)
+            .font(.caption)
+            .foregroundStyle(CityChainPalette.teal)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+
+        if dynamicTypeSize.isAccessibilitySize {
+          Text("Next letter: \(nextLetterLabel)")
             .font(.caption.weight(.semibold))
             .foregroundStyle(CityChainPalette.blue)
         }
@@ -59,21 +72,33 @@ struct CityTurnRow: View {
       .padding(.top, 2)
       .padding(.bottom, isLastStop ? 0 : 24)
 
-      if !dynamicTypeSize.isAccessibilitySize, let letter = city.lastLetter {
+      if !dynamicTypeSize.isAccessibilitySize {
         VStack(spacing: 4) {
           Image(systemName: "arrow.turn.down.right")
             .font(.caption2)
-          Text(String(letter))
+          Text(nextLetterLabel)
             .font(.system(.title3, design: .rounded, weight: .heavy))
         }
         .foregroundStyle(CityChainPalette.blue)
         .padding(10)
         .background(CityChainPalette.sky.opacity(0.6), in: RoundedRectangle(cornerRadius: 12))
-        .accessibilityLabel("Next letter: \(String(letter))")
+        .accessibilityLabel("Next letter: \(nextLetterLabel)")
       }
     }
     .fixedSize(horizontal: false, vertical: true)
     .accessibilityElement(children: .combine)
     .accessibilityValue("Stop \(turnNumber)")
+  }
+}
+
+/// Presentation stays in the app; the engine records the rule's factual result.
+extension CityLetterContinuation {
+  var explanation: String? {
+    guard !skippedLetters.isEmpty else { return nil }
+    let letters = skippedLetters.map(String.init).joined(separator: ", ")
+    if let startingLetter {
+      return "No unused cities for \(letters). Back through \(sourceCity.name): try \(startingLetter)."
+    }
+    return "We've used every option for this name's letters. Pick any new city."
   }
 }
