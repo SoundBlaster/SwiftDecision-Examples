@@ -263,14 +263,13 @@ private struct CityChainBottomControls: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      if showsFeedback && model.hasTurnFeedback && !model.isSubmitting {
-        CityTurnFeedbackView(
+      if showsFeedback && model.hasTurnFeedback && !model.isSubmitting && isCityFocused {
+        ScoutSpeechFeedbackView(
           message: model.statusMessage,
           presentation: model.scoutPresentation,
           isFinished: snapshot?.isFinished == true,
           onDismiss: model.dismissTurnFeedback)
-          .padding(.horizontal, 20)
-          .padding(.top, 8)
+          .transition(.move(edge: .bottom).combined(with: .opacity))
       }
 
       if snapshot?.isFinished == true {
@@ -297,9 +296,19 @@ private struct CityChainBottomControls: View {
           isSubmitting: model.isSubmitting,
           onSubmit: { city in await model.submit(city) })
       }
+
+      if showsFeedback && model.hasTurnFeedback && !model.isSubmitting && !isCityFocused {
+        ScoutSpeechFeedbackView(
+          message: model.statusMessage,
+          presentation: model.scoutPresentation,
+          isFinished: snapshot?.isFinished == true,
+          onDismiss: model.dismissTurnFeedback)
+          .transition(.move(edge: .top).combined(with: .opacity))
+      }
     }
     .frame(maxWidth: .infinity)
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: model.hasTurnFeedback)
+    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isCityFocused)
   }
 }
 
