@@ -3,6 +3,7 @@ import SwiftUI
 struct SubmitCityForm: View {
   @Binding var text: String
   @FocusState.Binding var isFocused: Bool
+  @State private var inputRevision = 0
   @ScaledMetric(relativeTo: .title2) private var buttonSize = 52
   let isDisabled: Bool
   let isSubmitting: Bool
@@ -11,7 +12,7 @@ struct SubmitCityForm: View {
   var body: some View {
     let cannotSubmit = isDisabled || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     HStack(spacing: 12) {
-      TextField("Your city name", text: $text, axis: .vertical)
+      TextField("Your city name", text: inputBinding, axis: .vertical)
         .font(.title3.weight(.medium))
         .textFieldStyle(.plain)
         .lineLimit(1...3)
@@ -60,11 +61,24 @@ struct SubmitCityForm: View {
   }
 
   private func submit() {
-    let cityName = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    let submittedText = text
+    let cityName = submittedText.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !isDisabled, !cityName.isEmpty else { return }
+    let submittedRevision = inputRevision
     text = ""
     Task { @MainActor in
-      _ = await onSubmit(cityName)
+      let wasAccepted = await onSubmit(cityName)
+      guard !wasAccepted, inputRevision == submittedRevision, text.isEmpty else { return }
+      text = submittedText
     }
+  }
+
+  private var inputBinding: Binding<String> {
+    Binding(
+      get: { text },
+      set: { newValue in
+        text = newValue
+        inputRevision += 1
+      })
   }
 }
