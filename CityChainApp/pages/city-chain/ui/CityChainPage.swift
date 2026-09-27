@@ -193,7 +193,14 @@ private struct CityChainGamePane: View {
       .frame(maxWidth: .infinity)
     }
     .scrollIndicators(.hidden)
-    .scrollDismissesKeyboard(.interactively)
+    .scrollDismissesKeyboard(.never)
+    .simultaneousGesture(
+      TapGesture().onEnded {
+        if isCityFocused {
+          isCityFocused = false
+        }
+      }
+    )
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .safeAreaInset(edge: .top, spacing: 0) {
       if !isFirstStop || isCityFocused {

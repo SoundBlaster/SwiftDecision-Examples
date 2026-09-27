@@ -62,15 +62,9 @@ struct SubmitCityForm: View {
   private func submit() {
     let cityName = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !isDisabled, !cityName.isEmpty else { return }
+    text = ""
     Task { @MainActor in
-      if await onSubmit(cityName) {
-        // Keep the keyboard and viewport stable while Scout is working. If the
-        // player has already drafted another city, leave that draft untouched.
-        if text.trimmingCharacters(in: .whitespacesAndNewlines) == cityName {
-          text = ""
-          isFocused = false
-        }
-      }
+      _ = await onSubmit(cityName)
     }
   }
 }
