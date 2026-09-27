@@ -1,6 +1,5 @@
 import CityChainGame
 import SwiftUI
-import UIKit
 
 struct CityChainPage: View {
   let model: CityChainPageModel
@@ -158,111 +157,92 @@ private struct CityChainGamePane: View {
   @State private var isCityHintsRevealed = false
 
   var body: some View {
-    ScrollViewReader { scrollProxy in
-      ScrollView {
-        VStack(spacing: 20) {
-          if isFirstStop {
-            if !isCityFocused {
-              CityTripHeader(
-                presentation: model.scoutPresentation,
-                onShowAtlas: onShowAtlas)
+    ScrollView {
+      VStack(spacing: 20) {
+        if isFirstStop {
+          if !isCityFocused {
+            CityTripHeader(
+              presentation: model.scoutPresentation,
+              onShowAtlas: onShowAtlas)
+          }
+          LetterPromptCard(snapshot: snapshot, isSubmitting: model.isSubmitting)
+        }
+
+        if isFirstStop && !suggestions.isEmpty {
+          CitySuggestionPicker(
+            cities: suggestions, selectedName: model.cityInput, isDisabled: model.isSubmitting
+          ) { city in
+            model.cityInput = city.name
+          }
+        }
+
+        if let snapshot {
+          GameBoardWidget(
+            cities: snapshot.usedCities,
+            continuations: snapshot.letterContinuations,
+            latestStopFirst: !snapshot.usedCities.isEmpty)
+        } else {
+          ProgressView("Getting the atlas ready…")
+            .tint(CityChainPalette.blue)
+            .frame(maxWidth: .infinity, minHeight: 180)
+        }
+      }
+      .padding(.horizontal, 20)
+      .padding(.vertical, 18)
+      .frame(maxWidth: isExpanded ? 620 : .infinity)
+      .frame(maxWidth: .infinity)
+    }
+    .scrollIndicators(.hidden)
+    .scrollDismissesKeyboard(.interactively)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .safeAreaInset(edge: .top, spacing: 0) {
+      if !isFirstStop || isCityFocused {
+        CityChainPinnedHeader(
+          presentation: model.scoutPresentation,
+          isExpanded: isExpanded,
+          requiredLetter: snapshot?.requiredStartingLetter,
+          isSubmitting: model.isSubmitting,
+          isFinished: snapshot?.isFinished == true,
+          continuation: snapshot?.letterContinuations.last,
+          showsNewTrip: !isFirstStop && (snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true),
+          isNewTripDisabled: model.isSubmitting,
+          cityHints: suggestions,
+          selectedCityName: model.cityInput,
+          areCityHintsHidden: !isCityHintsRevealed,
+          isCityHintsDisabled: model.isSubmitting,
+          showsCityHintsPopover: $showsCityHintsPopover,
+          onRevealCityHints: {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+              isCityHintsRevealed = true
             }
-            LetterPromptCard(snapshot: snapshot, isSubmitting: model.isSubmitting)
-          }
-
-          if isFirstStop && !suggestions.isEmpty {
-              CitySuggestionPicker(
-                cities: suggestions, selectedName: model.cityInput, isDisabled: model.isSubmitting
-              ) { city in
-                model.cityInput = city.name
-              }
-          }
-
-          if let snapshot {
-            GameBoardWidget(
-              cities: snapshot.usedCities,
-              continuations: snapshot.letterContinuations,
-              latestStopFirst: !snapshot.usedCities.isEmpty)
-          } else {
-            ProgressView("Getting the atlas ready…")
-              .tint(CityChainPalette.blue)
-              .frame(maxWidth: .infinity, minHeight: 180)
-          }
-
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 18)
-        .frame(maxWidth: isExpanded ? 620 : .infinity)
-        .frame(maxWidth: .infinity)
+          },
+          onSelectHint: { city in
+            model.cityInput = city.name
+            showsCityHintsPopover = false
+          },
+          onShowAtlas: onShowAtlas,
+          onRequestNewTrip: onRequestNewTrip,
+          hasDecisionTrace: !model.latestTurnPipeline.isEmpty,
+          onShowDecisionTrace: { showsDecisionTrace = true }
+        )
       }
-      .scrollIndicators(.hidden)
-      .scrollDismissesKeyboard(.interactively)
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .safeAreaInset(edge: .top, spacing: 0) {
-        if !isFirstStop || isCityFocused {
-          CityChainPinnedHeader(
-            presentation: model.scoutPresentation,
-            isExpanded: isExpanded,
-            requiredLetter: snapshot?.requiredStartingLetter,
-            isSubmitting: model.isSubmitting,
-            isFinished: snapshot?.isFinished == true,
-            continuation: snapshot?.letterContinuations.last,
-            showsNewTrip: !isFirstStop && (snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true),
-            isNewTripDisabled: model.isSubmitting,
-            cityHints: suggestions,
-            selectedCityName: model.cityInput,
-            areCityHintsHidden: !isCityHintsRevealed,
-            isCityHintsDisabled: model.isSubmitting,
-            showsCityHintsPopover: $showsCityHintsPopover,
-            onRevealCityHints: {
-              withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-                isCityHintsRevealed = true
-              }
-            },
-            onSelectHint: { city in
-              model.cityInput = city.name
-              showsCityHintsPopover = false
-            },
-            onShowAtlas: onShowAtlas,
-            onRequestNewTrip: onRequestNewTrip,
-            hasDecisionTrace: !model.latestTurnPipeline.isEmpty,
-            onShowDecisionTrace: { showsDecisionTrace = true }
-          )
-        }
-      }
-      .safeAreaInset(edge: .bottom, spacing: 0) {
-        CityChainBottomControls(
-          model: model, snapshot: snapshot, isCityFocused: $isCityFocused,
-          showsFeedback: !routesFeedbackToAtlas)
-      }
-      .onChange(of: isCityFocused) {
-        revealLatestStops(using: scrollProxy)
-      }
-      .onChange(of: snapshot?.usedCities.count) { _, _ in
-        isCityHintsRevealed = false
-        showsCityHintsPopover = false
-        revealLatestStops(using: scrollProxy)
-      }
-      .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
-        revealLatestStops(using: scrollProxy)
-      }
+    }
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      CityChainBottomControls(
+        model: model, snapshot: snapshot, isCityFocused: $isCityFocused,
+        showsFeedback: !routesFeedbackToAtlas)
+    }
+    .onChange(of: snapshot?.usedCities.count) { _, _ in
+      isCityHintsRevealed = false
+      showsCityHintsPopover = false
+    }
 #if DEBUG
-      .sheet(isPresented: $showsDecisionTrace) {
-        CityChainPipelineDetailView(stages: model.latestTurnPipeline)
-          .presentationDetents([.medium, .large])
-          .presentationDragIndicator(.visible)
-      }
+    .sheet(isPresented: $showsDecisionTrace) {
+      CityChainPipelineDetailView(stages: model.latestTurnPipeline)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
 #endif
-    }
-  }
-
-  private func revealLatestStops(using proxy: ScrollViewProxy) {
-    guard isCityFocused, let currentCityID = snapshot?.usedCities.last?.id else { return }
-    var transaction = Transaction()
-    transaction.disablesAnimations = true
-    withTransaction(transaction) {
-      proxy.scrollTo(currentCityID, anchor: .top)
-    }
   }
 }
 
