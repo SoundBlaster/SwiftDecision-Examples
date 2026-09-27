@@ -8,6 +8,7 @@ struct ScoutView: View {
 
   var body: some View {
     let reaction = ScoutReaction(pose: presentation.pose)
+    let isSceneActive = scenePhase == .active
     if reduceMotion {
       ScoutSprite(pose: presentation.pose)
         .padding(10)
@@ -16,11 +17,10 @@ struct ScoutView: View {
         .keyframeAnimator(
           initialValue: ScoutMotion(), trigger: presentation.reactionID
         ) { content, motion in
-          let isActive = scenePhase == .active
           content
-            .scaleEffect(isActive ? motion.scale : 1, anchor: .bottom)
-            .rotationEffect(.degrees(isActive ? motion.rotation : 0), anchor: .bottom)
-            .offset(y: isActive ? motion.height : 0)
+            .scaleEffect(isSceneActive ? motion.scale : 1, anchor: .bottom)
+            .rotationEffect(.degrees(isSceneActive ? motion.rotation : 0), anchor: .bottom)
+            .offset(y: isSceneActive ? motion.height : 0)
         } keyframes: { _ in
           KeyframeTrack(\.height) {
             CubicKeyframe(reaction.lift, duration: 0.24)
