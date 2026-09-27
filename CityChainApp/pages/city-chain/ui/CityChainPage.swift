@@ -44,8 +44,7 @@ struct CityChainPage: View {
             routesFeedbackToAtlas: usesColumns,
             onShowAtlas: { showsAtlas = true },
             onRequestNewTrip: { showsNewTripConfirmation = true },
-            isCityFocused: $isCityFocused,
-            feedbackMaxHeight: max(44, geometry.size.height * 0.20))
+            isCityFocused: $isCityFocused)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .padding(.horizontal, usesColumns ? 18 : 0)
@@ -155,7 +154,6 @@ private struct CityChainGamePane: View {
   @State private var showsDecisionTrace = false
   @State private var showsCityHintsPopover = false
   @FocusState.Binding var isCityFocused: Bool
-  let feedbackMaxHeight: CGFloat
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var isCityHintsRevealed = false
 
@@ -204,6 +202,7 @@ private struct CityChainGamePane: View {
         if !isFirstStop || isCityFocused {
           CityChainPinnedHeader(
             presentation: model.scoutPresentation,
+            isExpanded: isExpanded,
             requiredLetter: snapshot?.requiredStartingLetter,
             isSubmitting: model.isSubmitting,
             isFinished: snapshot?.isFinished == true,
@@ -229,26 +228,12 @@ private struct CityChainGamePane: View {
             hasDecisionTrace: !model.latestTurnPipeline.isEmpty,
             onShowDecisionTrace: { showsDecisionTrace = true }
           )
-          .overlay(alignment: .bottom) {
-            if !routesFeedbackToAtlas && model.hasTurnFeedback && !model.isSubmitting
-              && model.scoutPresentation.pose != .tryAnother {
-              CityTurnFeedbackView(
-                message: model.statusMessage,
-                presentation: model.scoutPresentation,
-                isFinished: snapshot?.isFinished == true,
-                onDismiss: model.dismissTurnFeedback)
-                .padding(.horizontal, 20)
-                .alignmentGuide(.bottom) { _ in -8 }
-                .zIndex(2)
-            }
-          }
         }
       }
       .safeAreaInset(edge: .bottom, spacing: 0) {
         CityChainBottomControls(
           model: model, snapshot: snapshot, isCityFocused: $isCityFocused,
-          showsFeedback: !routesFeedbackToAtlas,
-          feedbackMaxHeight: feedbackMaxHeight)
+          showsFeedback: !routesFeedbackToAtlas)
       }
       .onChange(of: isCityFocused) {
         revealLatestStops(using: scrollProxy)
@@ -286,18 +271,15 @@ private struct CityChainBottomControls: View {
   let snapshot: CityGameSnapshot?
   @FocusState.Binding var isCityFocused: Bool
   let showsFeedback: Bool
-  let feedbackMaxHeight: CGFloat
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     VStack(spacing: 0) {
-      if showsFeedback && model.hasTurnFeedback && !model.isSubmitting
-        && model.scoutPresentation.pose == .tryAnother {
+      if showsFeedback && model.hasTurnFeedback && !model.isSubmitting {
         CityTurnFeedbackView(
           message: model.statusMessage,
           presentation: model.scoutPresentation,
-          isFinished: false,
-          maximumHeight: feedbackMaxHeight,
+          isFinished: snapshot?.isFinished == true,
           onDismiss: model.dismissTurnFeedback)
           .padding(.horizontal, 20)
           .padding(.top, 8)
@@ -335,6 +317,7 @@ private struct CityChainBottomControls: View {
 
 private struct CityChainPinnedHeader: View {
   let presentation: ScoutPresentation
+  let isExpanded: Bool
   let requiredLetter: Character?
   let isSubmitting: Bool
   let isFinished: Bool
@@ -392,12 +375,21 @@ private struct CityChainPinnedHeader: View {
 #endif
       }
 
-      CityTurnPrompt(
-        presentation: presentation,
-        requiredLetter: requiredLetter,
-        isSubmitting: isSubmitting,
-        isFinished: isFinished,
-        continuation: continuation)
+      Group {
+        if isExpanded {
+          CityTurnPrompt(
+            presentation: presentation,
+            requiredLetter: requiredLetter,
+            isSubmitting: isSubmitting,
+            isFinished: isFinished,
+            continuation: continuation)
+        } else {
+          CityPhoneTurnIndicator(
+            requiredLetter: requiredLetter,
+            isSubmitting: isSubmitting,
+            isFinished: isFinished)
+        }
+      }
         .frame(maxWidth: .infinity, alignment: .leading)
         .layoutPriority(-1)
         .fixedSize(horizontal: false, vertical: true)
@@ -409,6 +401,38 @@ private struct CityChainPinnedHeader: View {
     .padding(.horizontal, 12)
     .padding(.vertical, 6)
     .background(.regularMaterial)
+  }
+}
+
+private struct CityPhoneTurnIndicator: View {
+  let requiredLetter: Character?
+  let isSubmitting: Bool
+  let isFinished: Bool
+
+  var body: some View {
+    HStack(spacing: 8) {
+      if isSubmitting {
+        ProgressView()
+          .tint(CityChainPalette.teal)
+          .accessibilityHidden(true)
+      } else {
+        Image(systemName: isFinished ? "flag.checkered" : "textformat")
+          .foregroundStyle(CityChainPalette.teal)
+          .accessibilityHidden(true)
+      }
+
+      Text(status)
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(CityChainPalette.ink)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    .accessibilityElement(children: .combine)
+  }
+
+  private var status: String {
+    if isFinished { return "Trip complete" }
+    if isSubmitting { return "Scout is thinking…" }
+    return requiredLetter.map { "Start with \($0)" } ?? "Pick your next city"
   }
 }
 

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Success belongs to the route; compact input errors can be dismissed above the keyboard.
+/// Dismissible Scout feedback shown next to the active game surface.
 struct CityTurnFeedbackView: View {
   let message: String
   let presentation: ScoutPresentation
@@ -42,7 +42,7 @@ struct CityTurnFeedbackView: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .background(
       presentation.pose == .tryAnother
-        ? CityChainPalette.orange.opacity(0.14) : Color.white.opacity(0.75),
+        ? Color(red: 1, green: 0.94, blue: 0.82) : .white,
       in: RoundedRectangle(cornerRadius: 18))
     .simultaneousGesture(
       DragGesture(minimumDistance: 30).onEnded { value in
