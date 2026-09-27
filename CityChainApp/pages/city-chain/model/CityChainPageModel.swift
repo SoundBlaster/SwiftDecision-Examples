@@ -13,6 +13,7 @@ final class CityChainPageModel {
   private(set) var snapshot: CityGameSnapshot?
   private(set) var latestTurnPipeline: [CityGamePipelineStage] = []
   private(set) var isSubmitting = false
+  private(set) var hasCommittedPlayerCityForCurrentTurn = false
   private(set) var hasTurnFeedback = false
   private(set) var scoutPresentation = ScoutPresentation()
   var cityInput = ""
@@ -55,6 +56,7 @@ final class CityChainPageModel {
   func submit(_ cityName: String) async -> Bool {
     guard !isSubmitting else { return false }
     isSubmitting = true
+    hasCommittedPlayerCityForCurrentTurn = false
     hasTurnFeedback = true
     // Let quick local rule failures return immediately without flashing the
     // thinking pose. Accepted turns stay in this pose while the engine works.
@@ -70,11 +72,13 @@ final class CityChainPageModel {
     defer {
       thinkingTask.cancel()
       isSubmitting = false
+      hasCommittedPlayerCityForCurrentTurn = false
     }
 
     do {
       let tracedResult = try await game.submitWithTrace(cityName) { [weak self] committedSnapshot in
         self?.snapshot = committedSnapshot
+        self?.hasCommittedPlayerCityForCurrentTurn = true
       }
       let result = tracedResult.result
       let updatedSnapshot = await game.snapshot()
