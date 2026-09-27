@@ -27,11 +27,18 @@ struct CityChainCard: ViewModifier {
 
 struct CityCapitalBadge: View {
   var body: some View {
-    Label("State capital", systemImage: "star.fill")
-      .font(.caption.weight(.semibold))
-      .foregroundStyle(CityChainPalette.teal)
-      .padding(.horizontal, 9)
-      .padding(.vertical, 5)
-      .background(CityChainPalette.mint, in: Capsule())
+    Label {
+      Text("State capital")
+        .lineLimit(1)
+        .fixedSize(horizontal: true, vertical: false)
+    } icon: {
+      Image(systemName: "star.fill")
+    }
+    .font(.caption.weight(.semibold))
+    .foregroundStyle(CityChainPalette.teal)
+    .fixedSize(horizontal: true, vertical: false)
+    .padding(.horizontal, 9)
+    .padding(.vertical, 5)
+    .background(CityChainPalette.mint, in: Capsule())
   }
 }
