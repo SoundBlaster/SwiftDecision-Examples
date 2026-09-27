@@ -990,7 +990,13 @@
           }
         }
       }
-    }
+    },
+    "A little American adventure": {},
+    "Big adventures start small.": {},
+    "Let's go places.": {},
+    "Pick your first city above. We'll collect our stops here!": {},
+    "Try one of these": {},
+    "Your current route will be cleared.": {}
   },
   "version": "1.0"
 }

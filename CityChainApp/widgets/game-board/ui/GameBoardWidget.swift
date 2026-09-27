@@ -3,18 +3,23 @@ import SwiftUI
 
 struct GameBoardWidget: View {
   let cities: [USCity]
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      HStack(alignment: .firstTextBaseline) {
-        Label("Our road trip", systemImage: "point.bottomleft.forward.to.point.topright.scurvepath")
-          .font(.title3.weight(.bold))
+    VStack(alignment: .leading, spacing: 22) {
+      let layout =
+        dynamicTypeSize.isAccessibilitySize
+        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+        : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 12))
+      layout {
+        Text("Our road trip")
+          .font(.system(.title3, design: .rounded, weight: .bold))
           .foregroundStyle(CityChainPalette.ink)
-        Spacer()
-        Text("\(cities.count) \(cities.count == 1 ? "stop" : "stops")")
+          .frame(maxWidth: .infinity, alignment: .leading)
+        Text(cities.count == 1 ? "1 stop" : "\(cities.count) stops")
           .font(.subheadline.weight(.semibold).monospacedDigit())
           .foregroundStyle(CityChainPalette.blue)
-          .accessibilityLabel("\(cities.count) cities visited")
+          .fixedSize()
       }
 
       if cities.isEmpty {
@@ -25,46 +30,76 @@ struct GameBoardWidget: View {
             CityTurnRow(
               city: turn.element,
               turnNumber: turn.offset + 1,
-              isPlayerTurn: turn.offset.isMultiple(of: 2))
-
-            if turn.offset < cities.count - 1 {
-              Rectangle()
-                .fill(CityChainPalette.blue.opacity(0.13))
-                .frame(height: 1)
-                .padding(.leading, 58)
-            }
+              isPlayerTurn: turn.offset.isMultiple(of: 2),
+              isLastStop: turn.offset == cities.count - 1)
           }
         }
       }
     }
-    .padding(18)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-    .shadow(color: CityChainPalette.ink.opacity(0.08), radius: 18, y: 8)
+    .modifier(CityChainCard())
   }
 }
 
 private struct EmptyRoadTripCard: View {
   var body: some View {
-    HStack(spacing: 14) {
-      Image(systemName: "car.side.fill")
-        .font(.system(size: 27, weight: .semibold))
-        .foregroundStyle(CityChainPalette.blue)
-        .frame(width: 48, height: 48)
-        .background(CityChainPalette.sky, in: RoundedRectangle(cornerRadius: 15))
-        .accessibilityHidden(true)
+    VStack(alignment: .leading, spacing: 16) {
+      HStack(spacing: 10) {
+        Image(systemName: "mappin.circle.fill")
+          .foregroundStyle(CityChainPalette.blue)
+        RouteTrail()
+          .stroke(
+            CityChainPalette.blue.opacity(0.25),
+            style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 6])
+          )
+          .frame(height: 22)
+        Image(systemName: "car.side.fill")
+          .foregroundStyle(CityChainPalette.teal)
+        RouteTrail()
+          .stroke(
+            CityChainPalette.blue.opacity(0.25),
+            style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 6])
+          )
+          .frame(height: 22)
+        Image(systemName: "flag.checkered")
+          .foregroundStyle(CityChainPalette.blue)
+      }
+      .font(.title2)
+      .accessibilityHidden(true)
 
-      VStack(alignment: .leading, spacing: 3) {
-        Text("Your trip starts here")
-          .font(.headline.weight(.bold))
+      VStack(alignment: .leading, spacing: 5) {
+        Text("Big adventures start small.")
+          .font(.system(.headline, design: .rounded, weight: .bold))
           .foregroundStyle(CityChainPalette.ink)
-        Text("Name a city, then follow its last letter.")
+        Text("Pick your first city above. We'll collect our stops here!")
           .font(.subheadline)
-          .foregroundStyle(CityChainPalette.ink.opacity(0.68))
+          .foregroundStyle(CityChainPalette.secondaryInk)
           .fixedSize(horizontal: false, vertical: true)
       }
     }
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(.vertical, 6)
   }
+}
+
+private struct RouteTrail: Shape {
+  func path(in rect: CGRect) -> Path {
+    Path { path in
+      path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+      path.addCurve(
+        to: CGPoint(x: rect.maxX, y: rect.midY),
+        control1: CGPoint(x: rect.width * 0.35, y: rect.minY),
+        control2: CGPoint(x: rect.width * 0.65, y: rect.maxY))
+    }
+  }
+}
+
+#Preview("Collected stops") {
+  ScrollView {
+    GameBoardWidget(cities: [
+      USCity("Austin", state: .texas, isStateCapital: true),
+      USCity("Nashville", state: .tennessee, isStateCapital: true),
+      USCity("Eugene", state: .oregon),
+    ])
+    .padding(20)
+  }
+  .background(CityChainPalette.paper)
 }

@@ -9,6 +9,7 @@ final class CityChainPageModel {
 
   private(set) var snapshot: CityGameSnapshot?
   private(set) var isSubmitting = false
+  private(set) var hasTurnFeedback = false
   var cityInput = ""
   var statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
 
@@ -24,6 +25,7 @@ final class CityChainPageModel {
     guard !isSubmitting else { return }
     await game.reset()
     cityInput = ""
+    hasTurnFeedback = false
     statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
     snapshot = await game.snapshot()
   }
@@ -31,6 +33,7 @@ final class CityChainPageModel {
   func submit(_ cityName: String) async -> Bool {
     guard !isSubmitting else { return false }
     isSubmitting = true
+    hasTurnFeedback = true
     defer { isSubmitting = false }
 
     do {
