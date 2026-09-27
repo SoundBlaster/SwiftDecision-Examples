@@ -180,7 +180,9 @@ private struct CityChainGamePane: View {
           GameBoardWidget(
             cities: snapshot.usedCities,
             continuations: snapshot.letterContinuations,
-            latestStopFirst: !snapshot.usedCities.isEmpty)
+            latestStopFirst: !snapshot.usedCities.isEmpty,
+            isScoutThinking: model.scoutPresentation.pose == .thinking,
+            scoutPresentation: model.scoutPresentation)
         } else {
           ProgressView("Getting the atlas ready…")
             .tint(CityChainPalette.blue)

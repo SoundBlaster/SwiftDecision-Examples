@@ -5,8 +5,22 @@ struct GameBoardWidget: View {
   let cities: [USCity]
   var continuations: [CityLetterContinuation] = []
   var latestStopFirst = false
+  var isScoutThinking = false
+  var scoutPresentation = ScoutPresentation()
   @State private var routeLayout: RoadTripLayout = .list
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  private var routeAnimationKey: RouteAnimationKey {
+    RouteAnimationKey(cityIDs: cities.map(\.id), isScoutThinking: isScoutThinking)
+  }
+
+  private var leadingRouteTargetID: String? {
+    guard latestStopFirst else { return nil }
+    return isScoutThinking ? Self.thinkingStopID : cities.last?.id
+  }
+
+  private static let thinkingStopID = "_city-scout-thinking-placeholder"
 
   var body: some View {
     VStack(alignment: .leading, spacing: 22) {
@@ -51,6 +65,15 @@ struct GameBoardWidget: View {
         let displayedTurns = latestStopFirst ? Array(turns.reversed()) : turns
         if routeLayout == .list {
           LazyVStack(spacing: 0) {
+            if latestStopFirst && isScoutThinking {
+              CityScoutThinkingRow(
+                presentation: scoutPresentation,
+                turnNumber: cities.count + 1,
+                isLastStop: false)
+                .id(Self.thinkingStopID)
+                .transition(verticalInsertionTransition)
+            }
+
             ForEach(Array(displayedTurns.enumerated()), id: \.element.element.id) { display in
               let turn = display.element
               CityTurnRow(
@@ -60,16 +83,35 @@ struct GameBoardWidget: View {
                 isLastStop: display.offset == displayedTurns.count - 1,
                 continuation: continuations.first { $0.sourceCity.id == turn.element.id })
                 .id(turn.element.id)
+                .transition(verticalInsertionTransition)
+            }
+
+            if !latestStopFirst && isScoutThinking {
+              CityScoutThinkingRow(
+                presentation: scoutPresentation,
+                turnNumber: cities.count + 1,
+                isLastStop: true)
+                .id(Self.thinkingStopID)
+                .transition(verticalInsertionTransition)
             }
           }
+          .animation(reduceMotion ? nil : .default, value: routeAnimationKey)
         } else {
           ScrollViewReader { proxy in
             ScrollView(.horizontal) {
               LazyHStack(alignment: .top, spacing: 12) {
+                if latestStopFirst && isScoutThinking {
+                  CityScoutThinkingCard(
+                    presentation: scoutPresentation,
+                    turnNumber: cities.count + 1)
+                    .id(Self.thinkingStopID)
+                    .transition(horizontalInsertionTransition)
+                }
+
                 ForEach(Array(displayedTurns.enumerated()), id: \.element.element.id) { display in
                   let turn = display.element
                   HStack(spacing: 12) {
-                    if display.offset > 0 {
+                    if display.offset > 0 || (latestStopFirst && isScoutThinking) {
                       Image(systemName: latestStopFirst ? "arrow.left" : "arrow.right")
                         .font(.title3.weight(.bold))
                         .foregroundStyle(CityChainPalette.blue)
@@ -83,18 +125,35 @@ struct GameBoardWidget: View {
                       isPlayerTurn: turn.offset.isMultiple(of: 2),
                       continuation: continuations.first { $0.sourceCity.id == turn.element.id })
                       .id(turn.element.id)
+                      .transition(horizontalInsertionTransition)
+                  }
+                }
+
+                if !latestStopFirst && isScoutThinking {
+                  HStack(spacing: 12) {
+                    Image(systemName: "arrow.right")
+                      .font(.title3.weight(.bold))
+                      .foregroundStyle(CityChainPalette.blue)
+                      .frame(width: 28)
+                      .accessibilityHidden(true)
+                    CityScoutThinkingCard(
+                      presentation: scoutPresentation,
+                      turnNumber: cities.count + 1)
+                      .id(Self.thinkingStopID)
+                      .transition(horizontalInsertionTransition)
                   }
                 }
               }
               .padding(.vertical, 2)
+              .animation(reduceMotion ? nil : .default, value: routeAnimationKey)
             }
             .scrollIndicators(.hidden)
-            .onChange(of: cities.last?.id, initial: true) { _, latestCityID in
-              guard latestStopFirst, let latestCityID else { return }
+            .onChange(of: leadingRouteTargetID, initial: true) { _, targetID in
+              guard let targetID else { return }
               var transaction = Transaction()
               transaction.disablesAnimations = true
               withTransaction(transaction) {
-                proxy.scrollTo(latestCityID, anchor: .leading)
+                proxy.scrollTo(targetID, anchor: .leading)
               }
             }
           }
@@ -104,6 +163,23 @@ struct GameBoardWidget: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .modifier(CityChainCard())
   }
+
+  private var verticalInsertionTransition: AnyTransition {
+    reduceMotion
+      ? .identity
+      : .move(edge: latestStopFirst ? .top : .bottom).combined(with: .opacity)
+  }
+
+  private var horizontalInsertionTransition: AnyTransition {
+    reduceMotion
+      ? .identity
+      : .move(edge: latestStopFirst ? .leading : .trailing).combined(with: .opacity)
+  }
+}
+
+private struct RouteAnimationKey: Equatable {
+  let cityIDs: [String]
+  let isScoutThinking: Bool
 }
 
 private enum RoadTripLayout {
@@ -172,6 +248,109 @@ private struct CityRouteStopCard: View {
       }
     }
     .frame(width: 220)
+    .frame(minHeight: 196, alignment: .topLeading)
+    .padding(16)
+    .background(.white, in: RoundedRectangle(cornerRadius: 20))
+    .overlay {
+      RoundedRectangle(cornerRadius: 20)
+        .strokeBorder(CityChainPalette.ink.opacity(0.08), lineWidth: 1)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityValue("Stop \(turnNumber)")
+  }
+}
+
+private struct CityScoutThinkingRow: View {
+  let presentation: ScoutPresentation
+  let turnNumber: Int
+  let isLastStop: Bool
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 14) {
+      VStack(spacing: 0) {
+        Text(turnNumber, format: .number)
+          .font(.system(.subheadline, design: .rounded, weight: .bold).monospacedDigit())
+          .foregroundStyle(CityChainPalette.teal)
+          .padding(10)
+          .frame(minWidth: 38, minHeight: 38)
+          .background(CityChainPalette.mint, in: Circle())
+          .accessibilityHidden(true)
+
+        if !isLastStop {
+          Rectangle()
+            .fill(CityChainPalette.ink.opacity(0.12))
+            .frame(width: 2)
+            .frame(maxHeight: .infinity)
+            .padding(.vertical, 5)
+        }
+      }
+
+      HStack(spacing: 10) {
+        ScoutView(presentation: presentation)
+          .frame(width: 64, height: 64)
+
+        VStack(alignment: .leading, spacing: 6) {
+          Label("City Scout", systemImage: "binoculars.fill")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(CityChainPalette.teal)
+
+          Text("One moment, I'm thinking!")
+            .font(.system(.title3, design: .rounded, weight: .bold))
+            .foregroundStyle(CityChainPalette.ink)
+            .fixedSize(horizontal: false, vertical: true)
+
+          ProgressView()
+            .tint(CityChainPalette.teal)
+            .accessibilityLabel("Thinking")
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.top, 2)
+      .padding(.bottom, isLastStop ? 0 : 24)
+    }
+    .fixedSize(horizontal: false, vertical: true)
+    .accessibilityElement(children: .combine)
+    .accessibilityValue("Stop \(turnNumber)")
+  }
+}
+
+private struct CityScoutThinkingCard: View {
+  let presentation: ScoutPresentation
+  let turnNumber: Int
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(spacing: 8) {
+        Text(turnNumber, format: .number)
+          .font(.subheadline.weight(.bold).monospacedDigit())
+          .foregroundStyle(CityChainPalette.teal)
+          .frame(width: 32, height: 32)
+          .background(CityChainPalette.mint, in: Circle())
+          .accessibilityHidden(true)
+
+        Label("City Scout", systemImage: "binoculars.fill")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(CityChainPalette.teal)
+          .lineLimit(1)
+      }
+
+      HStack(spacing: 10) {
+        ScoutView(presentation: presentation)
+          .frame(width: 76, height: 76)
+
+        VStack(alignment: .leading, spacing: 8) {
+          Text("One moment, I'm thinking!")
+            .font(.system(.headline, design: .rounded, weight: .bold))
+            .foregroundStyle(CityChainPalette.ink)
+            .fixedSize(horizontal: false, vertical: true)
+
+          ProgressView()
+            .tint(CityChainPalette.teal)
+            .accessibilityLabel("Thinking")
+        }
+      }
+    }
+    .frame(width: 220, alignment: .topLeading)
     .frame(minHeight: 196, alignment: .topLeading)
     .padding(16)
     .background(.white, in: RoundedRectangle(cornerRadius: 20))
