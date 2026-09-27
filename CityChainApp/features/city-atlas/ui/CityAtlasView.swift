@@ -150,14 +150,5 @@ private struct CityAtlasRow: View {
 }
 
 #Preview("City atlas") {
-  CityAtlasPreview()
-}
-
-private struct CityAtlasPreview: View {
-  @State private var model = AppDependencies().makePageModel()
-
-  var body: some View {
-    CityAtlasView(snapshot: model.snapshot, isSubmitting: false, onSelect: { _ in })
-      .task { await model.load() }
-  }
+  CityAtlasView(snapshot: nil, isSubmitting: false, onSelect: { _ in })
 }

@@ -127,7 +127,10 @@ public actor CityChainGame {
   }
 
   /// Evaluates one turn and returns the result with its curated engine trace.
-  public func submitWithTrace(_ rawCity: String) async throws -> CityGameTracedTurnResult {
+  public func submitWithTrace(
+    _ rawCity: String,
+    onPlayerCityCommitted: (@MainActor @Sendable (CityGameSnapshot) -> Void)? = nil
+  ) async throws -> CityGameTracedTurnResult {
     var pipeline: [CityGamePipelineStage] = []
     func finish(_ result: CityGameTurnResult) -> CityGameTracedTurnResult {
       CityGameTracedTurnResult(result: result, pipeline: pipeline)
@@ -185,6 +188,24 @@ public actor CityChainGame {
     case nil:
       assertionFailure("The preflight router always has a fallback.")
       return finish(.rejected(.emptyInput))
+    }
+
+    let thinkingStartedAt = Date()
+    let thinkingDelayTask = Task {
+      try await Task.sleep(nanoseconds: 2_500_000_000)
+    }
+    defer { thinkingDelayTask.cancel() }
+
+    func scoutThinkingStage() async throws -> CityGamePipelineStage {
+      try await thinkingDelayTask.value
+      let elapsedSeconds = Date().timeIntervalSince(thinkingStartedAt)
+      return CityGameTraceProjection.stage(
+        id: "scout-thinking", title: "Scout thinking",
+        summary: "Completed asynchronous work while choosing a reply.",
+        details: [
+          CityGameTraceDetail(
+            id: "elapsed", label: "Elapsed", value: String(format: "%.2f s", elapsedSeconds))
+        ])
     }
 
     var validationSource = CityValidationSource.noul
@@ -285,6 +306,9 @@ public actor CityChainGame {
             id: "skipped-letters", label: "Skipped letters",
             value: replyContinuation.skippedLetters.map(String.init).joined(separator: ", "))
         ], events: continuationRecorder.events))
+    commitPlayer(playerCity, source: validationSource, continuation: replyContinuation)
+    await onPlayerCityCommitted?(snapshot())
+
     let candidatesRecorder = SpecificationTraceRecorder()
     let candidates = Array(
       try await tracedAvailableCities(
@@ -314,7 +338,7 @@ public actor CityChainGame {
 
     switch plan {
     case .noAvailableReply:
-      commitPlayer(playerCity, source: validationSource, continuation: replyContinuation)
+      pipeline.append(try await scoutThinkingStage())
       ending = .noAvailableReply(startingLetter: nextLetter)
       requiredStartingLetter = nextLetter
       pipeline.append(
@@ -328,7 +352,7 @@ public actor CityChainGame {
         return finish(
           .playerWonNoAvailableReply(playerCity: playerCity, startingLetter: nextLetter))
       }
-      commitPlayer(playerCity, source: validationSource, continuation: replyContinuation)
+      pipeline.append(try await scoutThinkingStage())
       commit(computerCity)
       pipeline.append(
         CityGameTraceProjection.stage(
@@ -379,7 +403,7 @@ public actor CityChainGame {
           ? requestedIndex
           : options.startIndex
         let computerCity = options[selectedIndex]
-        commitPlayer(playerCity, source: validationSource, continuation: replyContinuation)
+        pipeline.append(try await scoutThinkingStage())
         commit(computerCity)
         pipeline.append(
           CityGameTraceProjection.stage(
@@ -412,9 +436,9 @@ public actor CityChainGame {
               id: "confidence", label: "Confidence",
               value: "\(Int((result.confidence * 100).rounded()))%"),
           ], result: result))
+      pipeline.append(try await scoutThinkingStage())
       switch result.outcome {
       case .accepted(let computerCity):
-        commitPlayer(playerCity, source: validationSource, continuation: replyContinuation)
         commit(computerCity)
         pipeline.append(
           CityGameTraceProjection.stage(
@@ -434,7 +458,6 @@ public actor CityChainGame {
           ))
 
       case .fallback(let computerCity, let reason):
-        commitPlayer(playerCity, source: validationSource, continuation: replyContinuation)
         commit(computerCity)
         pipeline.append(
           CityGameTraceProjection.stage(
@@ -454,7 +477,6 @@ public actor CityChainGame {
           ))
 
       case .abstained(let reason):
-        commitPlayer(playerCity, source: validationSource, continuation: replyContinuation)
         requiredStartingLetter = nextLetter
         ending = .computerAbstained(reason: reason)
         pipeline.append(

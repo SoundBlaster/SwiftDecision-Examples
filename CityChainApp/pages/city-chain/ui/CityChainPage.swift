@@ -4,7 +4,6 @@ import UIKit
 
 struct CityChainPage: View {
   let model: CityChainPageModel
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @State private var showsNewTripConfirmation = false
   @State private var showsAtlas = false
@@ -90,9 +89,6 @@ struct CityChainPage: View {
     } message: {
       Text("Your current route will be cleared.")
     }
-    .animation(
-      reduceMotion ? nil : .smooth(duration: 0.25), value: snapshot?.requiredStartingLetter
-    )
     .task { await model.load() }
     .preferredColorScheme(.light)
   }
@@ -156,6 +152,7 @@ private struct CityChainGamePane: View {
   let routesFeedbackToAtlas: Bool
   let onShowAtlas: () -> Void
   let onRequestNewTrip: () -> Void
+  @State private var showsDecisionTrace = false
   @FocusState.Binding var isCityFocused: Bool
   let feedbackMaxHeight: CGFloat
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -210,20 +207,11 @@ private struct CityChainGamePane: View {
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: hidesCityHints)
           }
 
-          if !routesFeedbackToAtlas && model.hasTurnFeedback && !model.isSubmitting
-            && model.scoutPresentation.pose != .tryAnother {
-            CityTurnFeedbackView(
-              message: model.statusMessage,
-              presentation: model.scoutPresentation,
-              isFinished: snapshot?.isFinished == true,
-              onDismiss: model.dismissTurnFeedback)
-          }
-
           if let snapshot {
             GameBoardWidget(
               cities: snapshot.usedCities,
               continuations: snapshot.letterContinuations,
-              latestStopFirst: isExpanded && !snapshot.usedCities.isEmpty)
+              latestStopFirst: !snapshot.usedCities.isEmpty)
           } else {
             ProgressView("Getting the atlas ready…")
               .tint(CityChainPalette.blue)
@@ -250,7 +238,23 @@ private struct CityChainGamePane: View {
             showsNewTrip: !isFirstStop && (snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true),
             isNewTripDisabled: model.isSubmitting,
             onShowAtlas: onShowAtlas,
-            onRequestNewTrip: onRequestNewTrip)
+            onRequestNewTrip: onRequestNewTrip,
+            hasDecisionTrace: !model.latestTurnPipeline.isEmpty,
+            onShowDecisionTrace: { showsDecisionTrace = true }
+          )
+          .overlay(alignment: .bottom) {
+            if !routesFeedbackToAtlas && model.hasTurnFeedback && !model.isSubmitting
+              && model.scoutPresentation.pose != .tryAnother {
+              CityTurnFeedbackView(
+                message: model.statusMessage,
+                presentation: model.scoutPresentation,
+                isFinished: snapshot?.isFinished == true,
+                onDismiss: model.dismissTurnFeedback)
+                .padding(.horizontal, 20)
+                .alignmentGuide(.bottom) { _ in -8 }
+                .zIndex(2)
+            }
+          }
         }
       }
       .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -264,16 +268,26 @@ private struct CityChainGamePane: View {
       }
       .onChange(of: snapshot?.usedCities.count) { _, _ in
         isCityHintsRevealed = false
+        revealLatestStops(using: scrollProxy)
       }
       .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
         revealLatestStops(using: scrollProxy)
       }
+#if DEBUG
+      .sheet(isPresented: $showsDecisionTrace) {
+        CityChainPipelineDetailView(stages: model.latestTurnPipeline)
+          .presentationDetents([.medium, .large])
+          .presentationDragIndicator(.visible)
+      }
+#endif
     }
   }
 
   private func revealLatestStops(using proxy: ScrollViewProxy) {
     guard isCityFocused, let currentCityID = snapshot?.usedCities.last?.id else { return }
-    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.25)) {
+    var transaction = Transaction()
+    transaction.disablesAnimations = true
+    withTransaction(transaction) {
       proxy.scrollTo(currentCityID, anchor: .top)
     }
   }
@@ -341,6 +355,8 @@ private struct CityChainPinnedHeader: View {
   let isNewTripDisabled: Bool
   let onShowAtlas: () -> Void
   let onRequestNewTrip: () -> Void
+  let hasDecisionTrace: Bool
+  let onShowDecisionTrace: () -> Void
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   var body: some View {
@@ -361,6 +377,14 @@ private struct CityChainPinnedHeader: View {
             isDisabled: isNewTripDisabled,
             action: onRequestNewTrip)
         }
+#if DEBUG
+        if hasDecisionTrace {
+          CityChainActionButton(
+            title: "Decision trace", systemImage: "point.3.connected.trianglepath.dotted",
+            hint: "Inspect the latest game decision trace",
+            action: onShowDecisionTrace)
+        }
+#endif
       }
 
       CityTurnPrompt(
@@ -643,12 +667,125 @@ private struct CitySuggestionCard: View {
   }
 }
 
+#if DEBUG
+private struct CityChainPipelineDetailView: View {
+  let stages: [CityGamePipelineStage]
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    NavigationStack {
+      List {
+        if stages.isEmpty {
+          ContentUnavailableView("No decision trace", systemImage: "point.3.connected.trianglepath.dotted")
+        }
+
+        ForEach(stages) { stage in
+          Section(stage.title) {
+            if let summary = stage.summary {
+              Label(summary, systemImage: "info.circle")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            ForEach(stage.details) { detail in
+              LabeledContent(detail.label, value: detail.value)
+                .font(.caption)
+            }
+
+            ForEach(stage.events) { event in
+              eventRow(event, in: stage.events)
+            }
+          }
+        }
+      }
+      .listStyle(.insetGrouped)
+      .navigationTitle("Decision pipeline")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .topBarTrailing) {
+          Button("Done") { dismiss() }
+        }
+      }
+    }
+  }
+
+  private func eventRow(_ event: CityGameTraceEvent, in events: [CityGameTraceEvent]) -> some View {
+    let isDecision = event.kind == .decision
+    var metadata = [isDecision ? "Decision" : "Rule check"]
+    if let outcome = event.outcome { metadata.append(outcome) }
+    if let duration = event.durationNanoseconds { metadata.append(format(duration)) }
+    if let elapsed = event.elapsedNanoseconds { metadata.append("at +\(format(elapsed))") }
+
+    return HStack(alignment: .top, spacing: 10) {
+      Image(systemName: symbol(for: event))
+        .foregroundStyle(tint(for: event))
+        .frame(width: 18)
+      VStack(alignment: .leading, spacing: 3) {
+        Text(event.name)
+          .font(.subheadline)
+          .fixedSize(horizontal: false, vertical: true)
+        Text(metadata.joined(separator: " · "))
+          .font(.caption2.monospacedDigit())
+          .foregroundStyle(.secondary)
+        if let detail = event.detail, !detail.isEmpty {
+          Text(detail)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      Spacer(minLength: 0)
+    }
+    .padding(.leading, CGFloat(depth(of: event, in: events)) * 14)
+    .accessibilityElement(children: .combine)
+  }
+
+  private func depth(of event: CityGameTraceEvent, in events: [CityGameTraceEvent]) -> Int {
+    let parents = Dictionary(uniqueKeysWithValues: events.map { ($0.id, $0.parentID) })
+    var depth = 0
+    var parent = event.parentID
+    var visited: Set<String> = []
+    while let id = parent, visited.insert(id).inserted {
+      depth += 1
+      parent = parents[id] ?? nil
+    }
+    return depth
+  }
+
+  private func symbol(for event: CityGameTraceEvent) -> String {
+    guard event.kind == .specification else { return "arrow.triangle.branch" }
+    return switch event.outcome {
+    case "Satisfied", "Selected": "checkmark.circle.fill"
+    case "Not satisfied", "No match": "xmark.circle"
+    case "Failed": "exclamationmark.circle.fill"
+    default: "circle"
+    }
+  }
+
+  private func tint(for event: CityGameTraceEvent) -> Color {
+    guard event.kind == .specification else { return CityChainPalette.blue }
+    return switch event.outcome {
+    case "Satisfied", "Selected": CityChainPalette.teal
+    case "Not satisfied", "No match", "Failed": Color.orange
+    default: Color.secondary
+    }
+  }
+
+  private func format(_ nanoseconds: UInt64) -> String {
+    if nanoseconds < 1_000_000 {
+      return String(format: "%.1f µs", Double(nanoseconds) / 1_000)
+    }
+    return String(format: "%.2f ms", Double(nanoseconds) / 1_000_000)
+  }
+}
+#endif
+
 #Preview("First stop") {
-  CityChainPage(model: AppDependencies().makePageModel())
+  CityChainPage(model: CityChainPageModel.preview())
 }
 
 #Preview("Larger text") {
-  CityChainPage(model: AppDependencies().makePageModel())
+  CityChainPage(model: CityChainPageModel.preview())
     .environment(\.dynamicTypeSize, .accessibility1)
 }
 
@@ -671,7 +808,7 @@ private struct StartedTripPreviewModifier: PreviewModifier {
   typealias Context = CityChainPageModel
 
   static func makeSharedContext() async throws -> CityChainPageModel {
-    let model = AppDependencies().makePageModel()
+    let model = CityChainPageModel.preview()
     await model.load()
     _ = await model.submit("Austin")
     return model

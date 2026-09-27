@@ -1,6 +1,9 @@
 import CityChainGame
 import Foundation
 import Observation
+#if DEBUG
+import SwiftDecision
+#endif
 
 @MainActor
 @Observable
@@ -18,6 +21,15 @@ final class CityChainPageModel {
   init(game: CityChainGame) {
     self.game = game
   }
+
+#if DEBUG
+  static func preview() -> CityChainPageModel {
+    CityChainPageModel(
+      game: CityChainGame(
+        decisions: DecisionEngine(backend: PreviewDecisionBackend()),
+        continuationPolicy: .previousAvailableLetter))
+  }
+#endif
 
   func load() async {
     guard snapshot == nil else { return }
@@ -44,8 +56,8 @@ final class CityChainPageModel {
     guard !isSubmitting else { return false }
     isSubmitting = true
     hasTurnFeedback = true
-    // Local rule failures can return immediately. Avoid flashing the thinking
-    // sprite between two corrective poses, without delaying the game result.
+    // Let quick local rule failures return immediately without flashing the
+    // thinking pose. Accepted turns stay in this pose while the engine works.
     let thinkingTask = Task { @MainActor in
       do {
         try await Task.sleep(for: .milliseconds(300))
@@ -61,12 +73,20 @@ final class CityChainPageModel {
     }
 
     do {
-      let tracedResult = try await game.submitWithTrace(cityName)
-      latestTurnPipeline = tracedResult.pipeline
+      let tracedResult = try await game.submitWithTrace(cityName) { [weak self] committedSnapshot in
+        self?.snapshot = committedSnapshot
+      }
       let result = tracedResult.result
-      statusMessage = Self.message(for: result)
-      snapshot = await game.snapshot()
+      let updatedSnapshot = await game.snapshot()
       let accepted = Self.didAcceptPlayerTurn(result)
+      if accepted {
+        await thinkingTask.value
+      } else {
+        thinkingTask.cancel()
+      }
+      latestTurnPipeline = tracedResult.pipeline
+      statusMessage = Self.message(for: result)
+      snapshot = updatedSnapshot
       scoutPresentation.present(accepted ? .celebration : .tryAnother)
       return accepted
     } catch {
@@ -138,3 +158,13 @@ final class CityChainPageModel {
       arguments: arguments)
   }
 }
+
+#if DEBUG
+private struct PreviewDecisionBackend: DecisionBackend {
+  func predict(for prompt: DecisionPrompt) async throws -> DecisionPrediction {
+    throw PreviewBackendUnavailable()
+  }
+}
+
+private struct PreviewBackendUnavailable: Error {}
+#endif

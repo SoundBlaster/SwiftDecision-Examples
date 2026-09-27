@@ -16,7 +16,6 @@ struct SubmitCityForm: View {
         .textFieldStyle(.plain)
         .lineLimit(1...3)
         .focused($isFocused)
-        .disabled(isDisabled)
         .textInputAutocapitalization(.words)
         .autocorrectionDisabled()
         .submitLabel(.go)
@@ -65,8 +64,12 @@ struct SubmitCityForm: View {
     guard !isDisabled, !cityName.isEmpty else { return }
     Task { @MainActor in
       if await onSubmit(cityName) {
-        text = ""
-        isFocused = false
+        // Keep the keyboard and viewport stable while Scout is working. If the
+        // player has already drafted another city, leave that draft untouched.
+        if text.trimmingCharacters(in: .whitespacesAndNewlines) == cityName {
+          text = ""
+          isFocused = false
+        }
       }
     }
   }
