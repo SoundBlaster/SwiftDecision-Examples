@@ -58,84 +58,106 @@ struct CityTurnFeedbackView: View {
 
 /// Scout speaks beside a comic-style bubble without a card behind the sprite.
 struct ScoutSpeechFeedbackView: View {
-  let message: String
+  let message: String?
   let presentation: ScoutPresentation
-  let isFinished: Bool
+  let isCompact: Bool
   let onDismiss: () -> Void
+  var companionSize: CGFloat? = nil
+  var horizontalPadding: CGFloat = 16
+  var bubbleBottomInset: CGFloat = 0
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
-    HStack(alignment: .bottom, spacing: -4) {
-      VStack(alignment: .leading, spacing: 5) {
-        HStack(alignment: .center, spacing: 8) {
-          Text(isFinished ? "What a trip!" : "City Scout")
-            .font(.caption.weight(.bold))
-            .foregroundStyle(CityChainPalette.teal)
-          Spacer(minLength: 0)
+    HStack(alignment: .bottom, spacing: -18) {
+      if let message {
+        HStack(alignment: .top, spacing: 4) {
+          Text(message)
+            .font(.system(.body, design: .rounded))
+            .foregroundStyle(CityChainPalette.ink)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.updatesFrequently)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .allowsHitTesting(false)
+
           Button(action: onDismiss) {
             Image(systemName: "xmark")
-              .font(.caption.weight(.bold))
+              .font(.caption.weight(.semibold))
               .foregroundStyle(CityChainPalette.secondaryInk)
-              .frame(minWidth: 44, minHeight: 44)
+              .frame(width: 44, height: 44)
               .contentShape(Rectangle())
           }
           .buttonStyle(.plain)
           .accessibilityLabel("Dismiss message")
         }
+        .padding(.leading, 18)
+        .padding(.trailing, 28)
+        .padding(.vertical, 8)
+        .background {
+          ScoutSpeechBubbleShape()
+            .fill(Color(red: 1, green: 0.985, blue: 0.94))
+            .shadow(color: .black.opacity(0.055), radius: 7, y: 3)
+            .allowsHitTesting(false)
+        }
+        .overlay {
+          ScoutSpeechBubbleShape()
+            .stroke(CityChainPalette.ink.opacity(0.11), lineWidth: 1)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+        .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .trailing)))
+        .offset(y: -bubbleBottomInset)
+      }
 
-        Text(message)
-          .font(.subheadline)
-          .foregroundStyle(CityChainPalette.ink)
-          .fixedSize(horizontal: false, vertical: true)
-          .accessibilityAddTraits(.updatesFrequently)
-      }
-      .padding(.leading, 14)
-      .padding(.trailing, 6)
-      .padding(.vertical, 8)
-      .background(.white, in: RoundedRectangle(cornerRadius: 22))
-      .overlay {
-        RoundedRectangle(cornerRadius: 22)
-          .strokeBorder(CityChainPalette.ink.opacity(0.08))
-      }
-      .overlay(alignment: .bottomTrailing) {
-        ScoutSpeechBubbleTail()
-          .fill(.white)
-          .frame(width: 20, height: 18)
-          .overlay {
-            ScoutSpeechBubbleTail()
-              .stroke(CityChainPalette.ink.opacity(0.08), lineWidth: 1)
-          }
-          .offset(x: 1, y: 8)
-          .accessibilityHidden(true)
-      }
-      .shadow(color: .black.opacity(0.07), radius: 10, y: 4)
-      .padding(.bottom, 10)
-
-      ScoutView(presentation: presentation)
-        .frame(width: 136, height: 148)
+      ScoutView(presentation: presentation, style: .cornerCompanion)
+        .frame(
+          width: companionSize ?? (isCompact ? 108 : 176),
+          height: companionSize ?? (isCompact ? 112 : 180))
         .accessibilityHidden(true)
     }
-    .padding(.horizontal, 16)
-    .padding(.top, 8)
+    .padding(.horizontal, horizontalPadding)
+    .padding(.top, message == nil ? 0 : 8)
     .padding(.bottom, 2)
     .frame(maxWidth: .infinity, alignment: .trailing)
-    .accessibilityElement(children: .contain)
+    .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: message)
+    .accessibilityElement(children: message == nil ? .ignore : .contain)
+    .accessibilityHidden(message == nil)
     .accessibilityAction(named: "Dismiss message", onDismiss)
   }
 }
 
-private struct ScoutSpeechBubbleTail: Shape {
+private struct ScoutSpeechBubbleShape: Shape {
   func path(in rect: CGRect) -> Path {
     Path { path in
-      path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+      let radius = min(22, rect.height * 0.22)
+      let tailWidth: CGFloat = 22
+      let bodyRight = rect.maxX - tailWidth
+      let tailCenter = rect.minY + rect.height * 0.43
+      let tailHalfHeight: CGFloat = 12
+
+      path.move(to: CGPoint(x: rect.minX + radius, y: rect.minY))
+      path.addLine(to: CGPoint(x: bodyRight - radius, y: rect.minY))
       path.addQuadCurve(
-        to: CGPoint(x: rect.maxX, y: rect.minY),
-        control: CGPoint(x: rect.midX, y: rect.minY - 1))
+        to: CGPoint(x: bodyRight, y: rect.minY + radius),
+        control: CGPoint(x: bodyRight, y: rect.minY))
+      path.addLine(to: CGPoint(x: bodyRight, y: tailCenter - tailHalfHeight))
       path.addQuadCurve(
-        to: CGPoint(x: rect.maxX * 0.73, y: rect.maxY),
-        control: CGPoint(x: rect.maxX * 0.94, y: rect.maxY * 0.62))
+        to: CGPoint(x: rect.maxX, y: tailCenter),
+        control: CGPoint(x: bodyRight + tailWidth * 0.55, y: tailCenter - tailHalfHeight))
       path.addQuadCurve(
-        to: CGPoint(x: rect.minX, y: rect.minY),
-        control: CGPoint(x: rect.maxX * 0.44, y: rect.maxY * 0.34))
+        to: CGPoint(x: bodyRight, y: tailCenter + tailHalfHeight),
+        control: CGPoint(x: rect.maxX - tailWidth * 0.38, y: tailCenter + 8))
+      path.addLine(to: CGPoint(x: bodyRight, y: rect.maxY - radius))
+      path.addQuadCurve(
+        to: CGPoint(x: bodyRight - radius, y: rect.maxY),
+        control: CGPoint(x: bodyRight, y: rect.maxY))
+      path.addLine(to: CGPoint(x: rect.minX + radius, y: rect.maxY))
+      path.addQuadCurve(
+        to: CGPoint(x: rect.minX, y: rect.maxY - radius),
+        control: CGPoint(x: rect.minX, y: rect.maxY))
+      path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + radius))
+      path.addQuadCurve(
+        to: CGPoint(x: rect.minX + radius, y: rect.minY),
+        control: CGPoint(x: rect.minX, y: rect.minY))
       path.closeSubpath()
     }
   }
@@ -200,9 +222,19 @@ private struct CityTurnFeedbackContent: View {
     Spacer()
     ScoutSpeechFeedbackView(
       message: "Great job with Sacramento! I picked Olympia from my atlas.",
-      presentation: ScoutPresentation(), isFinished: false, onDismiss: {})
+      presentation: ScoutPresentation(), isCompact: false, onDismiss: {})
   }
   .padding(.bottom, 16)
+  .frame(maxWidth: .infinity, maxHeight: .infinity)
+  .background(CityChainPalette.paper)
+}
+
+#Preview("Scout corner idle") {
+  VStack(spacing: 12) {
+    Spacer()
+    ScoutSpeechFeedbackView(
+      message: nil, presentation: ScoutPresentation(), isCompact: false, onDismiss: {})
+  }
   .frame(maxWidth: .infinity, maxHeight: .infinity)
   .background(CityChainPalette.paper)
 }

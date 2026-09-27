@@ -20,32 +20,56 @@ struct CityChainPage: View {
     NavigationStack {
       GeometryReader { geometry in
         let usesColumns = geometry.size.width >= 700 && !dynamicTypeSize.isAccessibilitySize
+        let sideRailInset = geometry.safeAreaInsets.trailing
+        let usesSideRailCompanion = sideRailInset >= 60
+        let requestedCompanionSize: CGFloat = isCityFocused ? 108 : 176
+        let railCompanionSize = min(
+          requestedCompanionSize,
+          min(sideRailInset + 8, max(64, geometry.size.height * 0.30)))
+        let columnInset: CGFloat = usesColumns ? 18 : 0
         let layout = usesColumns
           ? AnyLayout(HStackLayout(alignment: .top, spacing: 18))
           : AnyLayout(VStackLayout(spacing: 0))
 
-        layout {
-          if usesColumns {
-            CityAtlasMapView(
-              visitedCities: snapshot?.usedCities ?? [],
-              presentation: model.scoutPresentation,
-              selectedCity: $selectedAtlasCity,
-              transitionNamespace: atlasMapTransitionNamespace,
-              onOpenMapDetail: openMapDetail,
-              feedbackMessage: model.hasTurnFeedback && !model.isSubmitting ? model.statusMessage : nil,
-              feedbackIsFinished: snapshot?.isFinished == true,
-              onDismissFeedback: model.dismissTurnFeedback)
+        ZStack(alignment: .bottomTrailing) {
+          layout {
+            if usesColumns {
+              CityAtlasMapView(
+                visitedCities: snapshot?.usedCities ?? [],
+                presentation: model.scoutPresentation,
+                selectedCity: $selectedAtlasCity,
+                transitionNamespace: atlasMapTransitionNamespace,
+                onOpenMapDetail: openMapDetail,
+                feedbackMessage: model.hasTurnFeedback && !model.isSubmitting && !usesSideRailCompanion
+                  ? model.statusMessage : nil,
+                feedbackIsFinished: snapshot?.isFinished == true,
+                onDismissFeedback: model.dismissTurnFeedback)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            CityChainGamePane(
+              model: model, snapshot: snapshot, suggestions: suggestions,
+              isFirstStop: isFirstStop, isExpanded: usesColumns,
+              routesFeedbackToAtlas: usesColumns || usesSideRailCompanion,
+              showsSideRailCompanion: usesSideRailCompanion,
+              onShowAtlas: { showsAtlas = true },
+              onShowMap: { showsMapDetailSheet = true },
+              onRequestNewTrip: { showsNewTripConfirmation = true },
+              isCityFocused: $isCityFocused)
               .frame(maxWidth: .infinity, maxHeight: .infinity)
           }
-          CityChainGamePane(
-            model: model, snapshot: snapshot, suggestions: suggestions,
-            isFirstStop: isFirstStop, isExpanded: usesColumns,
-            routesFeedbackToAtlas: usesColumns,
-            onShowAtlas: { showsAtlas = true },
-            onShowMap: { showsMapDetailSheet = true },
-            onRequestNewTrip: { showsNewTripConfirmation = true },
-            isCityFocused: $isCityFocused)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+          if usesSideRailCompanion {
+            ScoutSpeechFeedbackView(
+              message: model.hasTurnFeedback && !model.isSubmitting ? model.statusMessage : nil,
+              presentation: model.scoutPresentation,
+              isCompact: isCityFocused,
+              onDismiss: model.dismissTurnFeedback,
+              companionSize: railCompanionSize,
+              horizontalPadding: 0,
+              bubbleBottomInset: 84)
+              .frame(width: min(460, geometry.size.width))
+              .offset(x: sideRailInset - 12 + columnInset, y: -12)
+              .zIndex(2)
+          }
         }
         .padding(.horizontal, usesColumns ? 18 : 0)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -149,6 +173,7 @@ private struct CityChainGamePane: View {
   let isFirstStop: Bool
   let isExpanded: Bool
   let routesFeedbackToAtlas: Bool
+  let showsSideRailCompanion: Bool
   let onShowAtlas: () -> Void
   let onShowMap: () -> Void
   let onRequestNewTrip: () -> Void
@@ -165,6 +190,7 @@ private struct CityChainGamePane: View {
           if !isCityFocused {
             CityTripHeader(
               presentation: model.scoutPresentation,
+              showsScout: !showsSideRailCompanion,
               onShowAtlas: onShowAtlas)
           }
           LetterPromptCard(snapshot: snapshot, isSubmitting: model.isSubmitting)
@@ -238,7 +264,8 @@ private struct CityChainGamePane: View {
     .safeAreaInset(edge: .bottom, spacing: 0) {
       CityChainBottomControls(
         model: model, snapshot: snapshot, isCityFocused: $isCityFocused,
-        showsFeedback: !routesFeedbackToAtlas)
+        showsFeedback: !routesFeedbackToAtlas,
+        showsCompanion: !showsSideRailCompanion && !isFirstStop)
     }
     .onChange(of: snapshot?.usedCities.count) { _, _ in
       isCityHintsRevealed = false
@@ -259,17 +286,17 @@ private struct CityChainBottomControls: View {
   let snapshot: CityGameSnapshot?
   @FocusState.Binding var isCityFocused: Bool
   let showsFeedback: Bool
+  let showsCompanion: Bool
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     VStack(spacing: 0) {
-      if showsFeedback && model.hasTurnFeedback && !model.isSubmitting && isCityFocused {
+      if showsFeedback && showsCompanion && isCityFocused {
         ScoutSpeechFeedbackView(
-          message: model.statusMessage,
+          message: model.hasTurnFeedback && !model.isSubmitting ? model.statusMessage : nil,
           presentation: model.scoutPresentation,
-          isFinished: snapshot?.isFinished == true,
+          isCompact: true,
           onDismiss: model.dismissTurnFeedback)
-          .transition(.move(edge: .bottom).combined(with: .opacity))
       }
 
       if snapshot?.isFinished == true {
@@ -297,18 +324,16 @@ private struct CityChainBottomControls: View {
           onSubmit: { city in await model.submit(city) })
       }
 
-      if showsFeedback && model.hasTurnFeedback && !model.isSubmitting && !isCityFocused {
+      if showsFeedback && showsCompanion && !isCityFocused {
         ScoutSpeechFeedbackView(
-          message: model.statusMessage,
+          message: model.hasTurnFeedback && !model.isSubmitting ? model.statusMessage : nil,
           presentation: model.scoutPresentation,
-          isFinished: snapshot?.isFinished == true,
+          isCompact: false,
           onDismiss: model.dismissTurnFeedback)
-          .transition(.move(edge: .top).combined(with: .opacity))
       }
     }
     .frame(maxWidth: .infinity)
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: model.hasTurnFeedback)
-    .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isCityFocused)
   }
 }
 
@@ -492,6 +517,7 @@ private struct CityChainBackdrop: View {
 
 private struct CityTripHeader: View {
   let presentation: ScoutPresentation
+  let showsScout: Bool
   let onShowAtlas: () -> Void
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -506,8 +532,10 @@ private struct CityTripHeader: View {
         hint: "Browse cities and find a name for your next turn",
         action: onShowAtlas)
 
-      ScoutView(presentation: presentation)
-        .frame(width: 124, height: 124)
+      if showsScout {
+        ScoutView(presentation: presentation)
+          .frame(width: 124, height: 124)
+      }
 
       VStack(alignment: .leading, spacing: 4) {
         Text("Explore with Scout")

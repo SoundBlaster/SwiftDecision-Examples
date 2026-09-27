@@ -116,8 +116,6 @@ struct CityAtlasMapView: View {
       }
       .padding(18)
       .frame(maxWidth: .infinity, alignment: .leading)
-      .background(.white.opacity(0.78), in: RoundedRectangle(cornerRadius: 25))
-      .overlay(RoundedRectangle(cornerRadius: 25).strokeBorder(CityChainPalette.ink.opacity(0.07)))
     }
     .scrollIndicators(.hidden)
     .contentMargins(.top, 18, for: .scrollContent)
@@ -152,29 +150,69 @@ private struct CityAtlasMapCanvas: View {
     GeometryReader { geometry in
       let layout = AtlasMapFrames(size: geometry.size)
       ZStack(alignment: .topLeading) {
+        LinearGradient(
+          colors: [
+            Color(red: 0.98, green: 0.97, blue: 0.94),
+            Color(red: 0.91, green: 0.96, blue: 0.97),
+          ],
+          startPoint: .topLeading,
+          endPoint: .bottomTrailing)
+          .clipShape(RoundedRectangle(cornerRadius: 18))
+
         Canvas { context, _ in
+          var landmass = Path()
+          for state in data.states {
+            landmass.addPath(state.simplePath, transform: layout.transform(for: state.region))
+          }
+          var shadowContext = context
+          shadowContext.addFilter(.shadow(
+            color: Color(red: 0.35, green: 0.49, blue: 0.43).opacity(0.17),
+            radius: 4, x: 0, y: 2))
+          shadowContext.fill(landmass, with: .color(.black.opacity(0.28)), style: FillStyle(eoFill: true))
+          context.fill(
+            landmass,
+            with: .linearGradient(
+              Gradient(colors: [
+                Color(red: 0.84, green: 0.92, blue: 0.78),
+                Color(red: 0.74, green: 0.86, blue: 0.69),
+              ]),
+              startPoint: CGPoint(x: layout.mainland.minX, y: layout.mainland.minY),
+              endPoint: CGPoint(x: layout.mainland.maxX, y: layout.mainland.maxY)),
+            style: FillStyle(eoFill: true))
           for state in data.states {
             var path = Path()
             path.addPath(state.simplePath, transform: layout.transform(for: state.region))
-            let fill = state.abbreviation == latestState
-              ? CityChainPalette.orange.opacity(0.75)
-              : (visitedStates.contains(state.abbreviation)
-                ? CityChainPalette.mint.opacity(0.9)
-                : CityChainPalette.sky.opacity(0.62))
-            context.fill(path, with: .color(fill), style: FillStyle(eoFill: true))
-            context.stroke(path, with: .color(CityChainPalette.blue.opacity(0.42)), lineWidth: 0.8)
+            if state.abbreviation == latestState {
+              context.fill(path, with: .color(Color(red: 0.99, green: 0.79, blue: 0.40).opacity(0.88)),
+                           style: FillStyle(eoFill: true))
+            } else if visitedStates.contains(state.abbreviation) {
+              context.fill(path, with: .color(Color(red: 0.94, green: 0.91, blue: 0.72).opacity(0.22)),
+                           style: FillStyle(eoFill: true))
+            }
+            context.stroke(path, with: .color(Color(red: 1, green: 0.98, blue: 0.90)), lineWidth: 1.15)
           }
-          for segment in routeSegments {
+          drawAtlasLandmarks(in: &context, layout: layout)
+          for (index, segment) in routeSegments.enumerated() {
             let from = data.projectedPoint(for: segment.from)
             let to = data.projectedPoint(for: segment.to)
             guard from.region == segment.region, to.region == segment.region else { continue }
             var path = Path()
-            path.move(to: layout.project(from.point, for: segment.region))
-            path.addLine(to: layout.project(to.point, for: segment.region))
+            let start = layout.project(from.point, for: segment.region)
+            let end = layout.project(to.point, for: segment.region)
+            let dx = end.x - start.x
+            let dy = end.y - start.y
+            let distance = max(1, hypot(dx, dy))
+            let bend = min(24, max(9, distance * 0.16)) * (index.isMultiple(of: 2) ? 1 : -1)
+            let control = CGPoint(x: (start.x + end.x) / 2 - dy / distance * bend,
+                                  y: (start.y + end.y) / 2 + dx / distance * bend)
+            path.move(to: start)
+            path.addQuadCurve(to: end, control: control)
+            context.stroke(path, with: .color(.white.opacity(0.92)),
+                           style: StrokeStyle(lineWidth: 5, lineCap: .round))
             context.stroke(
               path,
-              with: .color(CityChainPalette.teal.opacity(0.8)),
-              style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [4, 4]))
+              with: .color(Color(red: 0.22, green: 0.48, blue: 0.73)),
+              style: StrokeStyle(lineWidth: 3.1, lineCap: .round, dash: [7, 5]))
           }
         }
         .accessibilityHidden(true)
@@ -215,9 +253,12 @@ private struct CityAtlasMapCanvas: View {
             onSelect(marker.city)
           } label: {
             Image(systemName: selectedCity?.id == marker.city.id ? "mappin.circle.fill" : "circle.fill")
-              .font(.system(size: selectedCity?.id == marker.city.id ? 25 : 11, weight: .bold))
+              .font(.system(size: selectedCity?.id == marker.city.id ? 26 : 12, weight: .bold))
               .symbolRenderingMode(.palette)
-              .foregroundStyle(.white, CityChainPalette.blue)
+              .foregroundStyle(.white, selectedCity?.id == marker.city.id
+                ? Color(red: 0.91, green: 0.60, blue: 0.18)
+                : Color(red: 0.25, green: 0.48, blue: 0.69))
+              .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
               .frame(width: 44, height: 44)
               .contentShape(Circle())
           }
@@ -227,6 +268,32 @@ private struct CityAtlasMapCanvas: View {
           .accessibilityHint("Shows this visited city on the map")
         }
 
+        if let marker = markers.first(where: { $0.city.id == selectedCity?.id }) {
+          let projected = data.projectedPoint(for: marker.point)
+          let anchor = layout.project(projected.point, for: projected.region)
+          let regionFrame = layout.fittedFrame(for: projected.region)
+          let labelWidth = min(144, max(94, regionFrame.width * 0.43))
+          let goesLeft = anchor.x > regionFrame.midX
+          let labelX = min(regionFrame.maxX - labelWidth / 2 - 3,
+                           max(regionFrame.minX + labelWidth / 2 + 3,
+                               anchor.x + (goesLeft ? -labelWidth / 2 - 15 : labelWidth / 2 + 15)))
+          let labelY = min(regionFrame.maxY - 15, max(regionFrame.minY + 14, anchor.y - 25))
+          Text(marker.city.name)
+            .font(.system(.caption, design: .rounded, weight: .bold))
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .foregroundStyle(Color(red: 0.25, green: 0.31, blue: 0.31))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
+            .frame(maxWidth: labelWidth)
+            .background(Color(red: 1, green: 0.98, blue: 0.91), in: Capsule())
+            .overlay(Capsule().strokeBorder(Color(red: 0.89, green: 0.69, blue: 0.34), lineWidth: 1.2))
+            .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
+            .position(x: labelX, y: labelY)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+
         AtlasInsetLabel(title: "Alaska", abbreviation: "AK")
           .position(x: layout.alaska.minX + 39, y: layout.alaska.minY + 16)
           .allowsHitTesting(false)
@@ -234,8 +301,78 @@ private struct CityAtlasMapCanvas: View {
           .position(x: layout.hawaii.minX + 39, y: layout.hawaii.minY + 16)
           .allowsHitTesting(false)
       }
-      .background(CityChainPalette.paper.opacity(0.65), in: RoundedRectangle(cornerRadius: 18))
+      .background(.clear, in: RoundedRectangle(cornerRadius: 18))
       .clipShape(RoundedRectangle(cornerRadius: 18))
+    }
+  }
+
+  private func drawAtlasLandmarks(in context: inout GraphicsContext, layout: AtlasMapFrames) {
+    let frame = layout.fittedFrame(for: .mainland)
+    let waterPuffs: [(CGFloat, CGFloat, CGFloat)] = [(0.01, 0.69, 14), (0.99, 0.63, 17)]
+    for (x, y, radius) in waterPuffs {
+      let center = CGPoint(x: frame.minX + frame.width * x, y: frame.minY + frame.height * y)
+      var puff = Path()
+      puff.addEllipse(in: CGRect(x: center.x - radius, y: center.y - radius * 0.38,
+                                 width: radius * 1.25, height: radius * 0.8))
+      puff.addEllipse(in: CGRect(x: center.x - radius * 0.35, y: center.y - radius * 0.72,
+                                 width: radius * 1.2, height: radius * 1.1))
+      puff.addEllipse(in: CGRect(x: center.x + radius * 0.35, y: center.y - radius * 0.32,
+                                 width: radius, height: radius * 0.7))
+      context.fill(puff, with: .color(Color(red: 0.81, green: 0.92, blue: 0.94).opacity(0.48)))
+    }
+    let waves: [(CGFloat, CGFloat)] = [(0.01, 0.80), (0.99, 0.74)]
+    for (x, y) in waves {
+      let center = CGPoint(x: frame.minX + frame.width * x, y: frame.minY + frame.height * y)
+      var wave = Path()
+      wave.move(to: CGPoint(x: center.x - 7, y: center.y))
+      wave.addQuadCurve(to: CGPoint(x: center.x, y: center.y), control: CGPoint(x: center.x - 3.5, y: center.y - 4))
+      wave.addQuadCurve(to: CGPoint(x: center.x + 7, y: center.y), control: CGPoint(x: center.x + 3.5, y: center.y + 4))
+      context.stroke(wave, with: .color(Color(red: 0.38, green: 0.70, blue: 0.82).opacity(0.72)),
+                     style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
+    }
+    let mountainSize = min(22, max(12, frame.width * 0.035))
+    let mountains: [(CGFloat, CGFloat, CGFloat)] = [(0.24, 0.50, 1), (0.30, 0.53, 0.72)]
+    for (x, y, scale) in mountains {
+      let center = CGPoint(x: frame.minX + frame.width * x, y: frame.minY + frame.height * y)
+      let width = mountainSize * scale
+      let height = mountainSize * scale * 0.78
+      let peakPoint = CGPoint(x: center.x, y: center.y - height)
+      var mountain = Path()
+      mountain.move(to: CGPoint(x: center.x - width, y: center.y))
+      mountain.addLine(to: peakPoint)
+      mountain.addLine(to: CGPoint(x: center.x + width, y: center.y))
+      mountain.closeSubpath()
+      context.fill(mountain, with: .color(Color(red: 0.55, green: 0.67, blue: 0.57).opacity(0.52)))
+
+      var snow = Path()
+      snow.move(to: peakPoint)
+      snow.addLine(to: CGPoint(x: center.x - width * 0.28, y: center.y - height * 0.43))
+      snow.addLine(to: CGPoint(x: center.x, y: center.y - height * 0.59))
+      snow.addLine(to: CGPoint(x: center.x + width * 0.31, y: center.y - height * 0.39))
+      snow.closeSubpath()
+      context.fill(snow, with: .color(Color(red: 0.98, green: 0.97, blue: 0.91).opacity(0.88)))
+    }
+
+    let trees: [(CGFloat, CGFloat)] = [(0.19, 0.30), (0.23, 0.32), (0.32, 0.39), (0.78, 0.35), (0.82, 0.38)]
+    let treeSize = min(18, max(11, frame.width * 0.035))
+    for (x, y) in trees {
+      let center = CGPoint(x: frame.minX + frame.width * x, y: frame.minY + frame.height * y)
+      let canopyLayers: [(CGFloat, CGFloat, CGFloat)] = [
+        (1.0, 0.46, 0.27), (0.72, 0.16, 0.48), (0.42, -0.12, 0.70),
+      ]
+      for (topOffset, baseOffset, halfWidth) in canopyLayers {
+        var canopy = Path()
+        canopy.move(to: CGPoint(x: center.x, y: center.y - treeSize * topOffset))
+        canopy.addLine(to: CGPoint(x: center.x - treeSize * halfWidth, y: center.y - treeSize * baseOffset))
+        canopy.addLine(to: CGPoint(x: center.x + treeSize * halfWidth, y: center.y - treeSize * baseOffset))
+        canopy.closeSubpath()
+        context.fill(canopy, with: .color(Color(red: 0.34, green: 0.55, blue: 0.43).opacity(0.68)))
+      }
+      let trunkWidth = max(1.5, treeSize * 0.12)
+      context.fill(
+        Path(CGRect(x: center.x - trunkWidth / 2, y: center.y - treeSize * 0.12,
+                    width: trunkWidth, height: treeSize * 0.48)),
+        with: .color(Color(red: 0.48, green: 0.37, blue: 0.27).opacity(0.62)))
     }
   }
 }
@@ -435,7 +572,7 @@ private struct AtlasMapFrames {
       tx: frame.minX, ty: frame.minY)
   }
 
-  private func fittedFrame(for region: CityAtlasMapData.Region) -> CGRect {
+  func fittedFrame(for region: CityAtlasMapData.Region) -> CGRect {
     let container = frame(for: region)
     let bounds = CityAtlasMapData.bounds(for: region)
     let centerLatitude = (bounds.north + bounds.south) / 2 * .pi / 180
@@ -447,4 +584,32 @@ private struct AtlasMapFrames {
       x: container.midX - width / 2, y: container.midY - height / 2,
       width: width, height: height)
   }
+}
+
+private struct CityAtlasRoutePreview: View {
+  @State private var selectedCity: USCity? = USCity("Nashville", state: .tennessee, isStateCapital: true)
+  @Namespace private var transitionNamespace
+
+  private let visitedCities = [
+    USCity("Austin", state: .texas, isStateCapital: true),
+    USCity("Nashville", state: .tennessee, isStateCapital: true),
+  ]
+
+  var body: some View {
+    CityAtlasMapView(
+      visitedCities: visitedCities,
+      presentation: ScoutPresentation(),
+      selectedCity: $selectedCity,
+      transitionNamespace: transitionNamespace,
+      onOpenMapDetail: {},
+      feedbackMessage: nil,
+      feedbackIsFinished: false,
+      onDismissFeedback: {})
+      .frame(width: 390, height: 844)
+      .background(CityChainPalette.paper)
+  }
+}
+
+#Preview("Pocket Atlas — Austin to Nashville") {
+  CityAtlasRoutePreview()
 }

@@ -3,6 +3,7 @@ import SwiftUI
 /// Decorative companion; the adjacent game message supplies accessible feedback.
 struct ScoutView: View {
   let presentation: ScoutPresentation
+  var style: ScoutViewStyle = .reaction
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.scenePhase) private var scenePhase
 
@@ -10,10 +11,10 @@ struct ScoutView: View {
     let reaction = ScoutReaction(pose: presentation.pose)
     let isSceneActive = scenePhase == .active
     if reduceMotion {
-      ScoutSprite(pose: presentation.pose)
-        .padding(10)
+      ScoutSprite(pose: presentation.pose, style: style)
+        .padding(style == .cornerCompanion ? 0 : 10)
     } else {
-      ScoutSprite(pose: presentation.pose)
+      ScoutSprite(pose: presentation.pose, style: style)
         .keyframeAnimator(
           initialValue: ScoutMotion(), trigger: presentation.reactionID
         ) { content, motion in
@@ -39,10 +40,15 @@ struct ScoutView: View {
             CubicKeyframe(0, duration: reaction.isCorrective ? 0.30 : 0.18)
           }
         }
-        .padding(10)
+        .padding(style == .cornerCompanion ? 0 : 10)
         .modifier(ScoutIdleMotion())
     }
   }
+}
+
+enum ScoutViewStyle: Equatable {
+  case reaction
+  case cornerCompanion
 }
 
 private struct ScoutIdleMotion: ViewModifier {
@@ -102,11 +108,12 @@ private struct ScoutMotion {
 
 private struct ScoutSprite: View {
   let pose: ScoutPose
+  let style: ScoutViewStyle
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     ZStack {
-      Image(pose.assetName)
+      Image(assetName)
         .resizable()
         .scaledToFit()
         .id(pose)
@@ -115,6 +122,10 @@ private struct ScoutSprite: View {
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.16), value: pose)
     .accessibilityHidden(true)
     .allowsHitTesting(false)
+  }
+
+  private var assetName: String {
+    style == .cornerCompanion && pose == .welcome ? "ScoutCompanion" : pose.assetName
   }
 }
 
