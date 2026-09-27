@@ -21,7 +21,11 @@ for the offline fixture.
 
 ## City Chain
 
-City Chain is an offline-testable game engine for a US cities word chain. The player may enter any city name; Noul checks whether it is a US city. The built-in catalog is only used for computer replies and contains the 50 state capitals plus 50 additional large cities.
+See the [City Chain roadmap](DOCS/CITY_CHAIN_ROADMAP.md) for Scout and the searchable City atlas. The [iPhone Duo design concepts](DOCS/DESIGN/CITY_CHAIN_DUO_CONCEPTS.md) remain proposals for dedicated foldable layouts.
+
+City Chain is an offline-testable game engine for a US cities word chain. The player may enter any city name; Noul checks whether it is a US city. The built-in catalog supplies computer replies and the searchable City atlas, with the 50 state capitals plus 100 additional cities. Search matches the beginning of a city name (for example, Y finds Yuma and Yonkers). The atlas highlights cities available for the current turn and copies a selected name into the composer without sending it.
+
+The app uses `CityContinuationPolicy.previousAvailableLetter`: when no unused catalog city starts with the last letter, a Core decision specification scans the preceding letters of that name from right to left. The same rule applies to the player and Scout. If no letter has candidates, the next turn allows any unused city. The route and turn prompt explain skipped letters. The engine defaults to `.lastLetter` for existing clients; exhausting the entire reply catalog still completes the trip positively. See [catalog sources](DOCS/CITY_CATALOG_SOURCES.md) for the 50 newly added cities.
 
 The engine composes Core rules to reject empty input, enforce the current starting letter, prevent reuse, filter computer replies, and route between no reply, one automatic reply, and a model-selected reply. SwiftDecision uses Noul for player-city validation and Choice to select among at most five legal candidates, taken in stable catalog order. If Choice inference fails, the engine randomly selects from those same candidates. Noul abstentions remain visible as game outcomes, while Noul errors still propagate without partially committing a turn.
 

@@ -1,5 +1,7 @@
 version: 1
 root: CityChainApp
+ignoredPaths:
+  - Resources
 strict: true
 architecture: true
 layers:

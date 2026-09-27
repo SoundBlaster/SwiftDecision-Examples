@@ -18,6 +18,8 @@
 		11CCB03EDA6C91FCA8DA8BB6 /* OracleBallViewport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1298BCF7A4C481829D00DD0D /* OracleBallViewport.swift */; };
 		1A1ED4733AC5023DF7F56DD1 /* OracleFieldMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4C81B75995F2AFAA80302DE /* OracleFieldMesh.swift */; };
 		1E7947AE883BC2653A6DCA5F /* OracleRevealComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445C45A6D202E3AB95183E34 /* OracleRevealComponent.swift */; };
+		1EB9B208BE2A4F901BAFF83E /* CityTurnFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5DB9C4B106F38C8876F4AE1 /* CityTurnFeedbackView.swift */; };
+		20D896DD0DB2F028171E213C /* catalog-city-points-2024.json in Resources */ = {isa = PBXBuildFile; fileRef = EFA8C5AC696F24B492C47A07 /* catalog-city-points-2024.json */; };
 		246F0A525994AF40D20F5001 /* GenerateInstantPredictionIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FDC67E0A7EF1343E8E163A6 /* GenerateInstantPredictionIntent.swift */; };
 		248C23E9ABDAFA82B6D469EB /* OracleFieldSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF602E9E75819274A5A4DAB /* OracleFieldSystem.swift */; };
 		28B49B28EE662B70EEE0AA13 /* OracleWindow.metal in Sources */ = {isa = PBXBuildFile; fileRef = 15519B2D3913C91241F53B9E /* OracleWindow.metal */; };
@@ -26,13 +28,18 @@
 		2D0F7D6CD3818F07344C8A38 /* OracleBallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E8AA3D45A8DA72E5C9C6AE /* OracleBallApp.swift */; };
 		33F3AA614B0AA0C50B6B26E9 /* OracleWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = ACDC26693EFD67FE407BDC53 /* OracleWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		48C4C4E3A605725A5B907DF4 /* CityChainGame in Frameworks */ = {isa = PBXBuildFile; productRef = BCFC25CE5B72400FF274C46C /* CityChainGame */; };
+		4C42B82A0ED1932D32802E9A /* CityAtlasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 919366754759C2FA21BEC342 /* CityAtlasView.swift */; };
 		50807669B747813DBC71B7FD /* OracleScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 357AF2B335862288246DA28C /* OracleScene.swift */; };
+		519A07CBE2E74AB1302F0F0F /* CityAtlasMapData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DA8BA71F7348C43E25554FC /* CityAtlasMapData.swift */; };
 		580EB72F3B3FF332583161E7 /* CityChainPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4EA5F6E5CAB64FE4C85581F /* CityChainPage.swift */; };
 		5B6A6A9912E027A69E2DA48E /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 94EC648DF9878086C3FDFAEB /* Localizable.xcstrings */; };
+		5ED064FE275D7603D68676F7 /* ScoutPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FE3A100029847CA9E05D62 /* ScoutPresentation.swift */; };
 		67A639B8B3CC8FD71BA3D81E /* SubmitCityForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E564316622538C1B0F24094 /* SubmitCityForm.swift */; };
 		707B83D1BDF302B7B347FB89 /* OracleHistory in Frameworks */ = {isa = PBXBuildFile; productRef = E14F9F1E7EE4A975AA0F6EC8 /* OracleHistory */; };
 		73D9F4D9F66A8E7D19B64430 /* OracleWidgetTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC3AE3527A1B74DEFEB8C3B4 /* OracleWidgetTimeline.swift */; };
 		7D280D82F2F7E5DF67FEA291 /* OraclePage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */; };
+		7E48BF0C8BEBFA45D50857C0 /* us-states-2024.geojson in Resources */ = {isa = PBXBuildFile; fileRef = 25EEF5E55A5683493177C464 /* us-states-2024.geojson */; };
+		818CC5BF2122B610B6BBCC9D /* Scout.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9494B890BFBDF6BFF85A115D /* Scout.xcassets */; };
 		82BB60CD72FC53C90D7DBD2F /* NestedA11yIDs in Frameworks */ = {isa = PBXBuildFile; productRef = A80462350E333E838A687772 /* NestedA11yIDs */; };
 		82E6986B7DF9835BC0DFA101 /* OracleMotionInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = D28DFCC17C6D03DE5A7A7D1A /* OracleMotionInput.swift */; };
 		85139911433978FEDC77673D /* OracleFace.metal in Sources */ = {isa = PBXBuildFile; fileRef = EC4B8F1131B0DF0B3975D1D3 /* OracleFace.metal */; };
@@ -45,7 +52,9 @@
 		A72A68238261606A5A001734 /* OracleWidgetSharedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8535B4FE08460A471C02ABCF /* OracleWidgetSharedState.swift */; };
 		AF6617E50ED31DA57800D22C /* OracleMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57250EFE799C3061E9C2760F /* OracleMesh.swift */; };
 		B8487555A70BD40DA8F7B8F0 /* AskOracleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A1AE4194E83ECDCE129A0C /* AskOracleField.swift */; };
+		BEA5E9693D464575A1B0E5E0 /* CityAtlasMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E8DEB53DAADD0D87868E96 /* CityAtlasMapView.swift */; };
 		BEEB7D3D5DEE34E208AFB5DF /* OracleCosmicBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6D0F2E9F233D95523F6AADE /* OracleCosmicBackground.swift */; };
+		BF23AC3BC60CF2B45B7B1383 /* CityChainPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = E582BA0751AE903CC90C13E2 /* CityChainPalette.swift */; };
 		C428D200A15D0227F94E7C98 /* OracleField.metal in Sources */ = {isa = PBXBuildFile; fileRef = 491709646E8608240F697179 /* OracleField.metal */; };
 		C5CBA2C9D15B3CECA29148AF /* OracleFieldComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB7FC53B3F1BD79B3963ABE /* OracleFieldComponent.swift */; };
 		C660E0BCF93CFFEAC6ED29E0 /* OracleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B702F06B496B0B161550F616 /* OracleField.swift */; };
@@ -58,6 +67,7 @@
 		D58DEC0FE1D9DBC3A288FEBD /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = B531FD1996E7982085FB0DAB /* AppIcon.icon */; };
 		D59B5FA5D6EDECEAF9F38A98 /* OracleRevealSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12F66D65B6726987E960904 /* OracleRevealSystem.swift */; };
 		D811AB713A983C27ABB46B7F /* CityChainAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABBD1A12DA4DC7CDD5E30DA /* CityChainAppApp.swift */; };
+		EAD6D06BE72602F41958202F /* ScoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED215927DFC26C6B6169608E /* ScoutView.swift */; };
 		EC6595AF675A41B6667771EE /* OracleMotionComponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2083F00EA6DAE97338B46E3A /* OracleMotionComponent.swift */; };
 		ED0E773E7B8A4DCBB13C7BB3 /* GameBoardWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5549BCD5D7EB858B6086D906 /* GameBoardWidget.swift */; };
 		EFE0C9BD5C096D21F26C048C /* OracleHistory in Frameworks */ = {isa = PBXBuildFile; productRef = 95C63AA09DE5578A10CF1FF3 /* OracleHistory */; };
@@ -103,6 +113,8 @@
 		173D0B5C45B582AFDB6217F4 /* OracleMaterials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMaterials.swift; sourceTree = "<group>"; };
 		189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCredentialsStore.swift; sourceTree = "<group>"; };
 		2083F00EA6DAE97338B46E3A /* OracleMotionComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionComponent.swift; sourceTree = "<group>"; };
+		25EEF5E55A5683493177C464 /* us-states-2024.geojson */ = {isa = PBXFileReference; path = "us-states-2024.geojson"; sourceTree = "<group>"; };
+		2DA8BA71F7348C43E25554FC /* CityAtlasMapData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityAtlasMapData.swift; sourceTree = "<group>"; };
 		2E564316622538C1B0F24094 /* SubmitCityForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmitCityForm.swift; sourceTree = "<group>"; };
 		2FAFD99DC820B14AC5F98E6C /* OraclePipelineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePipelineDetailView.swift; sourceTree = "<group>"; };
 		2FDC67E0A7EF1343E8E163A6 /* GenerateInstantPredictionIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerateInstantPredictionIntent.swift; sourceTree = "<group>"; };
@@ -126,9 +138,12 @@
 		8AFB52F61EEB650A0BD6887C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8CAD9C413344AF26731F5A83 /* CityChainPageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainPageModel.swift; sourceTree = "<group>"; };
 		911A170638EF56C6D38F8199 /* OracleModeSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleModeSelector.swift; sourceTree = "<group>"; };
+		919366754759C2FA21BEC342 /* CityAtlasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityAtlasView.swift; sourceTree = "<group>"; };
 		93A1AE4194E83ECDCE129A0C /* AskOracleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskOracleField.swift; sourceTree = "<group>"; };
+		9494B890BFBDF6BFF85A115D /* Scout.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Scout.xcassets; sourceTree = "<group>"; };
 		94EC648DF9878086C3FDFAEB /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		9C2615427A2B6A804DDC43B7 /* OracleBallAppUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = OracleBallAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A0FE3A100029847CA9E05D62 /* ScoutPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutPresentation.swift; sourceTree = "<group>"; };
 		A4EA5F6E5CAB64FE4C85581F /* CityChainPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainPage.swift; sourceTree = "<group>"; };
 		A67E1F11F5D3410963D22099 /* AppDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencies.swift; sourceTree = "<group>"; };
 		A81CA36897223D0124FDDFE5 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -138,18 +153,23 @@
 		B4FEBB2DA601F4435F8A4D24 /* OracleAnswerTexture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleAnswerTexture.swift; sourceTree = "<group>"; };
 		B531FD1996E7982085FB0DAB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		B702F06B496B0B161550F616 /* OracleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleField.swift; sourceTree = "<group>"; };
+		B9E8DEB53DAADD0D87868E96 /* CityAtlasMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityAtlasMapView.swift; sourceTree = "<group>"; };
 		BABBD1A12DA4DC7CDD5E30DA /* CityChainAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainAppApp.swift; sourceTree = "<group>"; };
 		BCB7FC53B3F1BD79B3963ABE /* OracleFieldComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldComponent.swift; sourceTree = "<group>"; };
 		BD88EDB4A07A20B61CED052A /* OracleLighting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleLighting.swift; sourceTree = "<group>"; };
 		C12F66D65B6726987E960904 /* OracleRevealSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleRevealSystem.swift; sourceTree = "<group>"; };
 		C440A94AC7B3B70E4C383882 /* OraclePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePalette.swift; sourceTree = "<group>"; };
+		C5DB9C4B106F38C8876F4AE1 /* CityTurnFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityTurnFeedbackView.swift; sourceTree = "<group>"; };
 		D28DFCC17C6D03DE5A7A7D1A /* OracleMotionInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionInput.swift; sourceTree = "<group>"; };
 		D4C81B75995F2AFAA80302DE /* OracleFieldMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldMesh.swift; sourceTree = "<group>"; };
 		DEC372D3239535942E74F4DC /* OracleBallApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OracleBallApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFB09BAB95325736C5B21919 /* OracleAppPredictionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleAppPredictionWidget.swift; sourceTree = "<group>"; };
+		E582BA0751AE903CC90C13E2 /* CityChainPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainPalette.swift; sourceTree = "<group>"; };
 		EC3AE3527A1B74DEFEB8C3B4 /* OracleWidgetTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleWidgetTimeline.swift; sourceTree = "<group>"; };
 		EC4B8F1131B0DF0B3975D1D3 /* OracleFace.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleFace.metal; sourceTree = "<group>"; };
 		ECF602E9E75819274A5A4DAB /* OracleFieldSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldSystem.swift; sourceTree = "<group>"; };
+		ED215927DFC26C6B6169608E /* ScoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutView.swift; sourceTree = "<group>"; };
+		EFA8C5AC696F24B492C47A07 /* catalog-city-points-2024.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "catalog-city-points-2024.json"; sourceTree = "<group>"; };
 		F6D0F2E9F233D95523F6AADE /* OracleCosmicBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCosmicBackground.swift; sourceTree = "<group>"; };
 		F85255BEFB921D1C014C1753 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -210,6 +230,15 @@
 				E8FC602355EC6F88B5A0099B /* ui */,
 			);
 			path = "city-chain";
+			sourceTree = "<group>";
+		};
+		11B1B5AA7F2C24BEA965C468 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9494B890BFBDF6BFF85A115D /* Scout.xcassets */,
+				A97B6541903F4D81FA211DC2 /* Atlas */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		124BB5AA9B4A1385DDD31498 /* ask-oracle */ = {
@@ -332,9 +361,18 @@
 		3E724B63D8BA68E67F16EC0B /* features */ = {
 			isa = PBXGroup;
 			children = (
+				C1F4EDC346E3B6733A6019C3 /* city-atlas */,
 				FD84538909A24DC13BA93E0C /* submit-city */,
 			);
 			path = features;
+			sourceTree = "<group>";
+		};
+		56A52EBC3D6831FED573F78B /* shared */ = {
+			isa = PBXGroup;
+			children = (
+				9FF9CE4C94802D8D546A8CEF /* ui */,
+			);
+			path = shared;
 			sourceTree = "<group>";
 		};
 		5A7D9BBDAE2001F67872F30C /* ui */ = {
@@ -460,6 +498,8 @@
 				DC519239E23DE3286310650B /* entities */,
 				3E724B63D8BA68E67F16EC0B /* features */,
 				D70650C2949931B5B31235E0 /* pages */,
+				11B1B5AA7F2C24BEA965C468 /* Resources */,
+				56A52EBC3D6831FED573F78B /* shared */,
 				36A6014BB75818EB0900353F /* widgets */,
 			);
 			path = CityChainApp;
@@ -473,12 +513,64 @@
 			path = model;
 			sourceTree = "<group>";
 		};
+		9FF9CE4C94802D8D546A8CEF /* ui */ = {
+			isa = PBXGroup;
+			children = (
+				E582BA0751AE903CC90C13E2 /* CityChainPalette.swift */,
+			);
+			path = ui;
+			sourceTree = "<group>";
+		};
+		A35D6F04D8EF2C83BCAAD433 /* ui */ = {
+			isa = PBXGroup;
+			children = (
+				C5DB9C4B106F38C8876F4AE1 /* CityTurnFeedbackView.swift */,
+				ED215927DFC26C6B6169608E /* ScoutView.swift */,
+			);
+			path = ui;
+			sourceTree = "<group>";
+		};
 		A3C7D57626A7082A4D8EFCE8 /* entrypoint */ = {
 			isa = PBXGroup;
 			children = (
 				A9E8AA3D45A8DA72E5C9C6AE /* OracleBallApp.swift */,
 			);
 			path = entrypoint;
+			sourceTree = "<group>";
+		};
+		A97B6541903F4D81FA211DC2 /* Atlas */ = {
+			isa = PBXGroup;
+			children = (
+				EFA8C5AC696F24B492C47A07 /* catalog-city-points-2024.json */,
+				25EEF5E55A5683493177C464 /* us-states-2024.geojson */,
+			);
+			path = Atlas;
+			sourceTree = "<group>";
+		};
+		BC49F3989746DE4DF3E1C4B8 /* ui */ = {
+			isa = PBXGroup;
+			children = (
+				B9E8DEB53DAADD0D87868E96 /* CityAtlasMapView.swift */,
+				919366754759C2FA21BEC342 /* CityAtlasView.swift */,
+			);
+			path = ui;
+			sourceTree = "<group>";
+		};
+		C1F4EDC346E3B6733A6019C3 /* city-atlas */ = {
+			isa = PBXGroup;
+			children = (
+				FB34F58859DA69472CDB790A /* model */,
+				BC49F3989746DE4DF3E1C4B8 /* ui */,
+			);
+			path = "city-atlas";
+			sourceTree = "<group>";
+		};
+		C620A4D1C12DBCEC5BEB5FC3 /* model */ = {
+			isa = PBXGroup;
+			children = (
+				A0FE3A100029847CA9E05D62 /* ScoutPresentation.swift */,
+			);
+			path = model;
 			sourceTree = "<group>";
 		};
 		C6D37A194A720C9F68B69A47 /* Packages */ = {
@@ -526,6 +618,7 @@
 			isa = PBXGroup;
 			children = (
 				7EB75252B441EC04B7038EB1 /* city */,
+				F82A7C091AE704D889D68DC7 /* scout */,
 			);
 			path = entities;
 			sourceTree = "<group>";
@@ -573,6 +666,23 @@
 				7F4BA3789E1974B034A8258E /* providers */,
 			);
 			path = app;
+			sourceTree = "<group>";
+		};
+		F82A7C091AE704D889D68DC7 /* scout */ = {
+			isa = PBXGroup;
+			children = (
+				C620A4D1C12DBCEC5BEB5FC3 /* model */,
+				A35D6F04D8EF2C83BCAAD433 /* ui */,
+			);
+			path = scout;
+			sourceTree = "<group>";
+		};
+		FB34F58859DA69472CDB790A /* model */ = {
+			isa = PBXGroup;
+			children = (
+				2DA8BA71F7348C43E25554FC /* CityAtlasMapData.swift */,
+			);
+			path = model;
 			sourceTree = "<group>";
 		};
 		FD84538909A24DC13BA93E0C /* submit-city */ = {
@@ -688,6 +798,9 @@
 					963DA7726D5C483EA1F25ECB = {
 						TestTargetID = 5F2AA21B77A3804B4174B9AD;
 					};
+					B1033693A11B9FECC49A3912 = {
+						DevelopmentTeam = P8T2366K8X;
+					};
 				};
 			};
 			buildConfigurationList = CA8A0F14E6CD98AC98D99187 /* Build configuration list for PBXProject "CityChainApp" */;
@@ -723,6 +836,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				C7BD59E26A02FB2014A3DEC9 /* Localizable.xcstrings in Resources */,
+				818CC5BF2122B610B6BBCC9D /* Scout.xcassets in Resources */,
+				20D896DD0DB2F028171E213C /* catalog-city-points-2024.json in Resources */,
+				7E48BF0C8BEBFA45D50857C0 /* us-states-2024.geojson in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -809,11 +925,18 @@
 			buildActionMask = 2147483647;
 			files = (
 				2CCEE2308AE20D4D17F0FDFB /* AppDependencies.swift in Sources */,
+				519A07CBE2E74AB1302F0F0F /* CityAtlasMapData.swift in Sources */,
+				BEA5E9693D464575A1B0E5E0 /* CityAtlasMapView.swift in Sources */,
+				4C42B82A0ED1932D32802E9A /* CityAtlasView.swift in Sources */,
 				D811AB713A983C27ABB46B7F /* CityChainAppApp.swift in Sources */,
 				580EB72F3B3FF332583161E7 /* CityChainPage.swift in Sources */,
 				0C4CFA6FCD802F3DBBC3FE18 /* CityChainPageModel.swift in Sources */,
+				BF23AC3BC60CF2B45B7B1383 /* CityChainPalette.swift in Sources */,
+				1EB9B208BE2A4F901BAFF83E /* CityTurnFeedbackView.swift in Sources */,
 				CA7B6FB826C11092AB41EF8B /* CityTurnRow.swift in Sources */,
 				ED0E773E7B8A4DCBB13C7BB3 /* GameBoardWidget.swift in Sources */,
+				5ED064FE275D7603D68676F7 /* ScoutPresentation.swift in Sources */,
+				EAD6D06BE72602F41958202F /* ScoutView.swift in Sources */,
 				67A639B8B3CC8FD71BA3D81E /* SubmitCityForm.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -893,10 +1016,14 @@
 		345793F938AC03A2C82F38A6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = P8T2366K8X;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "City Chain";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1013,10 +1140,14 @@
 		D2B49C3FFE31E9044BE57D5D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = P8T2366K8X;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "City Chain";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

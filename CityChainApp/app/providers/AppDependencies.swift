@@ -14,7 +14,9 @@ struct AppDependencies {
   }
 
   func makeGame() -> CityChainGame {
-    CityChainGame(decisions: DecisionEngine(backend: backend))
+    CityChainGame(
+      decisions: DecisionEngine(backend: backend),
+      continuationPolicy: .previousAvailableLetter)
   }
 
   @MainActor

@@ -11,6 +11,7 @@ public struct CityGameSnapshot: Sendable, Equatable {
   public let consecutiveMistakes: Int
   public let cityHint: CityHint?
   public let validationSource: CityValidationSource?
+  public let letterContinuations: [CityLetterContinuation]
 
   public var isFinished: Bool { ending != nil }
 }
@@ -62,6 +63,8 @@ public enum CityGameTurnResult: Sendable, Equatable {
 public actor CityChainGame {
   private let decisions: DecisionEngine
   private let catalog: USCityCatalog
+  private let continuationPolicy: CityContinuationPolicy
+  private var letterContinuations: [CityLetterContinuation] = []
   /// Chooses from the deterministic reply candidates if Choice inference fails.
   private let randomCandidateIndex: @Sendable (Range<Int>) -> Int
   private var usedCities: [USCity] = []
@@ -78,14 +81,17 @@ public actor CityChainGame {
   /// - Parameters:
   ///   - decisions: The engine used to validate the player's city and rank computer replies.
   ///   - catalog: Ordered cities eligible as computer replies.
+  ///   - continuationPolicy: Strict last-letter chaining or a child-friendly search through previous letters.
   ///   - randomCandidateIndex: An index selector used only when Choice inference throws.
   public init(
     decisions: DecisionEngine,
     catalog: USCityCatalog = .standard,
+    continuationPolicy: CityContinuationPolicy = .lastLetter,
     randomCandidateIndex: @escaping @Sendable (Range<Int>) -> Int = { Int.random(in: $0) }
   ) {
     self.decisions = decisions
     self.catalog = catalog
+    self.continuationPolicy = continuationPolicy
     self.randomCandidateIndex = randomCandidateIndex
   }
 
@@ -97,14 +103,52 @@ public actor CityChainGame {
       isSubmissionInProgress: isSubmissionInProgress,
       consecutiveMistakes: consecutiveMistakes,
       cityHint: cityHint,
-      validationSource: validationSource
+      validationSource: validationSource,
+      letterContinuations: letterContinuations
     )
+  }
+
+  /// Starts a fresh round when there is no turn in progress.
+  public func reset() {
+    guard !isSubmissionInProgress else { return }
+    usedCities.removeAll(keepingCapacity: true)
+    letterContinuations.removeAll(keepingCapacity: true)
+    usedCityIDs.removeAll(keepingCapacity: true)
+    requiredStartingLetter = nil
+    ending = nil
+    consecutiveMistakes = 0
+    cityHint = nil
+    validationSource = nil
   }
 
   /// Validates a free-form city name and, when possible, asks the model for the computer's reply.
   public func submit(_ rawCity: String) async throws -> CityGameTurnResult {
-    guard ending == nil else { return .gameAlreadyFinished }
-    guard !isSubmissionInProgress else { return .submissionInProgress }
+    try await submitWithTrace(rawCity).result
+  }
+
+  /// Evaluates one turn and returns the result with its curated engine trace.
+  public func submitWithTrace(
+    _ rawCity: String,
+    onPlayerCityCommitted: (@MainActor @Sendable (CityGameSnapshot) -> Void)? = nil
+  ) async throws -> CityGameTracedTurnResult {
+    var pipeline: [CityGamePipelineStage] = []
+    func finish(_ result: CityGameTurnResult) -> CityGameTracedTurnResult {
+      CityGameTracedTurnResult(result: result, pipeline: pipeline)
+    }
+
+    guard ending == nil else {
+      pipeline.append(
+        CityGameTraceProjection.stage(
+          id: "game-state", title: "Game state", summary: "The round has already ended."))
+      return finish(.gameAlreadyFinished)
+    }
+    guard !isSubmissionInProgress else {
+      pipeline.append(
+        CityGameTraceProjection.stage(
+          id: "submission-state", title: "Submission state", summary: "Another turn is in progress."
+        ))
+      return finish(.submissionInProgress)
+    }
     isSubmissionInProgress = true
     defer { isSubmissionInProgress = false }
 
@@ -114,26 +158,54 @@ public actor CityChainGame {
       requiredStartingLetter: requiredStartingLetter,
       usedCityIDs: usedCityIDs
     )
-    let preflight = try await Self.preflightRouter().decide(context)
+    let preflightRecorder = SpecificationTraceRecorder()
+    let preflightSpecification = Self.preflightRouter().tracedAsync("city.player-preflight")
+    let preflight = try await SpecificationTraceRuntime.decideAsync(
+      preflightSpecification,
+      context,
+      recordingTo: preflightRecorder)
+    pipeline.append(
+      CityGameTraceProjection.specificationStage(
+        id: "player-preflight", title: "Player city checks",
+        summary: Self.preflightSummary(preflight), events: preflightRecorder.events))
     switch preflight {
     case .rejected(let rejection):
-      return try await recordMistake(.rejected(rejection))
+      return finish(try await recordMistake(.rejected(rejection)))
     case .noChainableLetters:
-      return try await recordMistake(.rejected(.cityNameHasNoLatinLetters))
+      return finish(try await recordMistake(.rejected(.cityNameHasNoLatinLetters)))
     case .wrongStartingLetter:
       guard let expected = context.requiredStartingLetter else {
         assertionFailure("A wrong-letter route requires a current letter.")
-        return .rejected(.emptyInput)
+        return finish(.rejected(.emptyInput))
       }
-      return try await recordMistake(
-        .rejected(.wrongStartingLetter(expected: expected, actual: playerCity.firstLetter)))
+      return finish(
+        try await recordMistake(
+          .rejected(.wrongStartingLetter(expected: expected, actual: playerCity.firstLetter))))
     case .alreadyUsed:
-      return try await recordMistake(.rejected(.alreadyUsed(playerCity)))
+      return finish(try await recordMistake(.rejected(.alreadyUsed(playerCity))))
     case .ready:
       break
     case nil:
       assertionFailure("The preflight router always has a fallback.")
-      return .rejected(.emptyInput)
+      return finish(.rejected(.emptyInput))
+    }
+
+    let thinkingStartedAt = Date()
+    let thinkingDelayTask = Task {
+      try await Task.sleep(nanoseconds: 2_500_000_000)
+    }
+    defer { thinkingDelayTask.cancel() }
+
+    func scoutThinkingStage() async throws -> CityGamePipelineStage {
+      try await thinkingDelayTask.value
+      let elapsedSeconds = Date().timeIntervalSince(thinkingStartedAt)
+      return CityGameTraceProjection.stage(
+        id: "scout-thinking", title: "Scout thinking",
+        summary: "Completed asynchronous work while choosing a reply.",
+        details: [
+          CityGameTraceDetail(
+            id: "elapsed", label: "Elapsed", value: String(format: "%.2f s", elapsedSeconds))
+        ])
     }
 
     var validationSource = CityValidationSource.noul
@@ -147,27 +219,70 @@ public actor CityChainGame {
     } catch {
       if error is CancellationError { throw error }
       try Task.checkCancellation()
-      guard let catalogCity = try await catalogMatch(for: playerCity) else { throw error }
+      pipeline.append(
+        CityGameTraceProjection.stage(
+          id: "city-validation", title: "City validation",
+          summary: "SwiftDecision failed: \(String(reflecting: type(of: error)))."))
+      let catalogRecorder = SpecificationTraceRecorder()
+      let catalogCity = try await catalogMatch(for: playerCity, recordingTo: catalogRecorder)
+      pipeline.append(
+        CityGameTraceProjection.specificationStage(
+          id: "catalog-validation", title: "Local atlas check",
+          summary: catalogCity == nil ? "No matching catalog city." : "Matched a catalog city.",
+          events: catalogRecorder.events))
+      guard let catalogCity else { throw error }
       playerCity = catalogCity
       validation = nil
       validationSource = .localCatalogFallback
     }
 
     if let validation {
+      pipeline.append(
+        CityGameTraceProjection.decisionStage(
+          id: "city-validation", title: "City validation",
+          summary: Self.decisionSummary(validation.outcome),
+          details: [
+            CityGameTraceDetail(
+              id: "city-recognized", label: "Recognized by Jev",
+              value: validation.value.map { $0 ? "Yes" : "No" } ?? "Unknown")
+          ], result: validation))
       switch validation.outcome {
       case .accepted(true):
-        break
+        let catalogRecorder = SpecificationTraceRecorder()
+        let catalogCity = try await catalogMatch(for: playerCity, recordingTo: catalogRecorder)
+        pipeline.append(
+          CityGameTraceProjection.specificationStage(
+            id: "catalog-validation", title: "Local atlas check",
+            summary: catalogCity == nil ? "No matching catalog city." : "Matched a catalog city.",
+            events: catalogRecorder.events))
+        if let catalogCity {
+          playerCity = catalogCity
+        }
       case .accepted(false):
-        return try await recordMistake(.cityNotRecognized(playerCity))
+        return finish(try await recordMistake(.cityNotRecognized(playerCity)))
       case .abstained(let reason):
-        guard let catalogCity = try await catalogMatch(for: playerCity) else {
-          return .cityVerificationAbstained(playerCity, reason: reason)
+        let catalogRecorder = SpecificationTraceRecorder()
+        let catalogCity = try await catalogMatch(for: playerCity, recordingTo: catalogRecorder)
+        pipeline.append(
+          CityGameTraceProjection.specificationStage(
+            id: "catalog-validation", title: "Local atlas check",
+            summary: catalogCity == nil ? "No matching catalog city." : "Matched a catalog city.",
+            events: catalogRecorder.events))
+        guard let catalogCity else {
+          return finish(.cityVerificationAbstained(playerCity, reason: reason))
         }
         playerCity = catalogCity
         validationSource = .localCatalogFallback
       case .fallback(_, let reason):
-        guard let catalogCity = try await catalogMatch(for: playerCity) else {
-          return .cityVerificationFallback(playerCity, reason: reason)
+        let catalogRecorder = SpecificationTraceRecorder()
+        let catalogCity = try await catalogMatch(for: playerCity, recordingTo: catalogRecorder)
+        pipeline.append(
+          CityGameTraceProjection.specificationStage(
+            id: "catalog-validation", title: "Local atlas check",
+            summary: catalogCity == nil ? "No matching catalog city." : "Matched a catalog city.",
+            events: catalogRecorder.events))
+        guard let catalogCity else {
+          return finish(.cityVerificationFallback(playerCity, reason: reason))
         }
         playerCity = catalogCity
         validationSource = .localCatalogFallback
@@ -175,49 +290,99 @@ public actor CityChainGame {
     }
 
     guard let nextLetter = playerCity.lastLetter else {
-      return .rejected(.emptyInput)
+      return finish(.rejected(.emptyInput))
     }
+    let continuationRecorder = SpecificationTraceRecorder()
+    let replyContinuation = continuation(
+      after: playerCity, excluding: usedCityIDs.union([playerCity.id]),
+      recordingTo: continuationRecorder)
+    pipeline.append(
+      CityGameTraceProjection.specificationStage(
+        id: "player-continuation", title: "Next letter",
+        summary:
+          "The computer needs a city starting with \(replyContinuation.startingLetter ?? nextLetter).",
+        details: [
+          CityGameTraceDetail(
+            id: "skipped-letters", label: "Skipped letters",
+            value: replyContinuation.skippedLetters.map(String.init).joined(separator: ", "))
+        ], events: continuationRecorder.events))
+    commitPlayer(playerCity, source: validationSource, continuation: replyContinuation)
+    await onPlayerCityCommitted?(snapshot())
+
+    let candidatesRecorder = SpecificationTraceRecorder()
     let candidates = Array(
-      try await orderedAvailableCities(
-        requiredStartingLetter: nextLetter,
-        usedCityIDs: usedCityIDs.union([playerCity.id])
+      try await tracedAvailableCities(
+        requiredStartingLetter: replyContinuation.startingLetter,
+        usedCityIDs: usedCityIDs.union([playerCity.id]),
+        recordingTo: candidatesRecorder
       ).prefix(5))
-    let plan = try await Self.replyPlanRouter().decide(
+    pipeline.append(
+      CityGameTraceProjection.specificationStage(
+        id: "reply-candidates", title: "Available replies",
+        summary:
+          "Found \(candidates.count) candidate\(candidates.count == 1 ? "" : "s") for the model.",
+        events: candidatesRecorder.events))
+
+    let replyPlanRecorder = SpecificationTraceRecorder()
+    let replyPlanSpecification = Self.replyPlanRouter().tracedAsync("city.reply-plan")
+    let plan = try await SpecificationTraceRuntime.decideAsync(
+      replyPlanSpecification,
       ReplyPlanContext(
         candidates: candidates,
         requiredStartingLetter: nextLetter
-      ))
+      ), recordingTo: replyPlanRecorder)
+    pipeline.append(
+      CityGameTraceProjection.specificationStage(
+        id: "reply-plan", title: "Reply plan",
+        summary: Self.replyPlanSummary(plan), events: replyPlanRecorder.events))
 
     switch plan {
     case .noAvailableReply:
-      commitPlayer(playerCity, source: validationSource)
+      pipeline.append(try await scoutThinkingStage())
       ending = .noAvailableReply(startingLetter: nextLetter)
       requiredStartingLetter = nextLetter
-      return .playerWonNoAvailableReply(playerCity: playerCity, startingLetter: nextLetter)
+      pipeline.append(
+        CityGameTraceProjection.stage(
+          id: "turn-commit", title: "Route update", summary: "The player's city ends the round."))
+      return finish(.playerWonNoAvailableReply(playerCity: playerCity, startingLetter: nextLetter))
 
     case .onlyAvailableCity:
       guard let computerCity = candidates.first else {
         assertionFailure("The single-city route requires a candidate.")
-        return .playerWonNoAvailableReply(playerCity: playerCity, startingLetter: nextLetter)
+        return finish(
+          .playerWonNoAvailableReply(playerCity: playerCity, startingLetter: nextLetter))
       }
-      commitPlayer(playerCity, source: validationSource)
+      pipeline.append(try await scoutThinkingStage())
       commit(computerCity)
-      requiredStartingLetter = computerCity.lastLetter
-      return .computerReplied(
-        playerCity: playerCity,
-        computerCity: computerCity,
-        selection: .onlyAvailableCity
+      pipeline.append(
+        CityGameTraceProjection.stage(
+          id: "turn-commit", title: "Route update", summary: "Both cities were added to the route.")
       )
+      let nextTurnEvents = prepareNextTurn(after: computerCity)
+      pipeline.append(
+        CityGameTraceProjection.specificationStage(
+          id: "computer-continuation", title: "Next player letter",
+          summary: requiredStartingLetter.map { "The next city starts with \($0)." }
+            ?? "Any starting letter is allowed.", events: nextTurnEvents))
+      return finish(
+        .computerReplied(
+          playerCity: playerCity,
+          computerCity: computerCity,
+          selection: .onlyAvailableCity
+        ))
 
     case .askModel:
       let options = Array(candidates.prefix(5))
+      let startingRule =
+        replyContinuation.startingLetter.map { "Your city must start with \($0)." }
+        ?? "All letters of the previous name are exhausted; any starting letter is allowed."
       let result: DecisionResult<USCity>
       do {
         result = try await decisions.choice(
           instructions:
             "Choose the strongest legal next US city for a city-chain game. Select only from the provided options. Prefer a familiar, unambiguous city name.",
           context:
-            "The previous city was \(playerCity.name). Your city must start with \(nextLetter). Already-used cities are excluded.",
+            "The previous city was \(playerCity.name). \(startingRule) Already-used cities are excluded.",
           options: options.map { ChoiceOption(label: $0, description: $0.name) }
         )
       } catch {
@@ -225,6 +390,12 @@ public actor CityChainGame {
           throw error
         }
         try Task.checkCancellation()
+        pipeline.append(
+          CityGameTraceProjection.stage(
+            id: "computer-choice", title: "Computer city choice",
+            summary:
+              "SwiftDecision failed: \(String(reflecting: type(of: error))); using a random legal candidate."
+          ))
 
         let requestedIndex = randomCandidateIndex(options.indices)
         let selectedIndex =
@@ -232,53 +403,126 @@ public actor CityChainGame {
           ? requestedIndex
           : options.startIndex
         let computerCity = options[selectedIndex]
-        commitPlayer(playerCity, source: validationSource)
+        pipeline.append(try await scoutThinkingStage())
         commit(computerCity)
-        requiredStartingLetter = computerCity.lastLetter
-        return .computerReplied(
-          playerCity: playerCity,
-          computerCity: computerCity,
-          selection: .randomFallback
-        )
+        pipeline.append(
+          CityGameTraceProjection.stage(
+            id: "turn-commit", title: "Route update",
+            summary: "Both cities were added to the route."))
+        let nextTurnEvents = prepareNextTurn(after: computerCity)
+        pipeline.append(
+          CityGameTraceProjection.specificationStage(
+            id: "computer-continuation", title: "Next player letter",
+            summary: requiredStartingLetter.map { "The next city starts with \($0)." }
+              ?? "Any starting letter is allowed.", events: nextTurnEvents))
+        return finish(
+          .computerReplied(
+            playerCity: playerCity,
+            computerCity: computerCity,
+            selection: .randomFallback
+          ))
       }
 
+      pipeline.append(
+        CityGameTraceProjection.decisionStage(
+          id: "computer-choice", title: "Computer city choice",
+          summary: Self.decisionSummary(result.outcome),
+          details: [
+            CityGameTraceDetail(
+              id: "candidate-count", label: "Candidates", value: String(options.count)),
+            CityGameTraceDetail(
+              id: "selected-city", label: "Selected city", value: result.value?.name ?? "None"),
+            CityGameTraceDetail(
+              id: "confidence", label: "Confidence",
+              value: "\(Int((result.confidence * 100).rounded()))%"),
+          ], result: result))
+      pipeline.append(try await scoutThinkingStage())
       switch result.outcome {
       case .accepted(let computerCity):
-        commitPlayer(playerCity, source: validationSource)
         commit(computerCity)
-        requiredStartingLetter = computerCity.lastLetter
-        return .computerReplied(
-          playerCity: playerCity,
-          computerCity: computerCity,
-          selection: .acceptedByDecision(confidence: result.confidence)
-        )
+        pipeline.append(
+          CityGameTraceProjection.stage(
+            id: "turn-commit", title: "Route update",
+            summary: "Both cities were added to the route."))
+        let nextTurnEvents = prepareNextTurn(after: computerCity)
+        pipeline.append(
+          CityGameTraceProjection.specificationStage(
+            id: "computer-continuation", title: "Next player letter",
+            summary: requiredStartingLetter.map { "The next city starts with \($0)." }
+              ?? "Any starting letter is allowed.", events: nextTurnEvents))
+        return finish(
+          .computerReplied(
+            playerCity: playerCity,
+            computerCity: computerCity,
+            selection: .acceptedByDecision(confidence: result.confidence)
+          ))
 
       case .fallback(let computerCity, let reason):
-        commitPlayer(playerCity, source: validationSource)
         commit(computerCity)
-        requiredStartingLetter = computerCity.lastLetter
-        return .computerReplied(
-          playerCity: playerCity,
-          computerCity: computerCity,
-          selection: .fallbackByDecision(confidence: result.confidence, reason: reason)
-        )
+        pipeline.append(
+          CityGameTraceProjection.stage(
+            id: "turn-commit", title: "Route update",
+            summary: "Both cities were added to the route."))
+        let nextTurnEvents = prepareNextTurn(after: computerCity)
+        pipeline.append(
+          CityGameTraceProjection.specificationStage(
+            id: "computer-continuation", title: "Next player letter",
+            summary: requiredStartingLetter.map { "The next city starts with \($0)." }
+              ?? "Any starting letter is allowed.", events: nextTurnEvents))
+        return finish(
+          .computerReplied(
+            playerCity: playerCity,
+            computerCity: computerCity,
+            selection: .fallbackByDecision(confidence: result.confidence, reason: reason)
+          ))
 
       case .abstained(let reason):
-        commit(playerCity)
         requiredStartingLetter = nextLetter
         ending = .computerAbstained(reason: reason)
-        return .playerWonBecauseComputerAbstained(playerCity: playerCity, reason: reason)
+        pipeline.append(
+          CityGameTraceProjection.stage(
+            id: "turn-commit", title: "Route update",
+            summary: "The player city was added; the computer abstained."))
+        return finish(.playerWonBecauseComputerAbstained(playerCity: playerCity, reason: reason))
       }
     case nil:
       assertionFailure("The reply-plan router always has a fallback.")
-      return .playerWonNoAvailableReply(playerCity: playerCity, startingLetter: nextLetter)
+      return finish(.playerWonNoAvailableReply(playerCity: playerCity, startingLetter: nextLetter))
     }
   }
 
-  private func commitPlayer(_ city: USCity, source: CityValidationSource) {
+  private func continuation(
+    after city: USCity,
+    excluding usedIDs: Set<String>,
+    recordingTo recorder: SpecificationTraceRecorder
+  ) -> CityLetterContinuation {
+    let rule = CityContinuationSpec(policy: continuationPolicy).traced("city.letter-continuation")
+    guard
+      let result = SpecificationTraceRuntime.decide(
+        rule,
+        CityContinuationContext(city: city, catalog: catalog.cities, usedCityIDs: usedIDs),
+        recordingTo: recorder)
+    else {
+      preconditionFailure("A validated city must contain chainable letters.")
+    }
+    return result
+  }
+
+  private func prepareNextTurn(after city: USCity) -> [SpecificationTraceEvent] {
+    let recorder = SpecificationTraceRecorder()
+    let next = continuation(after: city, excluding: usedCityIDs, recordingTo: recorder)
+    letterContinuations.append(next)
+    requiredStartingLetter = next.startingLetter
+    return recorder.events
+  }
+
+  private func commitPlayer(
+    _ city: USCity, source: CityValidationSource, continuation: CityLetterContinuation
+  ) {
     consecutiveMistakes = 0
     cityHint = nil
     validationSource = source
+    letterContinuations.append(continuation)
     commit(city)
   }
 
@@ -299,21 +543,46 @@ public actor CityChainGame {
     return result
   }
 
-  private func catalogMatch(for city: USCity) async throws -> USCity? {
-    let matchesCity = AnyAsyncSpecification<CatalogMatchContext> { context in
-      context.candidate.id == context.city.id
-    }
-    for catalogCity in catalog.cities {
-      if try await matchesCity.isSatisfiedBy(
-        CatalogMatchContext(city: city, candidate: catalogCity))
-      {
-        return catalogCity
+  private func catalogMatch(
+    for city: USCity,
+    recordingTo recorder: SpecificationTraceRecorder
+  ) async throws -> USCity? {
+    let lookup = AnyAsyncDecisionSpec<CatalogMatchContext, USCity> { context in
+      for candidate in context.candidates where candidate.id == context.city.id {
+        return candidate
       }
-    }
-    return nil
+      return nil
+    }.tracedAsync("city.catalog-match")
+    return try await SpecificationTraceRuntime.decideAsync(
+      lookup,
+      CatalogMatchContext(city: city, candidates: catalog.cities),
+      recordingTo: recorder)
+  }
+
+  private func tracedAvailableCities(
+    requiredStartingLetter: Character?,
+    usedCityIDs: Set<String>,
+    recordingTo recorder: SpecificationTraceRecorder
+  ) async throws -> [USCity] {
+    let search = AvailableCitySearchDecision(cities: catalog.cities)
+    return try await SpecificationTraceRuntime.decideAsync(
+      search,
+      ReplySearchContext(requiredStartingLetter: requiredStartingLetter, usedCityIDs: usedCityIDs),
+      recordingTo: recorder) ?? []
   }
 
   private func orderedAvailableCities(
+    requiredStartingLetter: Character?,
+    usedCityIDs: Set<String>
+  ) async throws -> [USCity] {
+    try await Self.orderedAvailableCities(
+      in: catalog.cities,
+      requiredStartingLetter: requiredStartingLetter,
+      usedCityIDs: usedCityIDs)
+  }
+
+  private static func orderedAvailableCities(
+    in cities: [USCity],
     requiredStartingLetter: Character?,
     usedCityIDs: Set<String>
   ) async throws -> [USCity] {
@@ -330,7 +599,7 @@ public actor CityChainGame {
     }
 
     var eligible: [ReplyCandidate] = []
-    for (catalogIndex, city) in catalog.cities.enumerated() {
+    for (catalogIndex, city) in cities.enumerated() {
       let candidate = ReplyCandidate(
         city: city,
         catalogIndex: catalogIndex,
@@ -359,6 +628,21 @@ public actor CityChainGame {
     return ordered.map(\.city)
   }
 
+  private struct AvailableCitySearchDecision: AsyncDecisionSpec, Sendable {
+    let cities: [USCity]
+
+    func decide(_ context: ReplySearchContext) async throws -> [USCity]? {
+      try await SpecificationTraceRuntime.withDecision("city.available-replies") {
+        try await SpecificationTraceRuntime.withoutRecording {
+          try await CityChainGame.orderedAvailableCities(
+            in: cities,
+            requiredStartingLetter: context.requiredStartingLetter,
+            usedCityIDs: context.usedCityIDs)
+        }
+      }
+    }
+  }
+
   private static func makeHint(_ city: USCity) -> CityHint {
     let characters = Array(city.name)
     let letterCount = characters.reduce(into: 0) { count, character in
@@ -379,6 +663,35 @@ public actor CityChainGame {
       letterIndex += 1
     }
     return CityHint(maskedName: maskedName, startingLetter: city.firstLetter)
+  }
+
+  private static func preflightSummary(_ result: PreflightResult?) -> String {
+    switch result {
+    case .rejected: "Rejected by a player input rule."
+    case .noChainableLetters: "The city has no usable Latin letters."
+    case .wrongStartingLetter: "The city does not start with the required letter."
+    case .alreadyUsed: "The city is already in the route."
+    case .ready: "Player input passed the local rules."
+    case nil: "No preflight rule selected a result."
+    }
+  }
+
+  private static func replyPlanSummary(_ result: ReplyPlan?) -> String {
+    switch result {
+    case .noAvailableReply: "No unused city matches the required letter."
+    case .onlyAvailableCity: "Exactly one legal reply is available."
+    case .askModel: "Several legal replies are available; ask SwiftDecision to choose."
+    case nil: "No reply plan selected."
+    }
+  }
+
+  private static func decisionSummary<Value: Sendable>(_ outcome: DecisionOutcome<Value>) -> String
+  {
+    switch outcome {
+    case .accepted: "Accepted by the selected policy."
+    case .fallback: "Used the configured fallback."
+    case .abstained: "Decision abstained."
+    }
   }
 
   private static func preflightRouter() -> AsyncFirstMatchSpec<
@@ -441,7 +754,12 @@ private struct CandidateOrderContext: Sendable {
 
 private struct CatalogMatchContext: Sendable {
   let city: USCity
-  let candidate: USCity
+  let candidates: [USCity]
+}
+
+private struct ReplySearchContext: Sendable {
+  let requiredStartingLetter: Character?
+  let usedCityIDs: Set<String>
 }
 
 private struct HintCharacterContext: Sendable {
