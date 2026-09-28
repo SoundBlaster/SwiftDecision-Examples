@@ -16,9 +16,33 @@ public struct CityGameSnapshot: Sendable, Equatable {
   public var isFinished: Bool { ending != nil }
 }
 
-public struct CityHint: Sendable, Equatable {
+public struct CityHint: Codable, Sendable, Equatable {
   public let maskedName: String
   public let startingLetter: Character?
+
+  enum CodingKeys: String, CodingKey { case maskedName, startingLetter }
+
+  public init(maskedName: String, startingLetter: Character?) {
+    self.maskedName = maskedName
+    self.startingLetter = startingLetter
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    maskedName = try container.decode(String.self, forKey: .maskedName)
+    let encodedLetter = try container.decodeIfPresent(String.self, forKey: .startingLetter)
+    guard encodedLetter == nil || encodedLetter?.count == 1 else {
+      throw DecodingError.dataCorruptedError(
+        forKey: .startingLetter, in: container, debugDescription: "Expected one starting letter.")
+    }
+    startingLetter = encodedLetter?.first
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(maskedName, forKey: .maskedName)
+    try container.encodeIfPresent(startingLetter.map(String.init), forKey: .startingLetter)
+  }
 }
 
 public enum CityValidationSource: Sendable, Equatable {
@@ -31,7 +55,6 @@ public enum CityGameEnding: Sendable, Equatable {
   case computerAbstained(reason: String)
 }
 
-#if DEBUG
 public enum CityGameFixturePhase: String, Codable, Sendable {
   case ready
   case thinking
@@ -55,6 +78,7 @@ public enum CityGameFixtureError: Error, LocalizedError, Sendable, Equatable {
   case duplicateCity(String)
   case brokenChain(city: String, expected: Character)
   case submissionInProgress
+  case invalidMistakeCount
 
   public var errorDescription: String? {
     switch self {
@@ -71,16 +95,22 @@ public enum CityGameFixtureError: Error, LocalizedError, Sendable, Equatable {
     case .brokenChain(let city, let expected):
       "\(city) does not start with the required letter \(expected)."
     case .submissionInProgress: "Cannot restore a fixture while a turn is in progress."
+    case .invalidMistakeCount: "Fixture mistake count cannot be negative."
     }
   }
 }
 
-/// A versioned, JSON-decodable starting position for local UI and engine debugging.
+/// A versioned, JSON-decodable game position used by debugging fixtures and autosave.
 public struct CityGameFixture: Codable, Sendable, Equatable {
   public struct Turn: Codable, Sendable, Equatable {
     public enum Role: String, Codable, Sendable { case player, computer }
     public let role: Role
     public let city: String
+
+    public init(role: Role, city: String) {
+      self.role = role
+      self.city = city
+    }
   }
 
   public let version: Int
@@ -91,9 +121,30 @@ public struct CityGameFixture: Codable, Sendable, Equatable {
   public let ending: CityGameFixtureEnding?
   public let endingMessage: String?
   public let focusInput: Bool
+  public let consecutiveMistakes: Int
+  public let cityHint: CityHint?
 
   enum CodingKeys: String, CodingKey {
     case version, route, draft, phase, feedbackMessage, ending, endingMessage, focusInput
+    case consecutiveMistakes, cityHint
+  }
+
+  public init(
+    version: Int = 1, route: [Turn], draft: String? = nil,
+    phase: CityGameFixturePhase = .ready, feedbackMessage: String? = nil,
+    ending: CityGameFixtureEnding? = nil, endingMessage: String? = nil,
+    focusInput: Bool = false, consecutiveMistakes: Int = 0, cityHint: CityHint? = nil
+  ) {
+    self.version = version
+    self.route = route
+    self.draft = draft
+    self.phase = phase
+    self.feedbackMessage = feedbackMessage
+    self.ending = ending
+    self.endingMessage = endingMessage
+    self.focusInput = focusInput
+    self.consecutiveMistakes = consecutiveMistakes
+    self.cityHint = cityHint
   }
 
   public init(from decoder: Decoder) throws {
@@ -106,9 +157,10 @@ public struct CityGameFixture: Codable, Sendable, Equatable {
     ending = try container.decodeIfPresent(CityGameFixtureEnding.self, forKey: .ending)
     endingMessage = try container.decodeIfPresent(String.self, forKey: .endingMessage)
     focusInput = try container.decodeIfPresent(Bool.self, forKey: .focusInput) ?? false
+    consecutiveMistakes = try container.decodeIfPresent(Int.self, forKey: .consecutiveMistakes) ?? 0
+    cityHint = try container.decodeIfPresent(CityHint.self, forKey: .cityHint)
   }
 }
-#endif
 
 public enum CitySubmissionRejection: Sendable, Equatable {
   case emptyInput
@@ -200,11 +252,11 @@ public actor CityChainGame {
     validationSource = nil
   }
 
-  /// Rebuilds all actor-owned game state from a validated, complete route.
-#if DEBUG
+  /// Rebuilds actor-owned state from a validated fixture or autosave route.
   public func restore(from fixture: CityGameFixture) throws {
     guard !isSubmissionInProgress else { throw CityGameFixtureError.submissionInProgress }
     guard fixture.version == 1 else { throw CityGameFixtureError.unsupportedVersion(fixture.version) }
+    guard fixture.consecutiveMistakes >= 0 else { throw CityGameFixtureError.invalidMistakeCount }
     let routeShouldBeOdd = fixture.phase == .thinking || fixture.phase == .finished
     guard fixture.route.count.isMultiple(of: 2) != routeShouldBeOdd else {
       throw CityGameFixtureError.invalidRouteLength(phase: fixture.phase.rawValue)
@@ -272,11 +324,10 @@ public actor CityChainGame {
     requiredStartingLetter = restoredRequiredLetter
     ending = restoredEnding
     isSubmissionInProgress = false
-    consecutiveMistakes = 0
-    cityHint = nil
+    consecutiveMistakes = fixture.consecutiveMistakes
+    cityHint = fixture.cityHint
     validationSource = nil
   }
-#endif
 
   /// Validates a free-form city name and, when possible, asks the model for the computer's reply.
   public func submit(_ rawCity: String) async throws -> CityGameTurnResult {

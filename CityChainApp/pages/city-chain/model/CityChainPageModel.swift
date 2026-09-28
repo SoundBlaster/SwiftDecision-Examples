@@ -9,6 +9,7 @@ import SwiftDecision
 @Observable
 final class CityChainPageModel {
   private let game: CityChainGame
+  private let autosaveStore: CityChainAutosaveStore
 
   private(set) var snapshot: CityGameSnapshot?
   private(set) var latestTurnPipeline: [CityGamePipelineStage] = []
@@ -22,7 +23,9 @@ final class CityChainPageModel {
   private(set) var latestScoutFact: ScoutFact?
   private let factSelectionStore = ScoutFactSelectionStore()
   private var scoutThinkingStopDelayTask: Task<Void, Never>?
-  var cityInput = ""
+  var cityInput = "" {
+    didSet { persistAutosave(draft: cityInput) }
+  }
   var statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
 #if DEBUG
   private let debugFixture: CityGameFixture?
@@ -32,8 +35,9 @@ final class CityChainPageModel {
   private(set) var debugFixtureDiagnostic: String?
 #endif
 
-  init(game: CityChainGame) {
+  init(game: CityChainGame, autosaveStore: CityChainAutosaveStore = CityChainAutosaveStore()) {
     self.game = game
+    self.autosaveStore = autosaveStore
 #if DEBUG
     self.debugFixture = nil
     self.debugFixtureError = nil
@@ -41,8 +45,12 @@ final class CityChainPageModel {
   }
 
 #if DEBUG
-  init(game: CityChainGame, debugFixture: CityGameFixture?, debugFixtureError: String?) {
+  init(
+    game: CityChainGame, debugFixture: CityGameFixture?, debugFixtureError: String?,
+    autosaveStore: CityChainAutosaveStore = CityChainAutosaveStore()
+  ) {
     self.game = game
+    self.autosaveStore = autosaveStore
     self.debugFixture = debugFixture
     self.debugFixtureError = debugFixtureError
   }
@@ -59,11 +67,15 @@ final class CityChainPageModel {
 
   func load() async {
     guard snapshot == nil else { return }
+    var suppressAutosaveRestore = false
+    var autosaveWasRestored = false
 #if DEBUG
     if let debugFixtureError {
+      suppressAutosaveRestore = true
       statusMessage = debugFixtureError
       debugFixtureDiagnostic = debugFixtureError
     } else if let debugFixture {
+      suppressAutosaveRestore = true
       do {
         try await game.restore(from: debugFixture)
         cityInput = debugFixture.draft ?? ""
@@ -96,7 +108,31 @@ final class CityChainPageModel {
       }
     }
 #endif
+    if !suppressAutosaveRestore, let save = autosaveStore.load() {
+      do {
+        try await game.restore(from: save.game)
+        autosaveWasRestored = true
+        cityInput = save.game.draft ?? ""
+        statusMessage = save.game.feedbackMessage
+          ?? String(localized: "Pick a city from the U.S. atlas to start your trip.")
+        switch save.game.phase {
+        case .ready: break
+        case .feedbackAccepted, .finished:
+          scoutStateMachine.send(.submit)
+          scoutStateMachine.send(.turnAccepted)
+        case .feedbackRejected:
+          scoutStateMachine.send(.submit)
+          scoutStateMachine.send(.turnRejected)
+        case .thinking: break
+        }
+      } catch {
+        // Replace invalid data with a fresh save after the initial snapshot is ready.
+      }
+    }
     snapshot = await game.snapshot()
+    if !suppressAutosaveRestore, !autosaveWasRestored {
+      persistAutosave(draft: cityInput)
+    }
   }
 
 #if DEBUG
@@ -107,34 +143,41 @@ final class CityChainPageModel {
   func exitDebugThinkingCapture() async {
     guard isDebugThinkingCapture else { return }
     await game.reset()
+    snapshot = await game.snapshot()
     scoutStateMachine.send(.newRoundStarted)
     isDebugThinkingCapture = false
     hasCommittedPlayerCityForCurrentTurn = false
     isScoutThinkingStopVisible = false
     cityInput = ""
     statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
-    snapshot = await game.snapshot()
+    persistAutosave(draft: cityInput)
   }
 #endif
 
   func dismissTurnFeedback() {
     scoutStateMachine.send(.feedbackDismissed)
     latestScoutFact = nil
+    persistAutosave(draft: cityInput)
   }
 
   func startNewRound() async {
     guard !isSubmitting else { return }
     await game.reset()
+    snapshot = await game.snapshot()
     scoutStateMachine.send(.newRoundStarted)
     cityInput = ""
     latestScoutFact = nil
     latestTurnPipeline = []
     statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
-    snapshot = await game.snapshot()
+    persistAutosave(draft: cityInput)
   }
 
   func submit(_ cityName: String) async -> Bool {
     guard !isSubmitting else { return false }
+    // If the process exits while inference is suspended, relaunch with the
+    // previous completed route and the exact city the player submitted.
+    persistAutosave(draft: cityName)
+    let durableSave = autosaveStore.load()
     scoutStateMachine.send(.submit)
     hasCommittedPlayerCityForCurrentTurn = false
     isScoutThinkingStopVisible = false
@@ -192,6 +235,7 @@ final class CityChainPageModel {
       }
       snapshot = updatedSnapshot
       scoutStateMachine.send(accepted ? .turnAccepted : .turnRejected)
+      persistAutosave(draft: cityInput)
       return accepted
     } catch {
       latestTurnPipeline.append(
@@ -199,8 +243,12 @@ final class CityChainPageModel {
           id: "turn-error", title: "Turn error",
           summary: "The turn failed with \(String(reflecting: type(of: error)))."))
       statusMessage = String(localized: "I can't check that city right now. Try a suggested city!")
+      if let durableSave {
+        try? await game.restore(from: durableSave.game)
+      }
       snapshot = await game.snapshot()
       scoutStateMachine.send(.turnRejected)
+      persistAutosave(draft: cityName)
       return false
     }
   }
@@ -224,6 +272,35 @@ final class CityChainPageModel {
     default:
       nil
     }
+  }
+
+  private func persistAutosave(draft: String) {
+    guard let snapshot else { return }
+    let phase: CityGameFixturePhase
+    if snapshot.isFinished {
+      phase = .finished
+    } else {
+      switch scoutStateMachine.state {
+      case .celebrating: phase = .feedbackAccepted
+      case .tryAnother: phase = .feedbackRejected
+      default: phase = .ready
+      }
+    }
+    let ending: CityGameFixtureEnding?
+    switch snapshot.ending {
+    case .noAvailableReply: ending = .noAvailableReply
+    case .computerAbstained: ending = .computerAbstained
+    case nil: ending = nil
+    }
+    let route = snapshot.usedCities.enumerated().map { index, city in
+      CityGameFixture.Turn(role: index.isMultiple(of: 2) ? .player : .computer, city: city.name)
+    }
+    let fixture = CityGameFixture(
+      route: route, draft: draft, phase: phase,
+      feedbackMessage: phase == .ready ? nil : statusMessage,
+      ending: ending, endingMessage: phase == .finished ? statusMessage : nil,
+      consecutiveMistakes: snapshot.consecutiveMistakes, cityHint: snapshot.cityHint)
+    autosaveStore.write(CityChainAutosave(game: fixture))
   }
 
   private static func message(for result: CityGameTurnResult) -> String {

@@ -527,6 +527,72 @@ struct CityChainGameTests {
     #expect(decoded == fixture)
   }
 
+  @Test("Autosave uses one atomic file and ignores corrupt or unsupported saves")
+  func autosaveStoreRecovery() async throws {
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let fileURL = directory.appendingPathComponent("autosave.json")
+    let store = CityChainAutosaveStore(fileURL: fileURL)
+    let fixture = CityGameFixture(
+      route: [.init(role: .player, city: "Austin"), .init(role: .computer, city: "Nashville")],
+      draft: "El Paso", phase: .feedbackAccepted, feedbackMessage: "Great turn!",
+      consecutiveMistakes: 2, cityHint: CityHint(maskedName: "E• P•••", startingLetter: "E"))
+
+    store.write(CityChainAutosave(game: fixture))
+    #expect(FileManager.default.fileExists(atPath: fileURL.path))
+    #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == ["autosave.json"])
+    let restoredSave = try #require(store.load())
+    #expect(restoredSave.game == fixture)
+    let relaunchedGame = CityChainGame(
+      decisions: DecisionEngine(backend: FixtureBackend()),
+      continuationPolicy: .previousAvailableLetter)
+    try await relaunchedGame.restore(from: restoredSave.game)
+    #expect(await relaunchedGame.snapshot().usedCities == [
+      USCity("Austin", state: .texas, isStateCapital: true),
+      USCity("Nashville", state: .tennessee, isStateCapital: true),
+    ])
+    #expect(await relaunchedGame.snapshot().consecutiveMistakes == 2)
+    #expect(await relaunchedGame.snapshot().cityHint == CityHint(maskedName: "E• P•••", startingLetter: "E"))
+
+    try Data("{broken".utf8).write(to: fileURL)
+    #expect(store.load() == nil)
+
+    let unsupported = CityChainAutosave(game: fixture)
+    let encoded = try JSONEncoder().encode(unsupported)
+    var object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    object["version"] = 999
+    try JSONSerialization.data(withJSONObject: object).write(to: fileURL)
+    #expect(store.load() == nil)
+  }
+
+  @Test("An invalid autosave route can be replaced after an atomic restore failure")
+  func invalidAutosaveCanBeReplaced() async throws {
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let store = CityChainAutosaveStore(fileURL: directory.appendingPathComponent("autosave.json"))
+    let invalid = CityGameFixture(
+      route: [.init(role: .player, city: "Austin"), .init(role: .computer, city: "Dallas")])
+    store.write(CityChainAutosave(game: invalid))
+    let loaded = try #require(store.load())
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: FixtureBackend()),
+      continuationPolicy: .previousAvailableLetter)
+
+    do {
+      try await game.restore(from: loaded.game)
+      Issue.record("Expected the broken route to be rejected.")
+    } catch let error as CityGameFixtureError {
+      #expect(error == .brokenChain(city: "Dallas", expected: "N"))
+    }
+    #expect(await game.snapshot().usedCities.isEmpty)
+
+    let fresh = CityGameFixture(route: [])
+    store.write(CityChainAutosave(game: fresh))
+    #expect(store.load()?.game == fresh)
+  }
+
   @Test("Fixture restoration rejects malformed turns, duplicates, and broken chains")
   func fixtureRejectsInvalidRoute() async throws {
     let cases: [(String, CityGameFixtureError)] = [
