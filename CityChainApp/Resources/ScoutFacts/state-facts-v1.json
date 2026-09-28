@@ -1,0 +1,452 @@
+[
+  {
+    "id": "state-AL-01",
+    "stateCode": "AL",
+    "cityID": null,
+    "text": "Alabama's highest point is Cheaha Mountain.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-AK-01",
+    "stateCode": "AK",
+    "cityID": null,
+    "text": "Denali is Alaska's highest point and the highest point in North America.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-AZ-01",
+    "stateCode": "AZ",
+    "cityID": null,
+    "text": "Arizona's highest point is Humphreys Peak.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-AR-01",
+    "stateCode": "AR",
+    "cityID": null,
+    "text": "Arkansas's highest point is Magazine Mountain.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-CA-01",
+    "stateCode": "CA",
+    "cityID": null,
+    "text": "California's highest point is Mount Whitney.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-CO-01",
+    "stateCode": "CO",
+    "cityID": null,
+    "text": "Colorado's highest point is Mount Elbert.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-CT-01",
+    "stateCode": "CT",
+    "cityID": null,
+    "text": "Connecticut's highest point lies on Mount Frissell's south slope.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-DE-01",
+    "stateCode": "DE",
+    "cityID": null,
+    "text": "Delaware's highest point is beside a road at the Pennsylvania border.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-FL-01",
+    "stateCode": "FL",
+    "cityID": null,
+    "text": "Florida's highest point is Britton Hill, just 345 feet high.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-GA-01",
+    "stateCode": "GA",
+    "cityID": null,
+    "text": "Georgia's highest point is Brasstown Bald.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-HI-01",
+    "stateCode": "HI",
+    "cityID": null,
+    "text": "Hawaii's highest point is Pu'u Wēkiu on Mauna Kea.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-ID-01",
+    "stateCode": "ID",
+    "cityID": null,
+    "text": "Idaho's highest point is Borah Peak.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-IL-01",
+    "stateCode": "IL",
+    "cityID": null,
+    "text": "Illinois's highest point is Charles Mound.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-IN-01",
+    "stateCode": "IN",
+    "cityID": null,
+    "text": "Indiana's highest point is Hoosier Hill.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-IA-01",
+    "stateCode": "IA",
+    "cityID": null,
+    "text": "Iowa's highest point is called Hawkeye Point.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-KS-01",
+    "stateCode": "KS",
+    "cityID": null,
+    "text": "Kansas's highest point is Mount Sunflower.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-KY-01",
+    "stateCode": "KY",
+    "cityID": null,
+    "text": "Kentucky's highest point is Black Mountain.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-LA-01",
+    "stateCode": "LA",
+    "cityID": null,
+    "text": "Louisiana's highest point is Driskill Mountain, 535 feet high.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-ME-01",
+    "stateCode": "ME",
+    "cityID": null,
+    "text": "Maine's highest point is Mount Katahdin.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-MD-01",
+    "stateCode": "MD",
+    "cityID": null,
+    "text": "Maryland's highest point is Hoye Crest.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-MA-01",
+    "stateCode": "MA",
+    "cityID": null,
+    "text": "Massachusetts's highest point is Mount Greylock.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-MI-01",
+    "stateCode": "MI",
+    "cityID": null,
+    "text": "Michigan's highest point is Mount Arvon.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-MN-01",
+    "stateCode": "MN",
+    "cityID": null,
+    "text": "Minnesota's highest point is Eagle Mountain.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-MS-01",
+    "stateCode": "MS",
+    "cityID": null,
+    "text": "Mississippi's highest point is Woodall Mountain.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-MO-01",
+    "stateCode": "MO",
+    "cityID": null,
+    "text": "Missouri's highest point is Taum Sauk Mountain.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-MT-01",
+    "stateCode": "MT",
+    "cityID": null,
+    "text": "Montana's highest point is Granite Peak.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-NE-01",
+    "stateCode": "NE",
+    "cityID": null,
+    "text": "Nebraska's highest point is Panorama Point.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-NV-01",
+    "stateCode": "NV",
+    "cityID": null,
+    "text": "Nevada's highest point is Boundary Peak.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-NH-01",
+    "stateCode": "NH",
+    "cityID": null,
+    "text": "New Hampshire's highest point is Mount Washington.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-NJ-01",
+    "stateCode": "NJ",
+    "cityID": null,
+    "text": "New Jersey's highest point is simply called High Point.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-NM-01",
+    "stateCode": "NM",
+    "cityID": null,
+    "text": "New Mexico's highest point is Wheeler Peak.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-NY-01",
+    "stateCode": "NY",
+    "cityID": null,
+    "text": "New York's highest point is Mount Marcy.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-NC-01",
+    "stateCode": "NC",
+    "cityID": null,
+    "text": "North Carolina's highest point is Mount Mitchell.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-ND-01",
+    "stateCode": "ND",
+    "cityID": null,
+    "text": "North Dakota's highest point is White Butte.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-OH-01",
+    "stateCode": "OH",
+    "cityID": null,
+    "text": "Ohio's highest point is Campbell Hill.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-OK-01",
+    "stateCode": "OK",
+    "cityID": null,
+    "text": "Oklahoma's highest point is Black Mesa.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-OR-01",
+    "stateCode": "OR",
+    "cityID": null,
+    "text": "Oregon's highest point is Mount Hood.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-PA-01",
+    "stateCode": "PA",
+    "cityID": null,
+    "text": "Pennsylvania's highest point is Mount Davis.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-RI-01",
+    "stateCode": "RI",
+    "cityID": null,
+    "text": "Rhode Island's highest point is Jerimoth Hill.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-SC-01",
+    "stateCode": "SC",
+    "cityID": null,
+    "text": "South Carolina's highest point is Sassafras Mountain.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-SD-01",
+    "stateCode": "SD",
+    "cityID": null,
+    "text": "Black Elk Peak is South Dakota's highest point.",
+    "sourceTitle": "Black Elk Peak | Travel South Dakota",
+    "sourceURL": "https://www.travelsouthdakota.com/trip-ideas/black-elk-peak",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-TN-01",
+    "stateCode": "TN",
+    "cityID": null,
+    "text": "Tennessee's highest point is Clingmans Dome.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-TX-01",
+    "stateCode": "TX",
+    "cityID": null,
+    "text": "Texas's highest point is Guadalupe Peak.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-UT-01",
+    "stateCode": "UT",
+    "cityID": null,
+    "text": "Utah's highest point is Kings Peak.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-VT-01",
+    "stateCode": "VT",
+    "cityID": null,
+    "text": "Vermont's highest point is Mount Mansfield.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-VA-01",
+    "stateCode": "VA",
+    "cityID": null,
+    "text": "Virginia's highest point is Mount Rogers.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-WA-01",
+    "stateCode": "WA",
+    "cityID": null,
+    "text": "Washington's highest point is Mount Rainier.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-WV-01",
+    "stateCode": "WV",
+    "cityID": null,
+    "text": "West Virginia's highest point is Spruce Knob.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-WI-01",
+    "stateCode": "WI",
+    "cityID": null,
+    "text": "Wisconsin's highest point is Timms Hill.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  },
+  {
+    "id": "state-WY-01",
+    "stateCode": "WY",
+    "cityID": null,
+    "text": "Wyoming's highest point is Gannett Peak.",
+    "sourceTitle": "Highest and Lowest Elevations | U.S. Geological Survey",
+    "sourceURL": "https://www.usgs.gov/educational-resources/highest-and-lowest-elevations",
+    "verifiedOn": "2026-09-28"
+  }
+]

@@ -46,13 +46,16 @@ struct CityTurnRow: View {
           .foregroundStyle(CityChainPalette.ink)
           .fixedSize(horizontal: false, vertical: true)
 
-        Text(city.state.map { "\($0.name) · \($0.abbreviation)" } ?? "United States")
-          .font(.subheadline)
-          .foregroundStyle(CityChainPalette.secondaryInk)
-          .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 6) {
+          Text(city.state.map { "\($0.name) · \($0.abbreviation)" } ?? "United States")
+            .font(.subheadline)
+            .foregroundStyle(CityChainPalette.secondaryInk)
+            .lineLimit(1)
+            .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.75)
 
-        if city.isStateCapital {
-          CityCapitalBadge()
+          if city.isStateCapital {
+            CityCapitalBadge()
+          }
         }
 
         if let explanation = continuation?.explanation {
@@ -68,9 +71,10 @@ struct CityTurnRow: View {
             .foregroundStyle(CityChainPalette.blue)
         }
       }
+      .frame(minHeight: 84, alignment: .topLeading)
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.top, 2)
-      .padding(.bottom, isLastStop ? 0 : 24)
+      .padding(.bottom, 8)
 
       if !dynamicTypeSize.isAccessibilitySize {
         VStack(spacing: 4) {

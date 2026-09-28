@@ -15,12 +15,19 @@ schemes:
     build:
       targets:
         CityChainApp: all
+    test:
+      targets:
+        - CityChainAppUITests
 targets:
   CityChainApp:
     type: application
     platform: iOS
     sources:
       - path: CityChainApp
+        excludes:
+          - Resources/ScoutFacts/state-facts-v1.json
+      - path: CityChainApp/Resources/ScoutFacts/state-facts-v1.json
+        buildPhase: resources
     dependencies:
       - package: SwiftDecisionExamples
         product: CityChainGame
@@ -35,6 +42,22 @@ targets:
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         DEVELOPMENT_TEAM: P8T2366K8X
         PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.citychain
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+  CityChainAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: CityChainAppUITests
+    dependencies:
+      - target: CityChainApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.citychain.uitests
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
 

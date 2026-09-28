@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "phase": "feedbackRejected",
+  "route": [
+    { "role": "player", "city": "Austin" },
+    { "role": "computer", "city": "Nashville" },
+    { "role": "player", "city": "El Paso" },
+    { "role": "computer", "city": "Olympia" },
+    { "role": "player", "city": "Akron" },
+    { "role": "computer", "city": "New Orleans" }
+  ],
+  "feedbackMessage": "That city does not fit the next letter. Try again!"
+}

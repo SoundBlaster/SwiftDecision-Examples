@@ -31,6 +31,85 @@ public enum CityGameEnding: Sendable, Equatable {
   case computerAbstained(reason: String)
 }
 
+#if DEBUG
+public enum CityGameFixturePhase: String, Codable, Sendable {
+  case ready
+  case thinking
+  case feedbackAccepted
+  case feedbackRejected
+  case finished
+}
+
+public enum CityGameFixtureEnding: String, Codable, Sendable {
+  case noAvailableReply
+  case computerAbstained
+}
+
+public enum CityGameFixtureError: Error, LocalizedError, Sendable, Equatable {
+  case unsupportedVersion(Int)
+  case invalidRouteLength(phase: String)
+  case endingDoesNotMatchPhase
+  case invalidTurnRole(index: Int, expected: String)
+  case unknownCity(String)
+  case cityHasNoLatinLetters(String)
+  case duplicateCity(String)
+  case brokenChain(city: String, expected: Character)
+  case submissionInProgress
+
+  public var errorDescription: String? {
+    switch self {
+    case .unsupportedVersion(let version): "Unsupported fixture version: \(version)."
+    case .invalidRouteLength(let phase):
+      "Fixture route length is invalid for phase \(phase)."
+    case .endingDoesNotMatchPhase:
+      "The finished phase requires an ending reason; other phases cannot have one."
+    case .invalidTurnRole(let index, let expected):
+      "Fixture turn \(index + 1) must have role \(expected)."
+    case .unknownCity(let city): "City is not in the game catalog: \(city)."
+    case .cityHasNoLatinLetters(let city): "City has no Latin letters: \(city)."
+    case .duplicateCity(let city): "City appears more than once: \(city)."
+    case .brokenChain(let city, let expected):
+      "\(city) does not start with the required letter \(expected)."
+    case .submissionInProgress: "Cannot restore a fixture while a turn is in progress."
+    }
+  }
+}
+
+/// A versioned, JSON-decodable starting position for local UI and engine debugging.
+public struct CityGameFixture: Codable, Sendable, Equatable {
+  public struct Turn: Codable, Sendable, Equatable {
+    public enum Role: String, Codable, Sendable { case player, computer }
+    public let role: Role
+    public let city: String
+  }
+
+  public let version: Int
+  public let route: [Turn]
+  public let draft: String?
+  public let phase: CityGameFixturePhase
+  public let feedbackMessage: String?
+  public let ending: CityGameFixtureEnding?
+  public let endingMessage: String?
+  public let focusInput: Bool
+
+  enum CodingKeys: String, CodingKey {
+    case version, route, draft, phase, feedbackMessage, ending, endingMessage, focusInput
+  }
+
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    version = try container.decode(Int.self, forKey: .version)
+    route = try container.decode([Turn].self, forKey: .route)
+    draft = try container.decodeIfPresent(String.self, forKey: .draft)
+    phase = try container.decodeIfPresent(CityGameFixturePhase.self, forKey: .phase) ?? .ready
+    feedbackMessage = try container.decodeIfPresent(String.self, forKey: .feedbackMessage)
+    ending = try container.decodeIfPresent(CityGameFixtureEnding.self, forKey: .ending)
+    endingMessage = try container.decodeIfPresent(String.self, forKey: .endingMessage)
+    focusInput = try container.decodeIfPresent(Bool.self, forKey: .focusInput) ?? false
+  }
+}
+#endif
+
 public enum CitySubmissionRejection: Sendable, Equatable {
   case emptyInput
   case cityNameHasNoLatinLetters
@@ -120,6 +199,84 @@ public actor CityChainGame {
     cityHint = nil
     validationSource = nil
   }
+
+  /// Rebuilds all actor-owned game state from a validated, complete route.
+#if DEBUG
+  public func restore(from fixture: CityGameFixture) throws {
+    guard !isSubmissionInProgress else { throw CityGameFixtureError.submissionInProgress }
+    guard fixture.version == 1 else { throw CityGameFixtureError.unsupportedVersion(fixture.version) }
+    let routeShouldBeOdd = fixture.phase == .thinking || fixture.phase == .finished
+    guard fixture.route.count.isMultiple(of: 2) != routeShouldBeOdd else {
+      throw CityGameFixtureError.invalidRouteLength(phase: fixture.phase.rawValue)
+    }
+    guard (fixture.phase == .finished) == (fixture.ending != nil) else {
+      throw CityGameFixtureError.endingDoesNotMatchPhase
+    }
+
+    let citiesByID = Dictionary(catalog.cities.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    var restoredCities: [USCity] = []
+    var restoredIDs = Set<String>()
+    var restoredContinuations: [CityLetterContinuation] = []
+    var expectedLetter: Character?
+
+    for (index, turn) in fixture.route.enumerated() {
+      let expectedRole: CityGameFixture.Turn.Role = index.isMultiple(of: 2) ? .player : .computer
+      guard turn.role == expectedRole else {
+        throw CityGameFixtureError.invalidTurnRole(index: index, expected: expectedRole.rawValue)
+      }
+      let candidate = USCity(turn.city)
+      let city: USCity
+      if let catalogCity = citiesByID[candidate.id] {
+        city = catalogCity
+      } else if expectedRole == .player {
+        city = candidate
+      } else {
+        throw CityGameFixtureError.unknownCity(turn.city)
+      }
+      guard city.firstLetter != nil else { throw CityGameFixtureError.cityHasNoLatinLetters(turn.city) }
+      guard !restoredIDs.contains(city.id) else { throw CityGameFixtureError.duplicateCity(city.name) }
+      if let expectedLetter, city.firstLetter != expectedLetter {
+        throw CityGameFixtureError.brokenChain(city: city.name, expected: expectedLetter)
+      }
+
+      restoredIDs.insert(city.id)
+      restoredCities.append(city)
+      let recorder = SpecificationTraceRecorder()
+      let next = continuation(after: city, excluding: restoredIDs, recordingTo: recorder)
+      restoredContinuations.append(next)
+      expectedLetter = next.startingLetter
+    }
+
+    var restoredEnding: CityGameEnding?
+    var restoredRequiredLetter = expectedLetter
+    if let fixtureEnding = fixture.ending {
+      switch fixtureEnding {
+      case .noAvailableReply:
+        let nextLetter = expectedLetter ?? restoredCities.last?.lastLetter
+        guard let nextLetter,
+              !catalog.cities.contains(where: { $0.firstLetter == nextLetter && !restoredIDs.contains($0.id) })
+        else {
+          throw CityGameFixtureError.endingDoesNotMatchPhase
+        }
+        restoredEnding = .noAvailableReply(startingLetter: nextLetter)
+        restoredRequiredLetter = nextLetter
+      case .computerAbstained:
+        restoredEnding = .computerAbstained(
+          reason: fixture.endingMessage ?? "Debug fixture: Scout abstained.")
+      }
+    }
+
+    usedCities = restoredCities
+    usedCityIDs = restoredIDs
+    letterContinuations = restoredContinuations
+    requiredStartingLetter = restoredRequiredLetter
+    ending = restoredEnding
+    isSubmissionInProgress = false
+    consecutiveMistakes = 0
+    cityHint = nil
+    validationSource = nil
+  }
+#endif
 
   /// Validates a free-form city name and, when possible, asks the model for the computer's reply.
   public func submit(_ rawCity: String) async throws -> CityGameTurnResult {

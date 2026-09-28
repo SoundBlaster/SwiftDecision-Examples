@@ -3,6 +3,7 @@ import SwiftUI
 /// Decorative companion; the adjacent game message supplies accessible feedback.
 struct ScoutView: View {
   let presentation: ScoutPresentation
+  var style: ScoutViewStyle = .reaction
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.scenePhase) private var scenePhase
 
@@ -10,10 +11,11 @@ struct ScoutView: View {
     let reaction = ScoutReaction(pose: presentation.pose)
     let isSceneActive = scenePhase == .active
     if reduceMotion {
-      ScoutSprite(pose: presentation.pose)
-        .padding(10)
+      ScoutSprite(pose: presentation.pose, style: style)
+        .padding(style == .cornerCompanion ? 0 : 10)
     } else {
-      ScoutSprite(pose: presentation.pose)
+      ScoutSprite(pose: presentation.pose, style: style)
+        .modifier(ScoutIdleMotion())
         .keyframeAnimator(
           initialValue: ScoutMotion(), trigger: presentation.reactionID
         ) { content, motion in
@@ -39,10 +41,14 @@ struct ScoutView: View {
             CubicKeyframe(0, duration: reaction.isCorrective ? 0.30 : 0.18)
           }
         }
-        .padding(10)
-        .modifier(ScoutIdleMotion())
+        .padding(style == .cornerCompanion ? 0 : 10)
     }
   }
+}
+
+enum ScoutViewStyle: Equatable {
+  case reaction
+  case cornerCompanion
 }
 
 private struct ScoutIdleMotion: ViewModifier {
@@ -102,19 +108,24 @@ private struct ScoutMotion {
 
 private struct ScoutSprite: View {
   let pose: ScoutPose
+  let style: ScoutViewStyle
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     ZStack {
-      Image(pose.assetName)
+      Image(assetName)
         .resizable()
         .scaledToFit()
-        .id(pose)
+        .id(assetName)
         .transition(.opacity)
     }
-    .animation(reduceMotion ? nil : .easeInOut(duration: 0.16), value: pose)
+    .animation(reduceMotion ? nil : .easeInOut(duration: 0.16), value: assetName)
     .accessibilityHidden(true)
     .allowsHitTesting(false)
+  }
+
+  private var assetName: String {
+    pose == .welcome ? "ScoutThinking" : pose.assetName
   }
 }
 
@@ -133,14 +144,22 @@ struct ScoutAvatar: View {
 }
 
 private struct ScoutReactionPreview: View {
-  @State private var presentation = ScoutPresentation()
+  @State private var pose = ScoutPose.welcome
+  @State private var reactionID: UInt64 = 0
+
+  private var presentation: ScoutPresentation {
+    ScoutPresentation(pose: pose, reactionID: reactionID)
+  }
 
   var body: some View {
     VStack(spacing: 20) {
       ScoutView(presentation: presentation)
         .frame(width: 240, height: 240)
       ForEach(ScoutPose.allCases, id: \.self) { pose in
-        Button(pose.rawValue) { presentation.present(pose) }
+        Button(pose.rawValue) {
+          self.pose = pose
+          reactionID &+= 1
+        }
       }
       ScoutAvatar()
         .frame(width: 48, height: 48)
@@ -148,6 +167,6 @@ private struct ScoutReactionPreview: View {
     .padding(24)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(CityChainPalette.paper)
-    .onAppear { presentation.present(.welcome) }
+    .onAppear { reactionID &+= 1 }
   }
 }

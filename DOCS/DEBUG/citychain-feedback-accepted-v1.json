@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "phase": "feedbackAccepted",
+  "route": [
+    { "role": "player", "city": "Austin" },
+    { "role": "computer", "city": "Nashville" },
+    { "role": "player", "city": "El Paso" },
+    { "role": "computer", "city": "Olympia" },
+    { "role": "player", "city": "Akron" },
+    { "role": "computer", "city": "New Orleans" }
+  ],
+  "feedbackMessage": "Great job! Scout found a reply."
+}
