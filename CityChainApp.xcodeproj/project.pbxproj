@@ -144,6 +144,7 @@
 		632F2811B6281ED49A08F2E4 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePage.swift; sourceTree = "<group>"; };
 		6B9F7144567D17541E66E983 /* InstantPredictionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantPredictionWidget.swift; sourceTree = "<group>"; };
+		74127C00306B1C5E001538ED /* CityChainApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CityChainApp.entitlements; sourceTree = "<group>"; };
 		7D2B12290F6ADAE2F1B1DBB2 /* CityChainApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CityChainApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D4B8D25E590F0131F861038 /* state-facts-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "state-facts-v1.json"; sourceTree = "<group>"; };
 		8535B4FE08460A471C02ABCF /* OracleWidgetSharedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleWidgetSharedState.swift; sourceTree = "<group>"; };
@@ -519,6 +520,7 @@
 		99862B608796978B198961A0 /* CityChainApp */ = {
 			isa = PBXGroup;
 			children = (
+				74127C00306B1C5E001538ED /* CityChainApp.entitlements */,
 				632F2811B6281ED49A08F2E4 /* Localizable.xcstrings */,
 				F233BC842C4179774235664C /* app */,
 				DC519239E23DE3286310650B /* entities */,
@@ -1089,6 +1091,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGN_ENTITLEMENTS = CityChainApp/CityChainApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = P8T2366K8X;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1232,6 +1235,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGN_ENTITLEMENTS = CityChainApp/CityChainApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEVELOPMENT_TEAM = P8T2366K8X;
 				GENERATE_INFOPLIST_FILE = YES;

@@ -533,16 +533,18 @@ struct CityChainGameTests {
       .appendingPathComponent(UUID().uuidString, isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
     let fileURL = directory.appendingPathComponent("autosave.json")
-    let store = CityChainAutosaveStore(fileURL: fileURL)
+    let store = CityChainAutosaveStore(
+      cloudDocumentsURL: { nil }, localFileURL: { fileURL })
+    let savedAt = Date(timeIntervalSince1970: 1_700_000_000)
     let fixture = CityGameFixture(
       route: [.init(role: .player, city: "Austin"), .init(role: .computer, city: "Nashville")],
       draft: "El Paso", phase: .feedbackAccepted, feedbackMessage: "Great turn!",
       consecutiveMistakes: 2, cityHint: CityHint(maskedName: "E• P•••", startingLetter: "E"))
 
-    store.write(CityChainAutosave(game: fixture))
+    _ = try await store.write(CityChainAutosave(game: fixture, savedAt: savedAt))
     #expect(FileManager.default.fileExists(atPath: fileURL.path))
     #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == ["autosave.json"])
-    let restoredSave = try #require(store.load())
+    let restoredSave = try #require(await store.loadCandidates().first?.save)
     #expect(restoredSave.game == fixture)
     let relaunchedGame = CityChainGame(
       decisions: DecisionEngine(backend: FixtureBackend()),
@@ -556,14 +558,188 @@ struct CityChainGameTests {
     #expect(await relaunchedGame.snapshot().cityHint == CityHint(maskedName: "E• P•••", startingLetter: "E"))
 
     try Data("{broken".utf8).write(to: fileURL)
-    #expect(store.load() == nil)
+    #expect(await store.loadCandidates().isEmpty)
 
-    let unsupported = CityChainAutosave(game: fixture)
+    let unsupported = CityChainAutosave(game: fixture, savedAt: savedAt)
     let encoded = try JSONEncoder().encode(unsupported)
     var object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
     object["version"] = 999
     try JSONSerialization.data(withJSONObject: object).write(to: fileURL)
-    #expect(store.load() == nil)
+    #expect(await store.loadCandidates().isEmpty)
+
+    var legacyObject = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    legacyObject["version"] = 1
+    legacyObject.removeValue(forKey: "savedAt")
+    try JSONSerialization.data(withJSONObject: legacyObject).write(to: fileURL)
+    let migrated = try #require(await store.loadCandidates().first?.save)
+    #expect(migrated.version == CityChainAutosave.currentVersion)
+    #expect(migrated.savedAt == .distantPast)
+  }
+
+  @Test("Autosave reads and writes iCloud first, with coordinated access and local fallback")
+  func autosaveCloudPriorityAndFallback() async throws {
+    let cloudDocuments = URL(fileURLWithPath: "/virtual/ubiquity/Documents", isDirectory: true)
+    let cloudFile = cloudDocuments.appendingPathComponent("CityChain", isDirectory: true)
+      .appendingPathComponent("autosave-v1.json")
+    let localFile = URL(fileURLWithPath: "/virtual/support/CityChain/autosave-v1.json")
+    let access = MemoryCityChainAutosaveFileAccess()
+    let store = CityChainAutosaveStore(
+      cloudDocumentsURL: { cloudDocuments }, localFileURL: { localFile }, fileAccess: access)
+    let tieTimestamp = Date(timeIntervalSince1970: 1_700_000_000)
+    let cloudSave = CityChainAutosave(
+      game: CityGameFixture(route: [], draft: "Austin"), savedAt: tieTimestamp)
+    let localSave = CityChainAutosave(
+      game: CityGameFixture(route: [], draft: "Boston"), savedAt: tieTimestamp)
+
+    #expect(try await store.write(cloudSave) == .iCloudDocuments)
+    access.setData(try JSONEncoder().encode(localSave), at: localFile)
+    let candidates = await store.loadCandidates()
+    #expect(candidates.map(\.location) == [.iCloudDocuments, .applicationSupport])
+    #expect(candidates.map(\.save.game.draft) == ["Austin", "Boston"])
+    #expect(access.coordinatedWrites == [cloudFile])
+    #expect(access.coordinatedReads.contains(cloudFile))
+
+    access.setData(Data("corrupt cloud data".utf8), at: cloudFile)
+    let fallback = await store.loadCandidates()
+    #expect(fallback.map(\.location) == [.applicationSupport])
+    #expect(fallback.first?.save == localSave)
+  }
+
+  @Test("A newer local save outranks an older cloud save and can be promoted")
+  func newestAutosaveWinsAcrossLocations() async throws {
+    let cloudDocuments = URL(fileURLWithPath: "/virtual/ubiquity/Documents", isDirectory: true)
+    let cloudFile = cloudDocuments.appendingPathComponent("CityChain", isDirectory: true)
+      .appendingPathComponent("autosave-v1.json")
+    let localFile = URL(fileURLWithPath: "/virtual/support/CityChain/autosave-v1.json")
+    let access = MemoryCityChainAutosaveFileAccess()
+    let oldCloudSave = CityChainAutosave(
+      game: CityGameFixture(route: [], draft: "Old cloud"),
+      savedAt: Date(timeIntervalSince1970: 1_700_000_000))
+    let newLocalSave = CityChainAutosave(
+      game: CityGameFixture(route: [
+        .init(role: .player, city: "Austin"), .init(role: .computer, city: "Nashville"),
+      ], draft: "El Paso"),
+      savedAt: Date(timeIntervalSince1970: 1_700_000_100))
+    access.setData(try JSONEncoder().encode(oldCloudSave), at: cloudFile)
+    access.setData(try JSONEncoder().encode(newLocalSave), at: localFile)
+    let store = CityChainAutosaveStore(
+      cloudDocumentsURL: { cloudDocuments }, localFileURL: { localFile }, fileAccess: access)
+
+    let candidates = await store.loadCandidates()
+    #expect(candidates.map(\.location) == [.applicationSupport, .iCloudDocuments])
+    let selected = try #require(candidates.first)
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: FixtureBackend()),
+      continuationPolicy: .previousAvailableLetter)
+    try await game.restore(from: selected.save.game)
+    #expect(selected.save == newLocalSave)
+    #expect(await game.snapshot().usedCities == [
+      USCity("Austin", state: .texas, isStateCapital: true),
+      USCity("Nashville", state: .tennessee, isStateCapital: true),
+    ])
+
+    #expect(try await store.write(selected.save) == .iCloudDocuments)
+    let promotedCandidates = await store.loadCandidates()
+    #expect(promotedCandidates.first?.location == .iCloudDocuments)
+    #expect(promotedCandidates.first?.save == newLocalSave)
+  }
+
+  @Test("A pending cloud download uses local save without promoting over the placeholder")
+  func autosaveDoesNotOverwritePendingCloudItem() async throws {
+    let cloudDocuments = URL(fileURLWithPath: "/virtual/ubiquity/Documents", isDirectory: true)
+    let cloudFile = cloudDocuments.appendingPathComponent("CityChain", isDirectory: true)
+      .appendingPathComponent("autosave-v1.json")
+    let localFile = URL(fileURLWithPath: "/virtual/support/CityChain/autosave-v1.json")
+    let access = MemoryCityChainAutosaveFileAccess()
+    let localSave = CityChainAutosave(game: CityGameFixture(route: [], draft: "Local copy"))
+    access.setCloudReadiness(.downloadPending, at: cloudFile)
+    access.setData(try JSONEncoder().encode(localSave), at: localFile)
+    let store = CityChainAutosaveStore(
+      cloudDocumentsURL: { cloudDocuments }, localFileURL: { localFile }, fileAccess: access)
+
+    let candidates = await store.loadCandidates()
+    #expect(candidates.map(\.location) == [.applicationSupport])
+    #expect(candidates.first?.canPromoteToCloud == false)
+    #expect(access.downloadRequests == [cloudFile])
+    #expect(access.coordinatedReads.isEmpty)
+
+    let nextSave = CityChainAutosave(game: CityGameFixture(route: [], draft: "New draft"))
+    #expect(try await store.write(nextSave) == .applicationSupport)
+    #expect(access.coordinatedWrites.isEmpty)
+    #expect(access.data(at: cloudFile) == nil)
+    let persisted = try JSONDecoder().decode(
+      CityChainAutosave.self, from: #require(access.data(at: localFile)))
+    #expect(persisted == nextSave)
+  }
+
+  @Test("An invalid cloud route falls through to a valid local autosave")
+  func invalidCloudRouteFallsBackToLocal() async throws {
+    let cloudDocuments = URL(fileURLWithPath: "/virtual/ubiquity/Documents", isDirectory: true)
+    let cloudFile = cloudDocuments.appendingPathComponent("CityChain", isDirectory: true)
+      .appendingPathComponent("autosave-v1.json")
+    let localFile = URL(fileURLWithPath: "/virtual/support/CityChain/autosave-v1.json")
+    let access = MemoryCityChainAutosaveFileAccess()
+    let invalidCloudSave = CityChainAutosave(game: CityGameFixture(route: [
+      .init(role: .player, city: "Austin"), .init(role: .computer, city: "Dallas"),
+    ]))
+    let validLocalSave = CityChainAutosave(game: CityGameFixture(route: [
+      .init(role: .player, city: "Austin"), .init(role: .computer, city: "Nashville"),
+    ], draft: "El Paso"))
+    access.setData(try JSONEncoder().encode(invalidCloudSave), at: cloudFile)
+    access.setData(try JSONEncoder().encode(validLocalSave), at: localFile)
+    let store = CityChainAutosaveStore(
+      cloudDocumentsURL: { cloudDocuments }, localFileURL: { localFile }, fileAccess: access)
+    let candidates = await store.loadCandidates()
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: FixtureBackend()),
+      continuationPolicy: .previousAvailableLetter)
+    var restored: CityChainAutosaveCandidate?
+
+    for candidate in candidates {
+      do {
+        try await game.restore(from: candidate.save.game)
+        restored = candidate
+        break
+      } catch {
+        continue
+      }
+    }
+
+    #expect(restored?.location == .applicationSupport)
+    #expect(restored?.save == validLocalSave)
+    #expect(await game.snapshot().usedCities == [
+      USCity("Austin", state: .texas, isStateCapital: true),
+      USCity("Nashville", state: .tennessee, isStateCapital: true),
+    ])
+  }
+
+  @Test("Autosave falls back after iCloud write failure and reports failure if local also fails")
+  func autosaveWriteFallbackAndFailure() async throws {
+    let cloudDocuments = URL(fileURLWithPath: "/virtual/ubiquity/Documents", isDirectory: true)
+    let cloudFile = cloudDocuments.appendingPathComponent("CityChain", isDirectory: true)
+      .appendingPathComponent("autosave-v1.json")
+    let localFile = URL(fileURLWithPath: "/virtual/support/CityChain/autosave-v1.json")
+    let access = MemoryCityChainAutosaveFileAccess()
+    let store = CityChainAutosaveStore(
+      cloudDocumentsURL: { cloudDocuments }, localFileURL: { localFile }, fileAccess: access)
+    let save = CityChainAutosave(game: CityGameFixture(route: []))
+
+    access.failWrite(at: cloudFile)
+    #expect(try await store.write(save) == .applicationSupport)
+    #expect(access.data(at: localFile) != nil)
+    #expect(access.coordinatedWrites == [cloudFile])
+    #expect(access.uncoordinatedWrites == [localFile])
+
+    access.failWrite(at: localFile)
+    do {
+      _ = try await store.write(save)
+      Issue.record("Expected persistence to fail when both locations reject writes.")
+    } catch let error as CityChainAutosaveError {
+      guard case .bothLocationsUnavailable = error else {
+        Issue.record("Unexpected autosave error: \(error)")
+        return
+      }
+    }
   }
 
   @Test("An invalid autosave route can be replaced after an atomic restore failure")
@@ -571,11 +747,12 @@ struct CityChainGameTests {
     let directory = FileManager.default.temporaryDirectory
       .appendingPathComponent(UUID().uuidString, isDirectory: true)
     defer { try? FileManager.default.removeItem(at: directory) }
-    let store = CityChainAutosaveStore(fileURL: directory.appendingPathComponent("autosave.json"))
+    let fileURL = directory.appendingPathComponent("autosave.json")
+    let store = CityChainAutosaveStore(cloudDocumentsURL: { nil }, localFileURL: { fileURL })
     let invalid = CityGameFixture(
       route: [.init(role: .player, city: "Austin"), .init(role: .computer, city: "Dallas")])
-    store.write(CityChainAutosave(game: invalid))
-    let loaded = try #require(store.load())
+    _ = try await store.write(CityChainAutosave(game: invalid))
+    let loaded = try #require(await store.loadCandidates().first?.save)
     let game = CityChainGame(
       decisions: DecisionEngine(backend: FixtureBackend()),
       continuationPolicy: .previousAvailableLetter)
@@ -589,8 +766,8 @@ struct CityChainGameTests {
     #expect(await game.snapshot().usedCities.isEmpty)
 
     let fresh = CityGameFixture(route: [])
-    store.write(CityChainAutosave(game: fresh))
-    #expect(store.load()?.game == fresh)
+    _ = try await store.write(CityChainAutosave(game: fresh))
+    #expect(await store.loadCandidates().first?.save.game == fresh)
   }
 
   @Test("Fixture restoration rejects malformed turns, duplicates, and broken chains")
@@ -776,5 +953,66 @@ private actor RecordingJevTransport: JevHTTPTransport {
   func send(_ request: JevHTTPRequest) async throws -> JevHTTPResponse {
     requestCount += 1
     return JevHTTPResponse(statusCode: 500, body: Data())
+  }
+}
+
+private final class MemoryCityChainAutosaveFileAccess: CityChainAutosaveFileAccess, @unchecked Sendable {
+  private let lock = NSLock()
+  private var files: [URL: Data] = [:]
+  private var writeFailures = Set<URL>()
+  private var readFailures = Set<URL>()
+  private var coordinatedReadURLs: [URL] = []
+  private var coordinatedWriteURLs: [URL] = []
+  private var uncoordinatedWriteURLs: [URL] = []
+  private var cloudReadinessByURL: [URL: CityChainCloudReadiness] = [:]
+  private var downloadRequestURLs: [URL] = []
+
+  var coordinatedReads: [URL] { lock.withLock { coordinatedReadURLs } }
+  var coordinatedWrites: [URL] { lock.withLock { coordinatedWriteURLs } }
+  var uncoordinatedWrites: [URL] { lock.withLock { uncoordinatedWriteURLs } }
+  var downloadRequests: [URL] { lock.withLock { downloadRequestURLs } }
+
+  func setData(_ data: Data, at url: URL) {
+    lock.withLock { files[url] = data }
+  }
+
+  func data(at url: URL) -> Data? {
+    lock.withLock { files[url] }
+  }
+
+  func failWrite(at url: URL) {
+    _ = lock.withLock { writeFailures.insert(url) }
+  }
+
+  func setCloudReadiness(_ readiness: CityChainCloudReadiness, at url: URL) {
+    lock.withLock { cloudReadinessByURL[url] = readiness }
+  }
+
+  func cloudReadiness(at url: URL) -> CityChainCloudReadiness {
+    lock.withLock {
+      let readiness = cloudReadinessByURL[url] ?? .ready
+      if readiness == .downloadPending { downloadRequestURLs.append(url) }
+      return readiness
+    }
+  }
+
+  func createDirectory(at url: URL) throws {}
+
+  func read(from url: URL, coordinate: Bool) throws -> Data {
+    try lock.withLock {
+      if coordinate { coordinatedReadURLs.append(url) }
+      guard !readFailures.contains(url) else { throw CocoaError(.fileReadNoPermission) }
+      guard let data = files[url] else { throw CocoaError(.fileNoSuchFile) }
+      return data
+    }
+  }
+
+  func write(_ data: Data, to url: URL, coordinate: Bool) throws {
+    try lock.withLock {
+      if coordinate { coordinatedWriteURLs.append(url) }
+      else { uncoordinatedWriteURLs.append(url) }
+      guard !writeFailures.contains(url) else { throw CocoaError(.fileWriteNoPermission) }
+      files[url] = data
+    }
   }
 }

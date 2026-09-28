@@ -10,6 +10,9 @@ import SwiftDecision
 final class CityChainPageModel {
   private let game: CityChainGame
   private let autosaveStore: CityChainAutosaveStore
+  private var autosaveWriteTask: Task<Void, Never>?
+  private var lastPersistedAutosave: CityChainAutosave?
+  private(set) var autosaveErrorMessage: String?
 
   private(set) var snapshot: CityGameSnapshot?
   private(set) var latestTurnPipeline: [CityGamePipelineStage] = []
@@ -26,7 +29,11 @@ final class CityChainPageModel {
   var cityInput = "" {
     didSet { persistAutosave(draft: cityInput) }
   }
-  var statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
+  private var regularStatusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
+  var statusMessage: String {
+    get { autosaveErrorMessage ?? regularStatusMessage }
+    set { regularStatusMessage = newValue }
+  }
 #if DEBUG
   private let debugFixture: CityGameFixture?
   private let debugFixtureError: String?
@@ -69,6 +76,7 @@ final class CityChainPageModel {
     guard snapshot == nil else { return }
     var suppressAutosaveRestore = false
     var autosaveWasRestored = false
+    var restoredFromLocal = false
 #if DEBUG
     if let debugFixtureError {
       suppressAutosaveRestore = true
@@ -108,30 +116,41 @@ final class CityChainPageModel {
       }
     }
 #endif
-    if !suppressAutosaveRestore, let save = autosaveStore.load() {
-      do {
-        try await game.restore(from: save.game)
-        autosaveWasRestored = true
-        cityInput = save.game.draft ?? ""
-        statusMessage = save.game.feedbackMessage
-          ?? String(localized: "Pick a city from the U.S. atlas to start your trip.")
-        switch save.game.phase {
-        case .ready: break
-        case .feedbackAccepted, .finished:
-          scoutStateMachine.send(.submit)
-          scoutStateMachine.send(.turnAccepted)
-        case .feedbackRejected:
-          scoutStateMachine.send(.submit)
-          scoutStateMachine.send(.turnRejected)
-        case .thinking: break
+    if !suppressAutosaveRestore {
+      for candidate in await autosaveStore.loadCandidates() {
+        let save = candidate.save
+        do {
+          try await game.restore(from: save.game)
+          autosaveWasRestored = true
+          restoredFromLocal =
+            candidate.location == .applicationSupport && candidate.canPromoteToCloud
+          lastPersistedAutosave = save
+          cityInput = save.game.draft ?? ""
+          statusMessage = save.game.feedbackMessage
+            ?? String(localized: "Pick a city from the U.S. atlas to start your trip.")
+          switch save.game.phase {
+          case .ready: break
+          case .feedbackAccepted, .finished:
+            scoutStateMachine.send(.submit)
+            scoutStateMachine.send(.turnAccepted)
+          case .feedbackRejected:
+            scoutStateMachine.send(.submit)
+            scoutStateMachine.send(.turnRejected)
+          case .thinking: break
+          }
+          break
+        } catch {
+          // Try the next storage location; route validation is atomic.
         }
-      } catch {
-        // Replace invalid data with a fresh save after the initial snapshot is ready.
       }
     }
     snapshot = await game.snapshot()
     if !suppressAutosaveRestore, !autosaveWasRestored {
       persistAutosave(draft: cityInput)
+      await autosaveWriteTask?.value
+    } else if !suppressAutosaveRestore, restoredFromLocal {
+      persistAutosave(draft: cityInput)
+      await autosaveWriteTask?.value
     }
   }
 
@@ -177,7 +196,8 @@ final class CityChainPageModel {
     // If the process exits while inference is suspended, relaunch with the
     // previous completed route and the exact city the player submitted.
     persistAutosave(draft: cityName)
-    let durableSave = autosaveStore.load()
+    await autosaveWriteTask?.value
+    let durableSave = lastPersistedAutosave
     scoutStateMachine.send(.submit)
     hasCommittedPlayerCityForCurrentTurn = false
     isScoutThinkingStopVisible = false
@@ -236,6 +256,7 @@ final class CityChainPageModel {
       snapshot = updatedSnapshot
       scoutStateMachine.send(accepted ? .turnAccepted : .turnRejected)
       persistAutosave(draft: cityInput)
+      await autosaveWriteTask?.value
       return accepted
     } catch {
       latestTurnPipeline.append(
@@ -249,6 +270,7 @@ final class CityChainPageModel {
       snapshot = await game.snapshot()
       scoutStateMachine.send(.turnRejected)
       persistAutosave(draft: cityName)
+      await autosaveWriteTask?.value
       return false
     }
   }
@@ -300,7 +322,19 @@ final class CityChainPageModel {
       feedbackMessage: phase == .ready ? nil : statusMessage,
       ending: ending, endingMessage: phase == .finished ? statusMessage : nil,
       consecutiveMistakes: snapshot.consecutiveMistakes, cityHint: snapshot.cityHint)
-    autosaveStore.write(CityChainAutosave(game: fixture))
+    let save = CityChainAutosave(game: fixture)
+    let previousWrite = autosaveWriteTask
+    autosaveWriteTask = Task { [weak self] in
+      await previousWrite?.value
+      guard let self else { return }
+      do {
+        try await self.autosaveStore.write(save)
+        self.lastPersistedAutosave = save
+        self.autosaveErrorMessage = nil
+      } catch {
+        self.autosaveErrorMessage = error.localizedDescription
+      }
+    }
   }
 
   private static func message(for result: CityGameTurnResult) -> String {
