@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "phase": "finished",
+  "route": [
+    { "role": "player", "city": "Austin" }
+  ],
+  "ending": "computerAbstained",
+  "endingMessage": "Scout passed this turn. Ready for another adventure?"
+}

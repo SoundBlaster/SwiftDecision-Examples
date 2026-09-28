@@ -15,6 +15,7 @@ struct ScoutView: View {
         .padding(style == .cornerCompanion ? 0 : 10)
     } else {
       ScoutSprite(pose: presentation.pose, style: style)
+        .modifier(ScoutIdleMotion())
         .keyframeAnimator(
           initialValue: ScoutMotion(), trigger: presentation.reactionID
         ) { content, motion in
@@ -41,7 +42,6 @@ struct ScoutView: View {
           }
         }
         .padding(style == .cornerCompanion ? 0 : 10)
-        .modifier(ScoutIdleMotion())
     }
   }
 }
@@ -116,16 +116,16 @@ private struct ScoutSprite: View {
       Image(assetName)
         .resizable()
         .scaledToFit()
-        .id(pose)
+        .id(assetName)
         .transition(.opacity)
     }
-    .animation(reduceMotion ? nil : .easeInOut(duration: 0.16), value: pose)
+    .animation(reduceMotion ? nil : .easeInOut(duration: 0.16), value: assetName)
     .accessibilityHidden(true)
     .allowsHitTesting(false)
   }
 
   private var assetName: String {
-    style == .cornerCompanion && pose == .welcome ? "ScoutCompanion" : pose.assetName
+    pose == .welcome ? "ScoutThinking" : pose.assetName
   }
 }
 
@@ -144,14 +144,22 @@ struct ScoutAvatar: View {
 }
 
 private struct ScoutReactionPreview: View {
-  @State private var presentation = ScoutPresentation()
+  @State private var pose = ScoutPose.welcome
+  @State private var reactionID: UInt64 = 0
+
+  private var presentation: ScoutPresentation {
+    ScoutPresentation(pose: pose, reactionID: reactionID)
+  }
 
   var body: some View {
     VStack(spacing: 20) {
       ScoutView(presentation: presentation)
         .frame(width: 240, height: 240)
       ForEach(ScoutPose.allCases, id: \.self) { pose in
-        Button(pose.rawValue) { presentation.present(pose) }
+        Button(pose.rawValue) {
+          self.pose = pose
+          reactionID &+= 1
+        }
       }
       ScoutAvatar()
         .frame(width: 48, height: 48)
@@ -159,6 +167,6 @@ private struct ScoutReactionPreview: View {
     .padding(24)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(CityChainPalette.paper)
-    .onAppear { presentation.present(.welcome) }
+    .onAppear { reactionID &+= 1 }
   }
 }

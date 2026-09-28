@@ -1,12 +1,11 @@
-/// Visual state only. The page model maps game outcomes to Scout's reactions.
+/// Immutable visual snapshot consumed by Scout views.
 struct ScoutPresentation: Equatable {
-  private(set) var pose: ScoutPose = .welcome
-  private(set) var reactionID: UInt64 = 0
+  let pose: ScoutPose
+  let reactionID: UInt64
 
-  mutating func present(_ pose: ScoutPose) {
+  init(pose: ScoutPose = .welcome, reactionID: UInt64 = 0) {
     self.pose = pose
-    // Repeated outcomes still deserve feedback, including two errors in a row.
-    reactionID &+= 1
+    self.reactionID = reactionID
   }
 }
 
@@ -23,5 +22,83 @@ enum ScoutPose: String, CaseIterable {
     case .celebration: "ScoutCelebration"
     case .tryAnother: "ScoutTryAnother"
     }
+  }
+}
+
+/// The page's single source of truth for Scout's lifecycle and visible reaction.
+enum ScoutState: Equatable {
+  case ready
+  case preparingTurn
+  case thinking
+  case celebrating
+  case tryAnother
+
+  var isSubmitting: Bool {
+    self == .preparingTurn || self == .thinking
+  }
+
+  var hasTurnFeedback: Bool {
+    self == .celebrating || self == .tryAnother
+  }
+
+  var pose: ScoutPose {
+    switch self {
+    case .ready, .preparingTurn: .welcome
+    case .thinking: .thinking
+    case .celebrating: .celebration
+    case .tryAnother: .tryAnother
+    }
+  }
+
+  fileprivate func next(for event: ScoutEvent) -> ScoutState? {
+    switch (self, event) {
+    case (.ready, .submit), (.celebrating, .submit), (.tryAnother, .submit):
+      .preparingTurn
+    case (.preparingTurn, .thinkingDelayElapsed):
+      .thinking
+    case (.preparingTurn, .turnAccepted), (.thinking, .turnAccepted):
+      .celebrating
+    case (.preparingTurn, .turnRejected), (.thinking, .turnRejected):
+      .tryAnother
+    case (.celebrating, .feedbackDismissed), (.tryAnother, .feedbackDismissed):
+      .ready
+    case (_, .newRoundStarted):
+      .ready
+    default:
+      nil
+    }
+  }
+}
+
+enum ScoutEvent {
+  case submit
+  case thinkingDelayElapsed
+  case turnAccepted
+  case turnRejected
+  case feedbackDismissed
+  case newRoundStarted
+}
+
+struct ScoutStateMachine {
+  private(set) var state: ScoutState = .ready
+  private var reactionID: UInt64 = 0
+
+  var isSubmitting: Bool { state.isSubmitting }
+  var hasTurnFeedback: Bool { state.hasTurnFeedback }
+  var isIdle: Bool { state == .ready }
+  var presentation: ScoutPresentation {
+    ScoutPresentation(pose: state.pose, reactionID: reactionID)
+  }
+
+  @discardableResult
+  mutating func send(_ event: ScoutEvent) -> Bool {
+    guard let nextState = state.next(for: event), nextState != state else { return false }
+
+    let poseChanged = state.pose != nextState.pose
+    state = nextState
+    if poseChanged {
+      reactionID &+= 1
+    }
+    return true
   }
 }

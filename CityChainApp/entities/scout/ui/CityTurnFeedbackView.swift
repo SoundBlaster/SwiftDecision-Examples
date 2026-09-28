@@ -5,6 +5,7 @@ struct CityTurnFeedbackView: View {
   let message: String
   let presentation: ScoutPresentation
   let isFinished: Bool
+  var fact: ScoutFact? = nil
   var maximumHeight: CGFloat? = nil
   let onDismiss: () -> Void
   @State private var contentHeight: CGFloat = 44
@@ -15,7 +16,7 @@ struct CityTurnFeedbackView: View {
         ScrollView {
           CityTurnFeedbackContent(
             message: message, presentation: presentation,
-            isFinished: isFinished, isCompact: true)
+            isFinished: isFinished, isCompact: true, fact: fact)
             .fixedSize(horizontal: false, vertical: true)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
               contentHeight = height
@@ -26,7 +27,7 @@ struct CityTurnFeedbackView: View {
       } else {
         CityTurnFeedbackContent(
           message: message, presentation: presentation,
-          isFinished: isFinished, isCompact: false)
+          isFinished: isFinished, isCompact: false, fact: fact)
       }
 
       Button(action: onDismiss) {
@@ -62,22 +63,37 @@ struct ScoutSpeechFeedbackView: View {
   let presentation: ScoutPresentation
   let isCompact: Bool
   let onDismiss: () -> Void
+  var fact: ScoutFact? = nil
   var companionSize: CGFloat? = nil
   var horizontalPadding: CGFloat = 16
   var bubbleBottomInset: CGFloat = 0
+  var onTapScout: (() -> Void)? = nil
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
-    HStack(alignment: .bottom, spacing: -18) {
+    // Let the bubble tail reach into Scout's visual area, past the asset's transparent edge.
+    HStack(alignment: .bottom, spacing: -34) {
       if let message {
         HStack(alignment: .top, spacing: 4) {
-          Text(message)
-            .font(.system(.body, design: .rounded))
-            .foregroundStyle(CityChainPalette.ink)
-            .fixedSize(horizontal: false, vertical: true)
-            .accessibilityAddTraits(.updatesFrequently)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .allowsHitTesting(false)
+          VStack(alignment: .leading, spacing: 5) {
+            Text(message)
+              .font(.system(.body, design: .rounded))
+              .foregroundStyle(CityChainPalette.ink)
+              .fixedSize(horizontal: false, vertical: true)
+              .accessibilityAddTraits(.updatesFrequently)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .allowsHitTesting(false)
+
+            if let fact {
+              Link(destination: fact.sourceURL) {
+                Label("Fact source", systemImage: "arrow.up.right.square")
+                  .font(.caption.weight(.semibold))
+              }
+              .tint(CityChainPalette.teal)
+              .accessibilityLabel("Fact source")
+              .accessibilityHint("Opens \(fact.sourceTitle)")
+            }
+          }
 
           Button(action: onDismiss) {
             Image(systemName: "xmark")
@@ -108,20 +124,39 @@ struct ScoutSpeechFeedbackView: View {
         .offset(y: -bubbleBottomInset)
       }
 
-      ScoutView(presentation: presentation, style: .cornerCompanion)
-        .frame(
-          width: companionSize ?? (isCompact ? 108 : 176),
-          height: companionSize ?? (isCompact ? 112 : 180))
-        .accessibilityHidden(true)
+      Group {
+        if let onTapScout {
+          Button(action: onTapScout) {
+            ZStack {
+              Rectangle().fill(.clear)
+              scoutCompanion
+            }
+            .contentShape(Rectangle())
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("Open atlas map")
+          .accessibilityHint("Shows the map of your road trip")
+          .accessibilityIdentifier("cityChain.scout.openMap")
+        } else {
+          scoutCompanion
+        }
+      }
     }
     .padding(.horizontal, horizontalPadding)
     .padding(.top, message == nil ? 0 : 8)
     .padding(.bottom, 2)
     .frame(maxWidth: .infinity, alignment: .trailing)
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: message)
-    .accessibilityElement(children: message == nil ? .ignore : .contain)
-    .accessibilityHidden(message == nil)
+    .accessibilityElement(children: .contain)
     .accessibilityAction(named: "Dismiss message", onDismiss)
+  }
+
+  private var scoutCompanion: some View {
+    ScoutView(presentation: presentation, style: .cornerCompanion)
+      .frame(
+        width: companionSize ?? (isCompact ? 108 : 176),
+        height: companionSize ?? (isCompact ? 112 : 180))
+      .accessibilityHidden(true)
   }
 }
 
@@ -168,6 +203,7 @@ private struct CityTurnFeedbackContent: View {
   let presentation: ScoutPresentation
   let isFinished: Bool
   let isCompact: Bool
+  let fact: ScoutFact?
 
   var body: some View {
     HStack(alignment: .top, spacing: 8) {
@@ -191,12 +227,21 @@ private struct CityTurnFeedbackContent: View {
           .foregroundStyle(CityChainPalette.ink)
           .fixedSize(horizontal: false, vertical: true)
           .accessibilityAddTraits(.updatesFrequently)
+        if let fact {
+          Link(destination: fact.sourceURL) {
+            Label("Fact source", systemImage: "arrow.up.right.square")
+              .font(.caption.weight(.semibold))
+          }
+          .tint(CityChainPalette.teal)
+          .accessibilityLabel("Fact source")
+          .accessibilityHint("Opens \(fact.sourceTitle)")
+        }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
     }
     .padding(.leading, isCompact ? 12 : 4)
     .padding(.vertical, 12)
-    .accessibilityElement(children: .combine)
+    .accessibilityElement(children: .contain)
   }
 }
 

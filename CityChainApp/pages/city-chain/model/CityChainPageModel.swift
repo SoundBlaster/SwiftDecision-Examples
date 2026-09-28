@@ -12,18 +12,41 @@ final class CityChainPageModel {
 
   private(set) var snapshot: CityGameSnapshot?
   private(set) var latestTurnPipeline: [CityGamePipelineStage] = []
-  private(set) var isSubmitting = false
   private(set) var hasCommittedPlayerCityForCurrentTurn = false
   private(set) var isScoutThinkingStopVisible = false
-  private(set) var hasTurnFeedback = false
-  private(set) var scoutPresentation = ScoutPresentation()
+  private var scoutStateMachine = ScoutStateMachine()
+  var isSubmitting: Bool { scoutStateMachine.isSubmitting }
+  var hasTurnFeedback: Bool { scoutStateMachine.hasTurnFeedback }
+  var isScoutIdle: Bool { scoutStateMachine.isIdle }
+  var scoutPresentation: ScoutPresentation { scoutStateMachine.presentation }
+  private(set) var latestScoutFact: ScoutFact?
+  private let factSelectionStore = ScoutFactSelectionStore()
   private var scoutThinkingStopDelayTask: Task<Void, Never>?
   var cityInput = ""
   var statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
+#if DEBUG
+  private let debugFixture: CityGameFixture?
+  private let debugFixtureError: String?
+  private(set) var isDebugThinkingCapture = false
+  var shouldFocusInputAfterLoad = false
+  private(set) var debugFixtureDiagnostic: String?
+#endif
 
   init(game: CityChainGame) {
     self.game = game
+#if DEBUG
+    self.debugFixture = nil
+    self.debugFixtureError = nil
+#endif
   }
+
+#if DEBUG
+  init(game: CityChainGame, debugFixture: CityGameFixture?, debugFixtureError: String?) {
+    self.game = game
+    self.debugFixture = debugFixture
+    self.debugFixtureError = debugFixtureError
+  }
+#endif
 
 #if DEBUG
   static func preview() -> CityChainPageModel {
@@ -36,31 +59,86 @@ final class CityChainPageModel {
 
   func load() async {
     guard snapshot == nil else { return }
+#if DEBUG
+    if let debugFixtureError {
+      statusMessage = debugFixtureError
+      debugFixtureDiagnostic = debugFixtureError
+    } else if let debugFixture {
+      do {
+        try await game.restore(from: debugFixture)
+        cityInput = debugFixture.draft ?? ""
+        shouldFocusInputAfterLoad = debugFixture.focusInput
+        switch debugFixture.phase {
+        case .ready:
+          break
+        case .thinking:
+          scoutStateMachine.send(.submit)
+          scoutStateMachine.send(.thinkingDelayElapsed)
+          hasCommittedPlayerCityForCurrentTurn = true
+          isScoutThinkingStopVisible = true
+          isDebugThinkingCapture = true
+        case .feedbackAccepted:
+          scoutStateMachine.send(.submit)
+          scoutStateMachine.send(.turnAccepted)
+          statusMessage = debugFixture.feedbackMessage ?? "Fixture feedback: accepted."
+        case .feedbackRejected:
+          scoutStateMachine.send(.submit)
+          scoutStateMachine.send(.turnRejected)
+          statusMessage = debugFixture.feedbackMessage ?? "Fixture feedback: try another city."
+        case .finished:
+          scoutStateMachine.send(.submit)
+          scoutStateMachine.send(.turnAccepted)
+          statusMessage = debugFixture.endingMessage ?? "Fixture route finished."
+        }
+      } catch {
+        statusMessage = "CityChain debug fixture: \(error.localizedDescription)"
+        debugFixtureDiagnostic = statusMessage
+      }
+    }
+#endif
     snapshot = await game.snapshot()
-    scoutPresentation.present(.welcome)
   }
 
+#if DEBUG
+  func dismissDebugFixtureDiagnostic() {
+    debugFixtureDiagnostic = nil
+  }
+
+  func exitDebugThinkingCapture() async {
+    guard isDebugThinkingCapture else { return }
+    await game.reset()
+    scoutStateMachine.send(.newRoundStarted)
+    isDebugThinkingCapture = false
+    hasCommittedPlayerCityForCurrentTurn = false
+    isScoutThinkingStopVisible = false
+    cityInput = ""
+    statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
+    snapshot = await game.snapshot()
+  }
+#endif
+
   func dismissTurnFeedback() {
-    hasTurnFeedback = false
+    scoutStateMachine.send(.feedbackDismissed)
+    latestScoutFact = nil
   }
 
   func startNewRound() async {
     guard !isSubmitting else { return }
     await game.reset()
+    scoutStateMachine.send(.newRoundStarted)
     cityInput = ""
-    hasTurnFeedback = false
+    latestScoutFact = nil
     latestTurnPipeline = []
     statusMessage = String(localized: "Pick a city from the U.S. atlas to start your trip.")
     snapshot = await game.snapshot()
-    scoutPresentation.present(.welcome)
   }
 
   func submit(_ cityName: String) async -> Bool {
     guard !isSubmitting else { return false }
-    isSubmitting = true
+    scoutStateMachine.send(.submit)
     hasCommittedPlayerCityForCurrentTurn = false
     isScoutThinkingStopVisible = false
-    hasTurnFeedback = true
+    latestScoutFact = nil
     // Let quick local rule failures return immediately without flashing the
     // thinking pose. Accepted turns stay in this pose while the engine works.
     let thinkingTask = Task { @MainActor in
@@ -70,13 +148,12 @@ final class CityChainPageModel {
         return
       }
       guard !Task.isCancelled else { return }
-      scoutPresentation.present(.thinking)
+      scoutStateMachine.send(.thinkingDelayElapsed)
     }
     defer {
       thinkingTask.cancel()
       scoutThinkingStopDelayTask?.cancel()
       scoutThinkingStopDelayTask = nil
-      isSubmitting = false
       hasCommittedPlayerCityForCurrentTurn = false
       isScoutThinkingStopVisible = false
     }
@@ -107,8 +184,14 @@ final class CityChainPageModel {
       }
       latestTurnPipeline = tracedResult.pipeline
       statusMessage = Self.message(for: result)
+      if accepted, let city = Self.factCity(for: result),
+         let fact = factSelectionStore.nextFact(for: city)
+      {
+        latestScoutFact = fact
+        statusMessage += " Did you know? \(fact.text)"
+      }
       snapshot = updatedSnapshot
-      scoutPresentation.present(accepted ? .celebration : .tryAnother)
+      scoutStateMachine.send(accepted ? .turnAccepted : .turnRejected)
       return accepted
     } catch {
       latestTurnPipeline.append(
@@ -117,7 +200,7 @@ final class CityChainPageModel {
           summary: "The turn failed with \(String(reflecting: type(of: error)))."))
       statusMessage = String(localized: "I can't check that city right now. Try a suggested city!")
       snapshot = await game.snapshot()
-      scoutPresentation.present(.tryAnother)
+      scoutStateMachine.send(.turnRejected)
       return false
     }
   }
@@ -128,6 +211,18 @@ final class CityChainPageModel {
       true
     default:
       false
+    }
+  }
+
+  private static func factCity(for result: CityGameTurnResult) -> USCity? {
+    switch result {
+    case .computerReplied(_, let computerCity, _):
+      computerCity
+    case .playerWonNoAvailableReply(let playerCity, _),
+         .playerWonBecauseComputerAbstained(let playerCity, _):
+      playerCity
+    default:
+      nil
     }
   }
 

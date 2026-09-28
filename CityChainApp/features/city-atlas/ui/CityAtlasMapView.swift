@@ -9,7 +9,9 @@ struct CityAtlasMapView: View {
   @Binding var selectedCity: USCity?
   let transitionNamespace: Namespace.ID
   let onOpenMapDetail: () -> Void
+  var onTapScout: (() -> Void)? = nil
   let feedbackMessage: String?
+  let feedbackFact: ScoutFact?
   let feedbackIsFinished: Bool
   let onDismissFeedback: () -> Void
 
@@ -36,8 +38,26 @@ struct CityAtlasMapView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 12) {
         HStack(alignment: .center, spacing: 10) {
-          ScoutView(presentation: presentation)
-            .frame(width: 52, height: 52)
+          Group {
+            if let onTapScout {
+              Button(action: onTapScout) {
+                ZStack {
+                  Rectangle().fill(.clear)
+                  ScoutView(presentation: presentation)
+                    .frame(width: 52, height: 52)
+                }
+                .frame(width: 52, height: 52)
+                .contentShape(Rectangle())
+              }
+              .buttonStyle(.plain)
+              .accessibilityLabel("Open atlas map")
+              .accessibilityHint("Shows the map of your road trip")
+              .accessibilityIdentifier("cityChain.scout.mapPanel.openMap")
+            } else {
+              ScoutView(presentation: presentation)
+                .frame(width: 52, height: 52)
+            }
+          }
           VStack(alignment: .leading, spacing: 3) {
             Text("Pocket Atlas")
               .font(.system(.title2, design: .rounded, weight: .bold))
@@ -67,6 +87,7 @@ struct CityAtlasMapView: View {
               message: feedbackMessage,
               presentation: presentation,
               isFinished: feedbackIsFinished,
+              fact: feedbackFact,
               onDismiss: onDismissFeedback)
           }
 
@@ -484,6 +505,7 @@ struct CityAtlasMapDetailView: View {
                 .background(CityChainPalette.paper, in: Capsule())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("cityAtlas.map.close")
           }
 
           if let mapData {
@@ -603,6 +625,7 @@ private struct CityAtlasRoutePreview: View {
       transitionNamespace: transitionNamespace,
       onOpenMapDetail: {},
       feedbackMessage: nil,
+      feedbackFact: nil,
       feedbackIsFinished: false,
       onDismissFeedback: {})
       .frame(width: 390, height: 844)

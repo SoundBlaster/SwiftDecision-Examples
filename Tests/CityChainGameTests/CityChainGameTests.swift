@@ -486,6 +486,122 @@ struct CityChainGameTests {
     #expect(Set(USCityCatalog.standard.cities.map(\.id)).count == 150)
   }
 
+  @Test("A fixture restores canonical route state and accepts the next move")
+  func fixtureRestoresPlayableRoute() async throws {
+    let json = #"{"version":1,"route":[{"role":"player","city":"Austin"},{"role":"computer","city":"Nashville"},{"role":"player","city":"El Paso"},{"role":"computer","city":"Olympia"},{"role":"player","city":"Akron"},{"role":"computer","city":"New Orleans"}],"draft":"Springfield"}"#
+    let fixture = try JSONDecoder().decode(CityGameFixture.self, from: Data(json.utf8))
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: FixtureBackend()),
+      continuationPolicy: .previousAvailableLetter)
+
+    try await game.restore(from: fixture)
+
+    let snapshot = await game.snapshot()
+    #expect(snapshot.usedCities == [
+      USCity("Austin", state: .texas, isStateCapital: true),
+      USCity("Nashville", state: .tennessee, isStateCapital: true),
+      USCity("El Paso", state: .texas),
+      USCity("Olympia", state: .washington, isStateCapital: true),
+      USCity("Akron"),
+      USCity("New Orleans", state: .louisiana),
+    ])
+    #expect(snapshot.requiredStartingLetter == "S")
+    #expect(snapshot.letterContinuations.count == 6)
+
+    let result = try await game.submit(fixture.draft ?? "")
+    guard case .computerReplied(let playerCity, _, _) = result else {
+      Issue.record("Expected the restored game to accept its draft, got \(result).")
+      return
+    }
+    #expect(playerCity == USCity("Springfield", state: .illinois, isStateCapital: true))
+  }
+
+  @Test("A versioned game fixture survives a JSON encode/decode round trip")
+  func fixtureJSONRoundTrip() throws {
+    let source = #"{"version":1,"phase":"feedbackRejected","route":[{"role":"player","city":"Austin"},{"role":"computer","city":"Nashville"}],"draft":"El Paso","feedbackMessage":"Try again","focusInput":true}"#
+    let fixture = try JSONDecoder().decode(CityGameFixture.self, from: Data(source.utf8))
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.sortedKeys]
+    let encoded = try encoder.encode(fixture)
+    let decoded = try JSONDecoder().decode(CityGameFixture.self, from: encoded)
+    #expect(decoded == fixture)
+  }
+
+  @Test("Fixture restoration rejects malformed turns, duplicates, and broken chains")
+  func fixtureRejectsInvalidRoute() async throws {
+    let cases: [(String, CityGameFixtureError)] = [
+      (#"{"version":2,"route":[]}"#, .unsupportedVersion(2)),
+      (#"{"version":1,"route":[{"role":"player","city":"Austin"}]}"#,
+       .invalidRouteLength(phase: "ready")),
+      (#"{"version":1,"route":[{"role":"player","city":"Austin"},{"role":"player","city":"Nashville"}]}"#,
+       .invalidTurnRole(index: 1, expected: "computer")),
+      (#"{"version":1,"route":[{"role":"player","city":"Austin"},{"role":"computer","city":"Dallas"}]}"#,
+       .brokenChain(city: "Dallas", expected: "N")),
+      (#"{"version":1,"route":[{"role":"player","city":"Austin"},{"role":"computer","city":"Nashville"},{"role":"player","city":"Austin"},{"role":"computer","city":"El Paso"}]}"#,
+       .duplicateCity("Austin")),
+    ]
+    for (json, expectedError) in cases {
+      let fixture = try JSONDecoder().decode(CityGameFixture.self, from: Data(json.utf8))
+      let game = CityChainGame(
+        decisions: DecisionEngine(backend: FixtureBackend()),
+        continuationPolicy: .previousAvailableLetter)
+      do {
+        try await game.restore(from: fixture)
+        Issue.record("Expected fixture error \(expectedError).")
+      } catch let error as CityGameFixtureError {
+        #expect(error == expectedError)
+      }
+      #expect(await game.snapshot().usedCities.isEmpty)
+    }
+  }
+
+  @Test("Fixtures represent ready, thinking, feedback, and finished screen phases")
+  func fixturePhasesRestoreConsistentEngineSnapshots() async throws {
+    let baseRoute = #"[{"role":"player","city":"Austin"},{"role":"computer","city":"Nashville"}]"#
+    let fixtures = [
+      #"{"version":1,"phase":"ready","route":[{"role":"player","city":"Riverhead"},{"role":"computer","city":"Durham"}]}"#,
+      #"{"version":1,"phase":"thinking","route":[{"role":"player","city":"Austin"},{"role":"computer","city":"Nashville"},{"role":"player","city":"El Paso"}]}"#,
+      "{\"version\":1,\"phase\":\"feedbackAccepted\",\"feedbackMessage\":\"Accepted!\",\"route\":\(baseRoute)}",
+      "{\"version\":1,\"phase\":\"feedbackRejected\",\"feedbackMessage\":\"Try another city.\",\"route\":\(baseRoute)}",
+      #"{"version":1,"phase":"finished","ending":"computerAbstained","endingMessage":"Scout passed.","route":[{"role":"player","city":"Austin"}]}"#,
+    ]
+    for json in fixtures {
+      let fixture = try JSONDecoder().decode(CityGameFixture.self, from: Data(json.utf8))
+      let game = CityChainGame(
+        decisions: DecisionEngine(backend: FixtureBackend()),
+        continuationPolicy: .previousAvailableLetter)
+      try await game.restore(from: fixture)
+      let snapshot = await game.snapshot()
+      #expect(snapshot.usedCities.count == fixture.route.count)
+      #expect(snapshot.isFinished == (fixture.phase == .finished))
+      if fixture.phase == .thinking {
+        #expect(fixture.route.count.isMultiple(of: 2) == false)
+      }
+    }
+  }
+
+  @Test("An invalid restore leaves an existing game route unchanged")
+  func fixtureRestoreIsAtomic() async throws {
+    let valid = try JSONDecoder().decode(
+      CityGameFixture.self,
+      from: Data(#"{"version":1,"route":[{"role":"player","city":"Austin"},{"role":"computer","city":"Nashville"}]}"#.utf8))
+    let invalid = try JSONDecoder().decode(
+      CityGameFixture.self,
+      from: Data(#"{"version":1,"phase":"finished","ending":"noAvailableReply","route":[{"role":"player","city":"Austin"}]}"#.utf8))
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: FixtureBackend()),
+      continuationPolicy: .previousAvailableLetter)
+    try await game.restore(from: valid)
+    let before = await game.snapshot()
+    do {
+      try await game.restore(from: invalid)
+      Issue.record("Expected the invalid route to be rejected.")
+    } catch let error as CityGameFixtureError {
+      #expect(error == .endingDoesNotMatchPhase)
+    }
+    #expect(await game.snapshot() == before)
+  }
+
   private func catalog(_ names: String...) -> USCityCatalog {
     USCityCatalog(cities: names.map { USCity($0) })
   }

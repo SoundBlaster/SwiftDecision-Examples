@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "phase": "thinking",
+  "route": [
+    { "role": "player", "city": "Austin" },
+    { "role": "computer", "city": "Nashville" },
+    { "role": "player", "city": "El Paso" }
+  ],
+  "draft": "Olympia"
+}

@@ -8,6 +8,7 @@ struct CityChainPage: View {
   @State private var showsAtlas = false
   @State private var isMapDetailPresented = false
   @State private var showsMapDetailSheet = false
+  @State private var showsFullScreenMap = false
   @State private var selectedAtlasCity: USCity?
   @Namespace private var atlasMapTransitionNamespace
   @FocusState private var isCityFocused: Bool
@@ -22,6 +23,13 @@ struct CityChainPage: View {
         let usesColumns = geometry.size.width >= 700 && !dynamicTypeSize.isAccessibilitySize
         let sideRailInset = geometry.safeAreaInsets.trailing
         let usesSideRailCompanion = sideRailInset >= 60
+        let openMapFromScout = {
+          if usesColumns || usesSideRailCompanion {
+            showsFullScreenMap = true
+          } else {
+            showsMapDetailSheet = true
+          }
+        }
         let requestedCompanionSize: CGFloat = isCityFocused ? 108 : 176
         let railCompanionSize = min(
           requestedCompanionSize,
@@ -40,8 +48,10 @@ struct CityChainPage: View {
                 selectedCity: $selectedAtlasCity,
                 transitionNamespace: atlasMapTransitionNamespace,
                 onOpenMapDetail: openMapDetail,
+                onTapScout: model.isScoutIdle ? openMapFromScout : nil,
                 feedbackMessage: model.hasTurnFeedback && !model.isSubmitting && !usesSideRailCompanion
                   ? model.statusMessage : nil,
+                feedbackFact: model.latestScoutFact,
                 feedbackIsFinished: snapshot?.isFinished == true,
                 onDismissFeedback: model.dismissTurnFeedback)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -51,6 +61,7 @@ struct CityChainPage: View {
               isFirstStop: isFirstStop, isExpanded: usesColumns,
               routesFeedbackToAtlas: usesColumns || usesSideRailCompanion,
               showsSideRailCompanion: usesSideRailCompanion,
+              onTapScout: model.isScoutIdle ? openMapFromScout : nil,
               onShowAtlas: { showsAtlas = true },
               onShowMap: { showsMapDetailSheet = true },
               onRequestNewTrip: { showsNewTripConfirmation = true },
@@ -63,9 +74,11 @@ struct CityChainPage: View {
               presentation: model.scoutPresentation,
               isCompact: isCityFocused,
               onDismiss: model.dismissTurnFeedback,
+              fact: model.latestScoutFact,
               companionSize: railCompanionSize,
               horizontalPadding: 0,
-              bubbleBottomInset: 84)
+              bubbleBottomInset: 84,
+              onTapScout: model.isScoutIdle ? openMapFromScout : nil)
               .frame(width: min(460, geometry.size.width))
               .offset(x: sideRailInset - 12 + columnInset, y: -12)
               .zIndex(2)
@@ -78,7 +91,6 @@ struct CityChainPage: View {
       .navigationDestination(isPresented: $isMapDetailPresented) {
         cityMapDetailDestination
       }
-      .toolbar(.hidden, for: .navigationBar)
     }
     .sheet(isPresented: $showsAtlas) {
       CityAtlasView(snapshot: model.snapshot, isSubmitting: model.isSubmitting) { city in
@@ -94,6 +106,9 @@ struct CityChainPage: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
+    .fullScreenCover(isPresented: $showsFullScreenMap) {
+      cityMapDetail
+    }
     .onChange(of: snapshot?.usedCities.last, initial: true) { _, latestCity in
       selectedAtlasCity = latestCity
     }
@@ -102,6 +117,18 @@ struct CityChainPage: View {
         AccessibilityNotification.Announcement(model.statusMessage).post()
       }
     }
+#if DEBUG
+    .alert(
+      "Debug fixture problem",
+      isPresented: Binding(
+        get: { model.debugFixtureDiagnostic != nil },
+        set: { if !$0 { model.dismissDebugFixtureDiagnostic() } }))
+    {
+      Button("OK", role: .cancel) { model.dismissDebugFixtureDiagnostic() }
+    } message: {
+      Text(model.debugFixtureDiagnostic ?? "")
+    }
+#endif
     .confirmationDialog(
       "Start a new road trip?", isPresented: $showsNewTripConfirmation, titleVisibility: .visible
     ) {
@@ -112,7 +139,15 @@ struct CityChainPage: View {
     } message: {
       Text("Your current route will be cleared.")
     }
-    .task { await model.load() }
+    .task {
+      await model.load()
+#if DEBUG
+      if model.shouldFocusInputAfterLoad {
+        try? await Task.sleep(for: .milliseconds(400))
+        isCityFocused = true
+      }
+#endif
+    }
     .preferredColorScheme(.light)
   }
 
@@ -174,6 +209,7 @@ private struct CityChainGamePane: View {
   let isExpanded: Bool
   let routesFeedbackToAtlas: Bool
   let showsSideRailCompanion: Bool
+  let onTapScout: (() -> Void)?
   let onShowAtlas: () -> Void
   let onShowMap: () -> Void
   let onRequestNewTrip: () -> Void
@@ -191,7 +227,7 @@ private struct CityChainGamePane: View {
             CityTripHeader(
               presentation: model.scoutPresentation,
               showsScout: !showsSideRailCompanion,
-              onShowAtlas: onShowAtlas)
+              onTapScout: onTapScout)
           }
           LetterPromptCard(snapshot: snapshot, isSubmitting: model.isSubmitting)
         }
@@ -233,39 +269,70 @@ private struct CityChainGamePane: View {
       }
     )
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .safeAreaInset(edge: .top, spacing: 0) {
-      if !isFirstStop || isCityFocused {
-        CityChainPinnedHeader(
-          showsNewTrip: !isFirstStop && (snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true),
-          showsMapButton: !isExpanded,
-          isNewTripDisabled: model.isSubmitting,
-          cityHints: suggestions,
-          selectedCityName: model.cityInput,
-          areCityHintsHidden: !isCityHintsRevealed,
-          isCityHintsDisabled: model.isSubmitting,
-          showsCityHintsPopover: $showsCityHintsPopover,
-          onRevealCityHints: {
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-              isCityHintsRevealed = true
-            }
-          },
-          onSelectHint: { city in
-            model.cityInput = city.name
-            showsCityHintsPopover = false
-          },
-          onShowAtlas: onShowAtlas,
-          onShowMap: onShowMap,
-          onRequestNewTrip: onRequestNewTrip,
-          hasDecisionTrace: !model.latestTurnPipeline.isEmpty,
-          onShowDecisionTrace: { showsDecisionTrace = true }
-        )
+    .toolbar {
+      ToolbarItemGroup(placement: .topBarTrailing) {
+        toolbarButton(
+          "City atlas", systemImage: "book.closed",
+          hint: "Browse cities and find a name for your next turn",
+          action: onShowAtlas)
+
+        if !isFirstStop || isCityFocused {
+          if !isExpanded {
+            toolbarButton(
+              "Pocket Atlas map", systemImage: "map",
+              hint: "Open the route map",
+              action: onShowMap)
+          }
+
+          if !suggestions.isEmpty {
+            CityHintsToolbarButton(
+              cities: suggestions,
+              selectedName: model.cityInput,
+              isDisabled: model.isSubmitting,
+              isHidden: !isCityHintsRevealed,
+              isPresented: $showsCityHintsPopover,
+              onReveal: {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                  isCityHintsRevealed = true
+                }
+              },
+              onSelect: { city in
+                model.cityInput = city.name
+                showsCityHintsPopover = false
+              })
+          }
+
+          if !isFirstStop && (snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true) {
+            toolbarButton(
+              "New trip", systemImage: "arrow.counterclockwise",
+              hint: "Start a new trip after confirmation",
+              isDisabled: model.isSubmitting,
+              action: onRequestNewTrip)
+          }
+
+#if DEBUG
+          if model.isDebugThinkingCapture {
+            toolbarButton(
+              "Exit capture", systemImage: "xmark",
+              hint: "Leave the paused thinking fixture and start a new round",
+              action: { Task { await model.exitDebugThinkingCapture() } })
+          }
+          if !model.latestTurnPipeline.isEmpty {
+            toolbarButton(
+              "Decision trace", systemImage: "point.3.connected.trianglepath.dotted",
+              hint: "Inspect the latest game decision trace",
+              action: { showsDecisionTrace = true })
+          }
+#endif
+        }
       }
     }
     .safeAreaInset(edge: .bottom, spacing: 0) {
       CityChainBottomControls(
         model: model, snapshot: snapshot, isCityFocused: $isCityFocused,
         showsFeedback: !routesFeedbackToAtlas,
-        showsCompanion: !showsSideRailCompanion && !isFirstStop)
+        showsCompanion: !showsSideRailCompanion && !isFirstStop,
+        onTapScout: onTapScout)
     }
     .onChange(of: snapshot?.usedCities.count) { _, _ in
       isCityHintsRevealed = false
@@ -279,6 +346,20 @@ private struct CityChainGamePane: View {
     }
 #endif
   }
+
+  private func toolbarButton(
+    _ title: String,
+    systemImage: String,
+    hint: String,
+    isDisabled: Bool = false,
+    action: @escaping () -> Void
+  ) -> some View {
+    Button(action: action) {
+      Label(title, systemImage: systemImage)
+    }
+    .accessibilityHint(hint)
+    .disabled(isDisabled)
+  }
 }
 
 private struct CityChainBottomControls: View {
@@ -287,16 +368,19 @@ private struct CityChainBottomControls: View {
   @FocusState.Binding var isCityFocused: Bool
   let showsFeedback: Bool
   let showsCompanion: Bool
+  let onTapScout: (() -> Void)?
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     VStack(spacing: 0) {
-      if showsFeedback && showsCompanion && isCityFocused {
+      if showsFeedback && showsCompanion {
         ScoutSpeechFeedbackView(
           message: model.hasTurnFeedback && !model.isSubmitting ? model.statusMessage : nil,
           presentation: model.scoutPresentation,
-          isCompact: true,
-          onDismiss: model.dismissTurnFeedback)
+          isCompact: false,
+          onDismiss: model.dismissTurnFeedback,
+          fact: model.latestScoutFact,
+          onTapScout: onTapScout)
       }
 
       if snapshot?.isFinished == true {
@@ -323,89 +407,9 @@ private struct CityChainBottomControls: View {
           isSubmitting: model.isSubmitting,
           onSubmit: { city in await model.submit(city) })
       }
-
-      if showsFeedback && showsCompanion && !isCityFocused {
-        ScoutSpeechFeedbackView(
-          message: model.hasTurnFeedback && !model.isSubmitting ? model.statusMessage : nil,
-          presentation: model.scoutPresentation,
-          isCompact: false,
-          onDismiss: model.dismissTurnFeedback)
-      }
     }
     .frame(maxWidth: .infinity)
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: model.hasTurnFeedback)
-  }
-}
-
-private struct CityChainPinnedHeader: View {
-  let showsNewTrip: Bool
-  let showsMapButton: Bool
-  let isNewTripDisabled: Bool
-  let cityHints: [USCity]
-  let selectedCityName: String
-  let areCityHintsHidden: Bool
-  let isCityHintsDisabled: Bool
-  @Binding var showsCityHintsPopover: Bool
-  let onRevealCityHints: () -> Void
-  let onSelectHint: (USCity) -> Void
-  let onShowAtlas: () -> Void
-  let onShowMap: () -> Void
-  let onRequestNewTrip: () -> Void
-  let hasDecisionTrace: Bool
-  let onShowDecisionTrace: () -> Void
-  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-  var body: some View {
-    let layout = dynamicTypeSize.isAccessibilitySize
-      ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
-      : AnyLayout(HStackLayout(alignment: .center, spacing: 8))
-
-    layout {
-      HStack(spacing: 8) {
-        CityChainActionButton(
-          title: "City atlas", systemImage: "book.closed",
-          hint: "Browse cities and find a name for your next turn",
-          action: onShowAtlas)
-        if showsMapButton {
-          CityChainActionButton(
-            title: "Pocket Atlas map", systemImage: "map",
-            hint: "Open the route map",
-            action: onShowMap)
-        }
-        if !cityHints.isEmpty {
-          CityHintsToolbarButton(
-            cities: cityHints,
-            selectedName: selectedCityName,
-            isDisabled: isCityHintsDisabled,
-            isHidden: areCityHintsHidden,
-            isPresented: $showsCityHintsPopover,
-            onReveal: onRevealCityHints,
-            onSelect: onSelectHint)
-        }
-        if showsNewTrip {
-          CityChainActionButton(
-            title: "New trip", systemImage: "arrow.counterclockwise",
-            hint: "Start a new trip after confirmation",
-            isDisabled: isNewTripDisabled,
-            action: onRequestNewTrip)
-        }
-#if DEBUG
-        if hasDecisionTrace {
-          CityChainActionButton(
-            title: "Decision trace", systemImage: "point.3.connected.trianglepath.dotted",
-            hint: "Inspect the latest game decision trace",
-            action: onShowDecisionTrace)
-        }
-#endif
-      }
-
-      if !dynamicTypeSize.isAccessibilitySize {
-        Spacer(minLength: 0)
-      }
-    }
-    .padding(.horizontal, 12)
-    .padding(.vertical, 6)
-    .background(.regularMaterial)
   }
 }
 
@@ -419,11 +423,13 @@ private struct CityHintsToolbarButton: View {
   let onSelect: (USCity) -> Void
 
   var body: some View {
-    CityChainActionButton(
-      title: "City hints", systemImage: "lightbulb",
-      hint: isHidden ? "Open and reveal suggested cities for this turn" : "Open suggested cities for this turn",
-      isDisabled: isDisabled,
-      action: { isPresented = true })
+    Button {
+      isPresented = true
+    } label: {
+      Label("City hints", systemImage: "lightbulb")
+    }
+    .accessibilityHint(isHidden ? "Open and reveal suggested cities for this turn" : "Open suggested cities for this turn")
+    .disabled(isDisabled)
       .popover(isPresented: $isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
         CityHintsPopover(
           cities: cities,
@@ -477,28 +483,6 @@ private struct CityHintsPopover: View {
   }
 }
 
-private struct CityChainActionButton: View {
-  let title: String
-  let systemImage: String
-  let hint: String
-  var isDisabled = false
-  let action: () -> Void
-
-  var body: some View {
-    Button(action: action) {
-      Image(systemName: systemImage)
-        .font(.system(size: 18, weight: .semibold))
-        .frame(width: 44, height: 44)
-        .background(CityChainPalette.paper.opacity(0.82), in: Circle())
-        .contentShape(Circle())
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel(title)
-    .accessibilityHint(hint)
-    .disabled(isDisabled)
-  }
-}
-
 private struct CityChainBackdrop: View {
   var body: some View {
     CityChainPalette.paper
@@ -518,7 +502,7 @@ private struct CityChainBackdrop: View {
 private struct CityTripHeader: View {
   let presentation: ScoutPresentation
   let showsScout: Bool
-  let onShowAtlas: () -> Void
+  let onTapScout: (() -> Void)?
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   var body: some View {
@@ -527,14 +511,27 @@ private struct CityTripHeader: View {
       : AnyLayout(HStackLayout(alignment: .center, spacing: 8))
 
     layout {
-      CityChainActionButton(
-        title: "City atlas", systemImage: "book.closed",
-        hint: "Browse cities and find a name for your next turn",
-        action: onShowAtlas)
-
       if showsScout {
-        ScoutView(presentation: presentation)
-          .frame(width: 124, height: 124)
+        Group {
+          if let onTapScout {
+            Button(action: onTapScout) {
+              ZStack {
+                Rectangle().fill(.clear)
+                ScoutView(presentation: presentation)
+                  .frame(width: 124, height: 124)
+              }
+              .frame(width: 124, height: 124)
+              .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open atlas map")
+            .accessibilityHint("Shows the map of your road trip")
+            .accessibilityIdentifier("cityChain.scout.openMap")
+          } else {
+            ScoutView(presentation: presentation)
+              .frame(width: 124, height: 124)
+          }
+        }
       }
 
       VStack(alignment: .leading, spacing: 4) {
