@@ -4,6 +4,7 @@ import SwiftUI
 struct CityChainPage: View {
   let model: CityChainPageModel
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+  @Environment(\.scenePhase) private var scenePhase
   @State private var showsNewTripConfirmation = false
   @State private var showsAtlas = false
   @State private var isMapDetailPresented = false
@@ -147,6 +148,10 @@ struct CityChainPage: View {
         isCityFocused = true
       }
 #endif
+    }
+    .onChange(of: scenePhase) { _, phase in
+      guard phase != .active else { return }
+      Task { await model.flushPendingAutosave() }
     }
     .preferredColorScheme(.light)
   }
