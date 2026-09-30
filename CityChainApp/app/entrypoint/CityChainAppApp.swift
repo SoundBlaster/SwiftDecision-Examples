@@ -19,19 +19,12 @@ struct CityChainAppApp: App {
   var body: some Scene {
     WindowGroup {
       CityChainPage(model: model)
-        .background {
-          DuoHingeProbe()
-            .frame(width: 0, height: 0)
-            .allowsHitTesting(false)
-        }
     }
   }
 }
 
 @MainActor
 private final class CityChainApplicationDelegate: NSObject, UIApplicationDelegate, UIWindowSceneDelegate {
-  private static var duoSceneIdentifiers = Set<String>()
-
   func application(
     _ application: UIApplication,
     configurationForConnecting connectingSceneSession: UISceneSession,
@@ -44,11 +37,7 @@ private final class CityChainApplicationDelegate: NSObject, UIApplicationDelegat
 
   @available(iOS 27.0, *)
   func supportedInterfaceOrientations(for windowScene: UIWindowScene) -> UIInterfaceOrientationMask {
-    Self.orientationMask(for: windowScene, supportsDuoRotation: Self.duoSceneIdentifiers.contains(windowScene.session.persistentIdentifier))
-  }
-
-  func sceneDidDisconnect(_ scene: UIScene) {
-    Self.duoSceneIdentifiers.remove(scene.session.persistentIdentifier)
+    Self.orientationMask(for: windowScene)
   }
 
   @available(iOS, deprecated: 27.0, message: "Use UIWindowSceneDelegate.supportedInterfaceOrientations(for:) on iOS 27 and later")
@@ -57,69 +46,15 @@ private final class CityChainApplicationDelegate: NSObject, UIApplicationDelegat
     supportedInterfaceOrientationsFor window: UIWindow?
   ) -> UIInterfaceOrientationMask {
     guard let windowScene = window?.windowScene else { return .all }
-    return Self.orientationMask(
-      for: windowScene,
-      supportsDuoRotation: Self.duoSceneIdentifiers.contains(windowScene.session.persistentIdentifier)
-    )
+    return Self.orientationMask(for: windowScene)
   }
 
-  static func recordHingeSupport(for window: UIWindow?) {
-    guard let scene = window?.windowScene else { return }
-    let identifier = scene.session.persistentIdentifier
-    guard duoSceneIdentifiers.insert(identifier).inserted else { return }
-    scene.windows.first?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
-  }
-
-  private static func orientationMask(for scene: UIWindowScene, supportsDuoRotation: Bool) -> UIInterfaceOrientationMask {
-    if scene.traitCollection.userInterfaceIdiom == .pad || supportsDuoRotation {
+  private static func orientationMask(for scene: UIWindowScene) -> UIInterfaceOrientationMask {
+    let hasTwoPanelSize = scene.traitCollection.horizontalSizeClass == .regular
+      && scene.traitCollection.verticalSizeClass == .regular
+    if scene.traitCollection.userInterfaceIdiom == .pad || hasTwoPanelSize {
       return .all
     }
     return .portrait
-  }
-
-}
-
-private struct DuoHingeProbe: UIViewRepresentable {
-  func makeUIView(context: Context) -> HingeObservationView {
-    HingeObservationView()
-  }
-
-  func updateUIView(_ view: HingeObservationView, context: Context) {}
-}
-
-@MainActor
-private final class HingeObservationView: UIView {
-  #if compiler(>=6.4)
-  private var hingeInteraction: (any UIInteraction)?
-  #endif
-
-  override func didMoveToWindow() {
-    super.didMoveToWindow()
-    updateHingeObservation()
-  }
-
-  private func updateHingeObservation() {
-    #if compiler(>=6.4)
-    if #available(iOS 27.1, *) {
-      guard window != nil else {
-        if let hingeInteraction {
-          removeInteraction(hingeInteraction)
-          self.hingeInteraction = nil
-        }
-        return
-      }
-
-      guard hingeInteraction == nil else { return }
-      let interaction = UIHingeInteraction { [weak self] _, update in
-        guard let self else { return }
-        guard update.hinge != nil else { return }
-        CityChainApplicationDelegate.recordHingeSupport(for: self.window)
-      }
-      hingeInteraction = interaction
-      addInteraction(interaction)
-      return
-    }
-    #endif
-
   }
 }

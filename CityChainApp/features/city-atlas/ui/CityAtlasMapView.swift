@@ -110,10 +110,7 @@ struct CityAtlasMapView: View {
 
           if visitedCities.count > 1 {
             if horizontalSizeClass == .regular && verticalSizeClass == .regular {
-              GameBoardWidget(
-                cities: visitedCities,
-                latestStopFirst: true,
-                onSelectCity: { selectedCity = $0 })
+              CityAtlasVisitedCityList(cities: Array(visitedCities.reversed()), onSelect: { selectedCity = $0 })
                 .accessibilityIdentifier("cityAtlas.map.visitedCities")
             } else {
               ScrollView(.horizontal) {
@@ -164,6 +161,58 @@ struct CityAtlasMapView: View {
       onOpenMapDetail: onOpenMapDetail)
       .aspectRatio(1.16, contentMode: .fit)
       .accessibilityLabel("Map of the United States. Visited states are highlighted in gold. Alaska and Hawaii are shown in separate insets.")
+  }
+}
+
+private struct CityAtlasVisitedCityList: View {
+  let cities: [USCity]
+  let onSelect: (USCity) -> Void
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      HStack {
+        Text("Our road trip")
+          .font(.system(.title3, design: .rounded, weight: .bold))
+          .foregroundStyle(CityChainPalette.ink)
+        Spacer()
+        Text(cities.count == 1 ? "1 stop" : "\(cities.count) stops")
+          .font(.subheadline.weight(.semibold).monospacedDigit())
+          .foregroundStyle(CityChainPalette.blue)
+      }
+      .padding(.bottom, 12)
+
+      LazyVStack(spacing: 8) {
+        ForEach(Array(cities.enumerated()), id: \.element.id) { index, city in
+          Button { onSelect(city) } label: {
+            HStack(spacing: 12) {
+              Text("\(cities.count - index)")
+                .font(.subheadline.weight(.bold).monospacedDigit())
+                .foregroundStyle(CityChainPalette.blue)
+                .frame(width: 34, height: 34)
+                .background(CityChainPalette.sky.opacity(0.72), in: Circle())
+              VStack(alignment: .leading, spacing: 3) {
+                Text(city.name)
+                  .font(.system(.body, design: .rounded, weight: .bold))
+                  .foregroundStyle(CityChainPalette.ink)
+                Text(city.state.map { "\($0.name) · \($0.abbreviation)" } ?? "United States")
+                  .font(.caption)
+                  .foregroundStyle(CityChainPalette.secondaryInk)
+              }
+              Spacer(minLength: 0)
+              Image(systemName: "mappin.and.ellipse")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(CityChainPalette.teal)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.white, in: RoundedRectangle(cornerRadius: 16))
+            .contentShape(RoundedRectangle(cornerRadius: 16))
+          }
+          .buttonStyle(.plain)
+          .accessibilityHint("Shows this visited city on the map")
+        }
+      }
+    }
   }
 }
 

@@ -162,6 +162,112 @@ public struct CityGameFixture: Codable, Sendable, Equatable {
   }
 }
 
+private enum FixtureValidationDecision: Sendable {
+  case valid
+  case invalid(CityGameFixtureError)
+}
+
+private struct FixturePreflightContext {
+  let fixture: CityGameFixture
+  let isSubmissionInProgress: Bool
+}
+
+private struct FixtureTurnValidationContext {
+  let index: Int
+  let turn: CityGameFixture.Turn
+  let expectedRole: CityGameFixture.Turn.Role
+  let city: USCity
+  let catalogCity: USCity?
+  let restoredIDs: Set<String>
+  let expectedLetter: Character?
+}
+
+private struct FixtureEndingValidationContext {
+  let ending: CityGameFixtureEnding?
+  let expectedLetter: Character?
+  let lastCityLetter: Character?
+  let restoredIDs: Set<String>
+  let catalog: USCityCatalog
+}
+
+private enum MistakeHintDecision: Sendable, Equatable {
+  case wait
+  case show
+}
+
+private struct FixturePreflightSpec: DecisionSpec {
+  typealias Context = FixturePreflightContext
+  typealias Result = FixtureValidationDecision
+
+  func decide(_ context: Context) -> Result? {
+    let fixture = context.fixture
+    if context.isSubmissionInProgress { return .invalid(.submissionInProgress) }
+    if fixture.version != 1 { return .invalid(.unsupportedVersion(fixture.version)) }
+    if fixture.consecutiveMistakes < 0 { return .invalid(.invalidMistakeCount) }
+    let routeShouldBeOdd = fixture.phase == .thinking || fixture.phase == .finished
+    if fixture.route.count.isMultiple(of: 2) == routeShouldBeOdd {
+      return .invalid(.invalidRouteLength(phase: fixture.phase.rawValue))
+    }
+    if (fixture.phase == .finished) != (fixture.ending != nil) {
+      return .invalid(.endingDoesNotMatchPhase)
+    }
+    return .valid
+  }
+}
+
+private struct FixtureTurnValidationSpec: DecisionSpec {
+  typealias Context = FixtureTurnValidationContext
+  typealias Result = FixtureValidationDecision
+
+  func decide(_ context: Context) -> Result? {
+    if context.turn.role != context.expectedRole {
+      return .invalid(.invalidTurnRole(index: context.index, expected: context.expectedRole.rawValue))
+    }
+    if context.catalogCity == nil && context.expectedRole == .computer {
+      return .invalid(.unknownCity(context.turn.city))
+    }
+    if context.city.firstLetter == nil {
+      return .invalid(.cityHasNoLatinLetters(context.turn.city))
+    }
+    if context.restoredIDs.contains(context.city.id) {
+      return .invalid(.duplicateCity(context.city.name))
+    }
+    if let expectedLetter = context.expectedLetter,
+       context.city.firstLetter != expectedLetter {
+      return .invalid(.brokenChain(city: context.city.name, expected: expectedLetter))
+    }
+    return .valid
+  }
+}
+
+private struct FixtureEndingValidationSpec: DecisionSpec {
+  typealias Context = FixtureEndingValidationContext
+  typealias Result = FixtureValidationDecision
+
+  func decide(_ context: Context) -> Result? {
+    guard context.ending == .noAvailableReply else { return .valid }
+    guard let nextLetter = context.expectedLetter ?? context.lastCityLetter else {
+      return .invalid(.endingDoesNotMatchPhase)
+    }
+    let hasAvailableReply = context.catalog.cities.contains {
+      $0.firstLetter == nextLetter && !context.restoredIDs.contains($0.id)
+    }
+    return hasAvailableReply ? .invalid(.endingDoesNotMatchPhase) : .valid
+  }
+}
+
+/// The game rule that makes a catalog hint available after consecutive mistakes.
+private struct MistakeHintEligibilitySpec: DecisionSpec {
+  typealias Context = Int
+  typealias Result = MistakeHintDecision
+
+  static let threshold = 2
+
+  func decide(_ consecutiveMistakes: Int) -> MistakeHintDecision? {
+    consecutiveMistakes >= Self.threshold ? .show : .wait
+  }
+}
+
 public enum CitySubmissionRejection: Sendable, Equatable {
   case emptyInput
   case cityNameHasNoLatinLetters
@@ -254,15 +360,9 @@ public actor CityChainGame {
 
   /// Rebuilds actor-owned state from a validated fixture or autosave route.
   public func restore(from fixture: CityGameFixture) throws {
-    guard !isSubmissionInProgress else { throw CityGameFixtureError.submissionInProgress }
-    guard fixture.version == 1 else { throw CityGameFixtureError.unsupportedVersion(fixture.version) }
-    guard fixture.consecutiveMistakes >= 0 else { throw CityGameFixtureError.invalidMistakeCount }
-    let routeShouldBeOdd = fixture.phase == .thinking || fixture.phase == .finished
-    guard fixture.route.count.isMultiple(of: 2) != routeShouldBeOdd else {
-      throw CityGameFixtureError.invalidRouteLength(phase: fixture.phase.rawValue)
-    }
-    guard (fixture.phase == .finished) == (fixture.ending != nil) else {
-      throw CityGameFixtureError.endingDoesNotMatchPhase
+    if case .invalid(let error) = FixturePreflightSpec().decide(
+      FixturePreflightContext(fixture: fixture, isSubmissionInProgress: isSubmissionInProgress)) {
+      throw error
     }
 
     let citiesByID = Dictionary(catalog.cities.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -273,22 +373,20 @@ public actor CityChainGame {
 
     for (index, turn) in fixture.route.enumerated() {
       let expectedRole: CityGameFixture.Turn.Role = index.isMultiple(of: 2) ? .player : .computer
-      guard turn.role == expectedRole else {
-        throw CityGameFixtureError.invalidTurnRole(index: index, expected: expectedRole.rawValue)
-      }
       let candidate = USCity(turn.city)
-      let city: USCity
-      if let catalogCity = citiesByID[candidate.id] {
-        city = catalogCity
-      } else if expectedRole == .player {
-        city = candidate
-      } else {
-        throw CityGameFixtureError.unknownCity(turn.city)
-      }
-      guard city.firstLetter != nil else { throw CityGameFixtureError.cityHasNoLatinLetters(turn.city) }
-      guard !restoredIDs.contains(city.id) else { throw CityGameFixtureError.duplicateCity(city.name) }
-      if let expectedLetter, city.firstLetter != expectedLetter {
-        throw CityGameFixtureError.brokenChain(city: city.name, expected: expectedLetter)
+      let catalogCity = citiesByID[candidate.id]
+      let city = catalogCity ?? candidate
+      let validation = FixtureTurnValidationSpec().decide(
+        FixtureTurnValidationContext(
+          index: index,
+          turn: turn,
+          expectedRole: expectedRole,
+          city: city,
+          catalogCity: catalogCity,
+          restoredIDs: restoredIDs,
+          expectedLetter: expectedLetter))
+      if case .invalid(let error) = validation {
+        throw error
       }
 
       restoredIDs.insert(city.id)
@@ -301,6 +399,16 @@ public actor CityChainGame {
 
     var restoredEnding: CityGameEnding?
     var restoredRequiredLetter = expectedLetter
+    let endingValidation = FixtureEndingValidationSpec().decide(
+      FixtureEndingValidationContext(
+        ending: fixture.ending,
+        expectedLetter: expectedLetter,
+        lastCityLetter: restoredCities.last?.lastLetter,
+        restoredIDs: restoredIDs,
+        catalog: catalog))
+    if case .invalid(let error) = endingValidation {
+      throw error
+    }
     if let fixtureEnding = fixture.ending {
       switch fixtureEnding {
       case .noAvailableReply:
@@ -328,6 +436,7 @@ public actor CityChainGame {
     cityHint = fixture.cityHint
     validationSource = nil
   }
+
 
   /// Validates a free-form city name and, when possible, asks the model for the computer's reply.
   public func submit(_ rawCity: String) async throws -> CityGameTurnResult {
@@ -741,7 +850,7 @@ public actor CityChainGame {
 
   private func recordMistake(_ result: CityGameTurnResult) async throws -> CityGameTurnResult {
     consecutiveMistakes += 1
-    if consecutiveMistakes >= 2 {
+    if MistakeHintEligibilitySpec().decide(consecutiveMistakes) == .show {
       let available = try await orderedAvailableCities(
         requiredStartingLetter: requiredStartingLetter,
         usedCityIDs: usedCityIDs
