@@ -20,12 +20,14 @@ final class CityChainPageModel {
   private(set) var hasCommittedPlayerCityForCurrentTurn = false
   private(set) var isScoutThinkingStopVisible = false
   private var scoutStateMachine = ScoutStateMachine()
+  var scoutState: ScoutState { scoutStateMachine.state }
   var isSubmitting: Bool { scoutStateMachine.isSubmitting }
   var hasTurnFeedback: Bool { scoutStateMachine.hasTurnFeedback }
   var isScoutIdle: Bool { scoutStateMachine.isIdle }
   var scoutPresentation: ScoutPresentation { scoutStateMachine.presentation }
   private(set) var latestScoutFact: ScoutFact?
   private let factSelectionStore = ScoutFactSelectionStore()
+
   private var scoutThinkingStopDelayTask: Task<Void, Never>?
   var cityInput = "" {
     didSet {
@@ -54,6 +56,10 @@ final class CityChainPageModel {
 #endif
   }
 
+  func atlasFact(for city: USCity) -> ScoutFact? {
+    factSelectionStore.nextLocationFact(for: city)
+  }
+
 #if DEBUG
   init(
     game: CityChainGame, debugFixture: CityGameFixture?, debugFixtureError: String?,
@@ -67,11 +73,18 @@ final class CityChainPageModel {
 #endif
 
 #if DEBUG
-  static func preview() -> CityChainPageModel {
-    CityChainPageModel(
+  static func preview(fixture: CityGameFixture? = nil) -> CityChainPageModel {
+    let saveURL = FileManager.default.temporaryDirectory
+      .appendingPathComponent("CityChainPreviews", isDirectory: true)
+      .appendingPathComponent("\(UUID().uuidString).json")
+    return CityChainPageModel(
       game: CityChainGame(
         decisions: DecisionEngine(backend: PreviewDecisionBackend()),
-        continuationPolicy: .previousAvailableLetter))
+        continuationPolicy: .previousAvailableLetter),
+      debugFixture: fixture ?? CityGameFixture(route: []),
+      debugFixtureError: nil,
+      autosaveStore: CityChainAutosaveStore(
+        cloudDocumentsURL: { nil }, localFileURL: { saveURL }))
   }
 #endif
 
@@ -204,14 +217,14 @@ final class CityChainPageModel {
 
   func submit(_ cityName: String) async -> Bool {
     guard !isSubmitting else { return false }
-    // If the process exits while inference is suspended, relaunch with the
-    // previous completed route and the exact city the player submitted.
-    await flushAutosave(draft: cityName)
-    let durableSave = lastPersistedAutosave
     scoutStateMachine.send(.submit)
     hasCommittedPlayerCityForCurrentTurn = false
     isScoutThinkingStopVisible = false
     latestScoutFact = nil
+    // If the process exits while inference is suspended, relaunch with the
+    // previous completed route and the exact city the player submitted.
+    await flushAutosave(draft: cityName)
+    let durableSave = lastPersistedAutosave
     // Let quick local rule failures return immediately without flashing the
     // thinking pose. Accepted turns stay in this pose while the engine works.
     let thinkingTask = Task { @MainActor in

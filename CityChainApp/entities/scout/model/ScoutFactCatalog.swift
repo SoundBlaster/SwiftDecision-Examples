@@ -88,7 +88,8 @@ struct ScoutFactCatalog: Codable, Sendable {
   }
 }
 
-/// Selects facts without repeats until every fact in the current catalog has appeared.
+/// Remembers shown facts across launches. Gameplay avoids repeats until the
+/// catalog is exhausted; atlas browsing repeats locally when needed to stay relevant.
 @MainActor
 final class ScoutFactSelectionStore {
   private let catalog: ScoutFactCatalog?
@@ -106,6 +107,16 @@ final class ScoutFactSelectionStore {
   }
 
   func nextFact(for city: USCity) -> ScoutFact? {
+    selectFact(for: city, locationOnly: false)
+  }
+
+  /// Atlas selections must describe the selected place, even when its facts
+  /// have already appeared. This shares the game's persistent history.
+  func nextLocationFact(for city: USCity) -> ScoutFact? {
+    selectFact(for: city, locationOnly: true)
+  }
+
+  private func selectFact(for city: USCity, locationOnly: Bool) -> ScoutFact? {
     guard let catalog, !catalog.facts.isEmpty else { return nil }
 
     let allIDs = Set(catalog.facts.map(\.id))
@@ -115,13 +126,18 @@ final class ScoutFactSelectionStore {
       seenIDs.removeAll()
     }
 
-    let unseenFacts = catalog.facts.filter { !seenIDs.contains($0.id) }
-    let cityFacts = unseenFacts.filter { $0.cityID == city.id }
-    let stateFacts = unseenFacts.filter {
-      $0.stateCode?.uppercased() == city.stateAbbreviation?.uppercased()
+    let cityFacts = catalog.facts.filter { $0.cityID == city.id }
+    let stateFacts = catalog.facts.filter {
+      guard let state = city.stateAbbreviation, let factState = $0.stateCode else { return false }
+      return factState.uppercased() == state.uppercased()
     }
-    let selected =
-      cityFacts.randomElement() ?? stateFacts.randomElement() ?? unseenFacts.randomElement()
+    let unseenCityFacts = cityFacts.filter { !seenIDs.contains($0.id) }
+    let unseenStateFacts = stateFacts.filter { !seenIDs.contains($0.id) }
+    let fallbackFacts = locationOnly
+      ? (cityFacts.isEmpty ? stateFacts : cityFacts)
+      : catalog.facts.filter { !seenIDs.contains($0.id) }
+    let selected = unseenCityFacts.randomElement()
+      ?? unseenStateFacts.randomElement() ?? fallbackFacts.randomElement()
     guard let selected else { return nil }
 
     seenIDs.insert(selected.id)

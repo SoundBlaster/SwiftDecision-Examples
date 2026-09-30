@@ -39,6 +39,8 @@
 		67A639B8B3CC8FD71BA3D81E /* SubmitCityForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E564316622538C1B0F24094 /* SubmitCityForm.swift */; };
 		707B83D1BDF302B7B347FB89 /* OracleHistory in Frameworks */ = {isa = PBXBuildFile; productRef = E14F9F1E7EE4A975AA0F6EC8 /* OracleHistory */; };
 		73D9F4D9F66A8E7D19B64430 /* OracleWidgetTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC3AE3527A1B74DEFEB8C3B4 /* OracleWidgetTimeline.swift */; };
+		740FFA49306D146700EC8AE6 /* RouteJourneyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740FFA48306D146700EC8AE6 /* RouteJourneyCard.swift */; };
+		740FFA4B306D146700EC8AE6 /* RouteScoutGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740FFA4A306D146700EC8AE6 /* RouteScoutGuide.swift */; };
 		7D280D82F2F7E5DF67FEA291 /* OraclePage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */; };
 		7E48BF0C8BEBFA45D50857C0 /* us-states-2024.geojson in Resources */ = {isa = PBXBuildFile; fileRef = 25EEF5E55A5683493177C464 /* us-states-2024.geojson */; };
 		818CC5BF2122B610B6BBCC9D /* Scout.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9494B890BFBDF6BFF85A115D /* Scout.xcassets */; };
@@ -124,7 +126,7 @@
 		173D0B5C45B582AFDB6217F4 /* OracleMaterials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMaterials.swift; sourceTree = "<group>"; };
 		189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCredentialsStore.swift; sourceTree = "<group>"; };
 		2083F00EA6DAE97338B46E3A /* OracleMotionComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionComponent.swift; sourceTree = "<group>"; };
-		25EEF5E55A5683493177C464 /* us-states-2024.geojson */ = {isa = PBXFileReference; path = "us-states-2024.geojson"; sourceTree = "<group>"; };
+		25EEF5E55A5683493177C464 /* us-states-2024.geojson */ = {isa = PBXFileReference; lastKnownFileType = text; path = "us-states-2024.geojson"; sourceTree = "<group>"; };
 		2DA8BA71F7348C43E25554FC /* CityAtlasMapData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityAtlasMapData.swift; sourceTree = "<group>"; };
 		2E1891ADC92C6E7280C6B041 /* ScoutFactCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutFactCatalog.swift; sourceTree = "<group>"; };
 		2E564316622538C1B0F24094 /* SubmitCityForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmitCityForm.swift; sourceTree = "<group>"; };
@@ -144,6 +146,8 @@
 		632F2811B6281ED49A08F2E4 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePage.swift; sourceTree = "<group>"; };
 		6B9F7144567D17541E66E983 /* InstantPredictionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantPredictionWidget.swift; sourceTree = "<group>"; };
+		740FFA48306D146700EC8AE6 /* RouteJourneyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteJourneyCard.swift; sourceTree = "<group>"; };
+		740FFA4A306D146700EC8AE6 /* RouteScoutGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteScoutGuide.swift; sourceTree = "<group>"; };
 		74127C00306B1C5E001538ED /* CityChainApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CityChainApp.entitlements; sourceTree = "<group>"; };
 		7D2B12290F6ADAE2F1B1DBB2 /* CityChainApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CityChainApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D4B8D25E590F0131F861038 /* state-facts-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "state-facts-v1.json"; sourceTree = "<group>"; };
@@ -268,6 +272,8 @@
 			isa = PBXGroup;
 			children = (
 				5549BCD5D7EB858B6086D906 /* GameBoardWidget.swift */,
+				740FFA48306D146700EC8AE6 /* RouteJourneyCard.swift */,
+				740FFA4A306D146700EC8AE6 /* RouteScoutGuide.swift */,
 			);
 			path = ui;
 			sourceTree = "<group>";
@@ -998,6 +1004,8 @@
 				4C42B82A0ED1932D32802E9A /* CityAtlasView.swift in Sources */,
 				D811AB713A983C27ABB46B7F /* CityChainAppApp.swift in Sources */,
 				580EB72F3B3FF332583161E7 /* CityChainPage.swift in Sources */,
+				740FFA49306D146700EC8AE6 /* RouteJourneyCard.swift in Sources */,
+				740FFA4B306D146700EC8AE6 /* RouteScoutGuide.swift in Sources */,
 				0C4CFA6FCD802F3DBBC3FE18 /* CityChainPageModel.swift in Sources */,
 				BF23AC3BC60CF2B45B7B1383 /* CityChainPalette.swift in Sources */,
 				1EB9B208BE2A4F901BAFF83E /* CityTurnFeedbackView.swift in Sources */,

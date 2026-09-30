@@ -6,6 +6,7 @@ struct GameBoardWidget: View {
   var continuations: [CityLetterContinuation] = []
   var latestStopFirst = false
   var isScoutThinking = false
+  var onSelectCity: ((USCity) -> Void)? = nil
   @State private var routeLayout: RoadTripLayout = .list
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -73,12 +74,14 @@ struct GameBoardWidget: View {
 
             ForEach(Array(displayedTurns.enumerated()), id: \.element.element.id) { display in
               let turn = display.element
-              CityTurnRow(
-                city: turn.element,
-                turnNumber: turn.offset + 1,
-                isPlayerTurn: turn.offset.isMultiple(of: 2),
-                isLastStop: display.offset == displayedTurns.count - 1,
-                continuation: continuations.first { $0.sourceCity.id == turn.element.id })
+              selectableStop(turn.element) {
+                CityTurnRow(
+                  city: turn.element,
+                  turnNumber: turn.offset + 1,
+                  isPlayerTurn: turn.offset.isMultiple(of: 2),
+                  isLastStop: display.offset == displayedTurns.count - 1,
+                  continuation: continuations.first { $0.sourceCity.id == turn.element.id })
+              }
                 .id(turn.element.id)
                 .transition(verticalInsertionTransition)
             }
@@ -112,11 +115,13 @@ struct GameBoardWidget: View {
                         .accessibilityHidden(true)
                     }
 
-                    CityRouteStopCard(
-                      city: turn.element,
-                      turnNumber: turn.offset + 1,
-                      isPlayerTurn: turn.offset.isMultiple(of: 2),
-                      continuation: continuations.first { $0.sourceCity.id == turn.element.id })
+                    selectableStop(turn.element) {
+                      CityRouteStopCard(
+                        city: turn.element,
+                        turnNumber: turn.offset + 1,
+                        isPlayerTurn: turn.offset.isMultiple(of: 2),
+                        continuation: continuations.first { $0.sourceCity.id == turn.element.id })
+                    }
                       .id(turn.element.id)
                       .transition(horizontalInsertionTransition)
                   }
@@ -153,6 +158,22 @@ struct GameBoardWidget: View {
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .modifier(CityChainCard())
+  }
+
+  @ViewBuilder
+  private func selectableStop<Content: View>(
+    _ city: USCity, @ViewBuilder content: () -> Content
+  ) -> some View {
+    if let onSelectCity {
+      Button { onSelectCity(city) } label: {
+        content().contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .accessibilityHint("Shows a fact about this city or its state")
+      .accessibilityIdentifier("cityAtlas.route.city.\(city.id)")
+    } else {
+      content()
+    }
   }
 
   private var verticalInsertionTransition: AnyTransition {
