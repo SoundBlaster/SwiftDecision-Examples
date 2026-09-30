@@ -137,6 +137,22 @@ struct CityChainPage: View {
       Task { await model.flushPendingAutosave() }
     }
     .preferredColorScheme(.light)
+    .sensoryFeedback(trigger: model.hapticRevision) { _, _ in
+      switch model.latestHapticEvent {
+      case .scoutThinking:
+        .impact(weight: .light, intensity: 0.55)
+      case .scoutReplied, .hintUnlocked:
+        .success
+      case .turnRejected:
+        .warning
+      case .roundWon:
+        .success
+      case .newRoundStarted:
+        .selection
+      case nil:
+        nil
+      }
+    }
   }
 
   private func suggestedCities(for snapshot: CityGameSnapshot?) -> [USCity] {

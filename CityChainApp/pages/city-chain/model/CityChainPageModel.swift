@@ -16,6 +16,8 @@ final class CityChainPageModel {
   private(set) var autosaveErrorMessage: String?
 
   private(set) var snapshot: CityGameSnapshot?
+  private(set) var latestHapticEvent: CityGameHapticEvent?
+  private(set) var hapticRevision = 0
   private(set) var latestTurnPipeline: [CityGamePipelineStage] = []
   private(set) var hasCommittedPlayerCityForCurrentTurn = false
   private(set) var isScoutThinkingStopVisible = false
@@ -205,8 +207,13 @@ final class CityChainPageModel {
 
   func startNewRound() async {
     guard !isSubmitting else { return }
+    let previousSnapshot = snapshot
     await game.reset()
     snapshot = await game.snapshot()
+    if let snapshot {
+      applyHapticDecision(
+        phase: .roundStarted, previousSnapshot: previousSnapshot, currentSnapshot: snapshot)
+    }
     scoutStateMachine.send(.newRoundStarted)
     cityInput = ""
     latestScoutFact = nil
@@ -217,6 +224,12 @@ final class CityChainPageModel {
 
   func submit(_ cityName: String) async -> Bool {
     guard !isSubmitting else { return false }
+    let previousSnapshot: CityGameSnapshot
+    if let snapshot {
+      previousSnapshot = snapshot
+    } else {
+      previousSnapshot = await game.snapshot()
+    }
     scoutStateMachine.send(.submit)
     hasCommittedPlayerCityForCurrentTurn = false
     isScoutThinkingStopVisible = false
@@ -248,6 +261,10 @@ final class CityChainPageModel {
       let tracedResult = try await game.submitWithTrace(cityName) { [weak self] committedSnapshot in
         guard let self else { return }
         self.snapshot = committedSnapshot
+        self.applyHapticDecision(
+          phase: .playerCityCommitted,
+          previousSnapshot: previousSnapshot,
+          currentSnapshot: committedSnapshot)
         self.hasCommittedPlayerCityForCurrentTurn = true
         self.scoutThinkingStopDelayTask?.cancel()
         self.scoutThinkingStopDelayTask = Task { @MainActor [weak self] in
@@ -277,6 +294,11 @@ final class CityChainPageModel {
         statusMessage += " Did you know? \(fact.text)"
       }
       snapshot = updatedSnapshot
+      applyHapticDecision(
+        phase: .turnCompleted,
+        previousSnapshot: previousSnapshot,
+        currentSnapshot: updatedSnapshot,
+        result: result)
       scoutStateMachine.send(accepted ? .turnAccepted : .turnRejected)
       await flushAutosave(draft: cityInput)
       return accepted
@@ -289,11 +311,35 @@ final class CityChainPageModel {
       if let durableSave {
         try? await game.restore(from: durableSave.game)
       }
-      snapshot = await game.snapshot()
+      let restoredSnapshot = await game.snapshot()
+      snapshot = restoredSnapshot
+      applyHapticDecision(
+        phase: .turnCompleted,
+        previousSnapshot: previousSnapshot,
+        currentSnapshot: restoredSnapshot,
+        failedUnexpectedly: true)
       scoutStateMachine.send(.turnRejected)
       await flushAutosave(draft: cityName)
       return false
     }
+  }
+
+  private func applyHapticDecision(
+    phase: CityGameHapticPhase,
+    previousSnapshot: CityGameSnapshot?,
+    currentSnapshot: CityGameSnapshot,
+    result: CityGameTurnResult? = nil,
+    failedUnexpectedly: Bool = false
+  ) {
+    let context = CityGameHapticContext(
+      phase: phase,
+      previousSnapshot: previousSnapshot,
+      currentSnapshot: currentSnapshot,
+      result: result,
+      failedUnexpectedly: failedUnexpectedly)
+    guard let event = CityGameHapticFeedbackSpec().decide(context) else { return }
+    latestHapticEvent = event
+    hapticRevision &+= 1
   }
 
   private static func didAcceptPlayerTurn(_ result: CityGameTurnResult) -> Bool {
