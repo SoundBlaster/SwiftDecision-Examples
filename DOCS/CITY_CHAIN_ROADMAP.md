@@ -101,3 +101,19 @@ Updated after on-device UX review, 2026-09-27.
 - [x] When a letter has no unused catalog cities, scan the previous letters of the last city, right to left, for both players.
 - [x] Explain skipped letters in the turn prompt, route, and atlas. If every letter is exhausted, allow any new city.
 - [x] Check prefix search and exhausted-letter transitions on device (confirmed by the product owner on 2026-09-27).
+
+## Proposed: secondary travel-journal layer
+
+Status: product idea for future exploration; not approved for implementation.
+
+Use the variable space below the turn card as an optional, secondary celebration of the trip. It is frequently covered by the keyboard during the player's turn, so it must not contain hints, controls, required game information, or anything needed to submit a move. Hide or collapse it while the keyboard is visible without changing game functionality. Keep the existing open space part of the composition; avoid adding a full-width white dashboard card.
+
+The leading concept is a small **Journey so far** journal: show the latest 2–4 cities as illustrated postcard, polaroid, or stamp-like stops connected by a dotted route, then a restrained summary such as `2 cities · 2 states · 1,040 mi`. A subtle landscape can tie it to the atlas art direction. Aim for roughly 180–250 pt of vertical space when available, adapting or omitting content on shorter screens.
+
+Other optional journal treatments to explore independently (not all at once):
+
+- **Trip progress:** cities visited, states collected, and current streak, with a small next-achievement teaser.
+- **Postcard from the road:** one short fact about the latest city, with a city illustration when available.
+- **State stamps:** a compact collection of states already visited, with remaining states shown as a quiet collection goal.
+
+Keep these treatments subordinate to the current turn and route. Reuse the existing city catalog, route history, and fact data where possible. Before showing distance, define and document a deterministic distance calculation and its geographic source; omit the metric until that is settled. Prototype the journal options against the ordinary iPhone keyboard state and expanded iPad/Duo layouts before selecting one direction.
