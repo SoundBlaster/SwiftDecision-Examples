@@ -1,6 +1,6 @@
 import SpecificationCore
 
-/// A meaningful game transition that the app can translate into a platform haptic.
+/// A semantic haptic outcome selected for a game transition or interface interaction.
 public enum CityGameHapticEvent: Sendable, Equatable {
   case scoutThinking
   case scoutReplied
@@ -8,6 +8,27 @@ public enum CityGameHapticEvent: Sendable, Equatable {
   case hintUnlocked
   case roundWon
   case newRoundStarted
+  case toolbarButtonPressed
+  case suggestedCitySelected
+  case hintRevealed
+  case hintsPopoverDismissed
+  case mapTapped
+  case mapCitySelected
+  case scoutQuoteDismissed
+  case mapClosed
+}
+
+/// Interface events whose haptic behavior is selected by `CityGameHapticInteractionSpec`.
+public enum CityGameHapticInteraction: Sendable, Equatable {
+  case toolbarButtonPressed
+  case suggestedCitySelected
+  case hintRevealed
+  case hintsPopoverVisibilityChanged(
+    wasPresented: Bool, isPresented: Bool, programmaticDismissal: Bool)
+  case mapTapped
+  case mapCitySelected
+  case scoutQuoteDismissed
+  case mapClosed
 }
 
 public enum CityGameHapticPhase: Sendable, Equatable {
@@ -115,5 +136,64 @@ public struct CityGameHapticFeedbackSpec: DecisionSpec {
     default:
       false
     }
+  }
+}
+
+/// Routes explicit interface interactions to haptics through SpecificationCore.
+public struct CityGameHapticInteractionSpec: DecisionSpec {
+  public typealias Context = CityGameHapticInteraction
+  public typealias Result = CityGameHapticEvent
+
+  private let routing = Self.makeRouting()
+
+  public init() {}
+
+  public func decide(_ context: Context) -> Result? {
+    routing.decide(context)
+  }
+
+  private static func makeRouting() -> FirstMatchSpec<Context, Result> {
+    FirstMatchSpec([
+      (
+        PredicateSpec<Context>(
+          description: "city.haptic.hints-popover-dismissed", hintsPopoverWasDismissed),
+        .hintsPopoverDismissed),
+      (
+        PredicateSpec<Context>(description: "city.haptic.toolbar-button", {
+          $0 == .toolbarButtonPressed
+        }), .toolbarButtonPressed),
+      (
+        PredicateSpec<Context>(description: "city.haptic.suggested-city-selected", {
+          $0 == .suggestedCitySelected
+        }), .suggestedCitySelected),
+      (
+        PredicateSpec<Context>(description: "city.haptic.hint-revealed", {
+          $0 == .hintRevealed
+        }), .hintRevealed),
+      (
+        PredicateSpec<Context>(description: "city.haptic.map-tapped", { $0 == .mapTapped }),
+        .mapTapped),
+      (
+        PredicateSpec<Context>(description: "city.haptic.map-city-selected", {
+          $0 == .mapCitySelected
+        }), .mapCitySelected),
+      (
+        PredicateSpec<Context>(description: "city.haptic.scout-quote-dismissed", {
+          $0 == .scoutQuoteDismissed
+        }), .scoutQuoteDismissed),
+      (
+        PredicateSpec<Context>(description: "city.haptic.map-closed", { $0 == .mapClosed }),
+        .mapClosed),
+    ])
+  }
+
+  private static func hintsPopoverWasDismissed(_ interaction: Context) -> Bool {
+    guard
+      case let .hintsPopoverVisibilityChanged(wasPresented, isPresented, programmaticDismissal) =
+        interaction
+    else {
+      return false
+    }
+    return wasPresented && !isPresented && !programmaticDismissal
   }
 }

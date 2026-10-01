@@ -9,6 +9,7 @@ struct CityAtlasMapView: View {
   @Binding var selectedCity: USCity?
   let transitionNamespace: Namespace.ID
   let onOpenMapDetail: () -> Void
+  var onHapticInteraction: (CityGameHapticInteraction) -> Void = { _ in }
   var onTapScout: (() -> Void)? = nil
   let feedbackMessage: String?
   let feedbackFact: ScoutFact?
@@ -110,7 +111,10 @@ struct CityAtlasMapView: View {
 
           if visitedCities.count > 1 {
             if horizontalSizeClass == .regular && verticalSizeClass == .regular {
-              CityAtlasVisitedCityList(cities: Array(visitedCities.reversed()), onSelect: { selectedCity = $0 })
+              CityAtlasVisitedCityList(cities: Array(visitedCities.reversed()), onSelect: {
+                selectedCity = $0
+                onHapticInteraction(.mapCitySelected)
+              })
                 .accessibilityIdentifier("cityAtlas.map.visitedCities")
             } else {
               ScrollView(.horizontal) {
@@ -118,6 +122,7 @@ struct CityAtlasMapView: View {
                   ForEach(availableMarkers, id: \.point.id) { marker in
                     Button {
                       selectedCity = marker.city
+                      onHapticInteraction(.mapCitySelected)
                     } label: {
                       Text(marker.city.name)
                         .font(.caption.weight(.semibold))
@@ -157,8 +162,12 @@ struct CityAtlasMapView: View {
       selectedCity: selectedCity,
       visitedStates: Set(visitedCities.compactMap(\.stateAbbreviation)),
       latestState: visitedCities.last?.stateAbbreviation,
-      onSelect: { selectedCity = $0 },
-      onOpenMapDetail: onOpenMapDetail)
+      onSelect: { city in
+        selectedCity = city
+        onHapticInteraction(.mapCitySelected)
+      },
+      onOpenMapDetail: onOpenMapDetail,
+      onTapMap: { onHapticInteraction(.mapTapped) })
       .aspectRatio(1.16, contentMode: .fit)
       .accessibilityLabel("Map of the United States. Visited states are highlighted in gold. Alaska and Hawaii are shown in separate insets.")
   }
@@ -225,6 +234,7 @@ private struct CityAtlasMapCanvas: View {
   let latestState: String?
   let onSelect: (USCity) -> Void
   var onOpenMapDetail: (() -> Void)? = nil
+  var onTapMap: () -> Void = {}
 
   var body: some View {
     GeometryReader { geometry in
@@ -238,6 +248,8 @@ private struct CityAtlasMapCanvas: View {
           startPoint: .topLeading,
           endPoint: .bottomTrailing)
           .clipShape(RoundedRectangle(cornerRadius: 18))
+          .contentShape(RoundedRectangle(cornerRadius: 18))
+          .onTapGesture(perform: onTapMap)
 
         Canvas { context, _ in
           for region in [CityAtlasMapData.Region.mainland, .alaska, .hawaii] {
@@ -302,9 +314,13 @@ private struct CityAtlasMapCanvas: View {
           }
         }
         .accessibilityHidden(true)
+        .allowsHitTesting(false)
 
         if let onOpenMapDetail {
-          Button(action: onOpenMapDetail) {
+          Button {
+            onTapMap()
+            onOpenMapDetail()
+          } label: {
             ZStack(alignment: .topTrailing) {
               Color.clear
               Image(systemName: "arrow.up.left.and.arrow.down.right")
@@ -594,6 +610,8 @@ struct CityAtlasMapDetailView<RouteContent: View>: View {
   let fact: ScoutFact?
   let onSelectCity: (USCity) -> Void
   let onDismissFact: () -> Void
+  var onDismissMap: () -> Void = {}
+  var onHapticInteraction: (CityGameHapticInteraction) -> Void = { _ in }
   @ViewBuilder let routeContent: () -> RouteContent
   @Environment(\.dismiss) private var dismiss
   @State private var scoutOverlayHeight: CGFloat = 200
@@ -647,7 +665,8 @@ struct CityAtlasMapDetailView<RouteContent: View>: View {
               selectedCity: selectedCity,
               visitedStates: Set(visitedCities.compactMap(\.stateAbbreviation)),
               latestState: visitedCities.last?.stateAbbreviation,
-              onSelect: onSelectCity)
+              onSelect: onSelectCity,
+              onTapMap: { onHapticInteraction(.mapTapped) })
               .aspectRatio(1.16, contentMode: .fit)
               .accessibilityLabel("Interactive map of the United States. Visited states are highlighted in gold. Alaska and Hawaii are shown in separate insets.")
 
@@ -709,6 +728,7 @@ struct CityAtlasMapDetailView<RouteContent: View>: View {
     }
     .toolbar(.hidden, for: .navigationBar)
     .navigationBarBackButtonHidden(true)
+    .onDisappear(perform: onDismissMap)
   }
 }
 

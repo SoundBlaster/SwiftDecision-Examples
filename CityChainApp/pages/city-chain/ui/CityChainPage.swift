@@ -41,6 +41,7 @@ struct CityChainPage: View {
                 selectedCity: $selectedAtlasCity,
                 transitionNamespace: atlasMapTransitionNamespace,
                 onOpenMapDetail: openMapDetail,
+                onHapticInteraction: model.recordHapticInteraction,
                 onTapScout: model.isScoutIdle ? openMapFromScout : nil,
                 feedbackMessage: nil,
                 feedbackFact: nil,
@@ -80,6 +81,7 @@ struct CityChainPage: View {
     }
     .sheet(isPresented: $showsAtlas) {
       CityAtlasView(snapshot: model.snapshot, isSubmitting: model.isSubmitting) { city in
+        model.recordHapticInteraction(.suggestedCitySelected)
         model.cityInput = city.name
       }
       .toolbar(.visible, for: .navigationBar)
@@ -94,7 +96,7 @@ struct CityChainPage: View {
     }
     .onChange(of: snapshot?.usedCities.last, initial: true) { _, latestCity in
       selectedAtlasCity = latestCity
-      dismissAtlasFact()
+      clearAtlasFact()
     }
     .onChange(of: model.scoutPresentation.reactionID) {
       if model.scoutPresentation.pose == .tryAnother {
@@ -149,6 +151,10 @@ struct CityChainPage: View {
         .success
       case .newRoundStarted:
         .selection
+      case .toolbarButtonPressed, .suggestedCitySelected, .hintRevealed,
+           .hintsPopoverDismissed, .mapTapped, .mapCitySelected,
+           .scoutQuoteDismissed, .mapClosed:
+        .impact(weight: .light, intensity: 0.45)
       case nil:
         nil
       }
@@ -204,7 +210,9 @@ struct CityChainPage: View {
       selectedCity: $selectedAtlasCity,
       fact: selectedAtlasFact,
       onSelectCity: selectAtlasCity,
-      onDismissFact: dismissAtlasFact) {
+      onDismissFact: dismissAtlasFact,
+      onDismissMap: { model.recordHapticInteraction(.mapClosed) },
+      onHapticInteraction: model.recordHapticInteraction) {
         GameBoardWidget(
           cities: model.snapshot?.usedCities ?? [],
           continuations: model.snapshot?.letterContinuations ?? [],
@@ -218,12 +226,18 @@ struct CityChainPage: View {
   }
 
   private func selectAtlasCity(_ city: USCity) {
+    model.recordHapticInteraction(.mapCitySelected)
     selectedAtlasCity = city
     selectedAtlasFact = model.atlasFact(for: city)
     atlasFactReactionID &+= 1
   }
 
   private func dismissAtlasFact() {
+    model.recordHapticInteraction(.scoutQuoteDismissed)
+    clearAtlasFact()
+  }
+
+  private func clearAtlasFact() {
     selectedAtlasFact = nil
     atlasFactReactionID &+= 1
   }
@@ -241,6 +255,7 @@ private struct CityChainGamePane: View {
   let onRequestNewTrip: () -> Void
   @State private var showsDecisionTrace = false
   @State private var showsCityHintsPopover = false
+  @State private var suppressHintsDismissHaptic = false
   @FocusState.Binding var isCityFocused: Bool
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -269,11 +284,12 @@ private struct CityChainGamePane: View {
             isDisabled: model.isSubmitting,
             isHidden: !isCityHintsRevealed,
             onReveal: {
+              model.recordHapticInteraction(.hintRevealed)
               withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
                 isCityHintsRevealed = true
               }
             },
-            onSelect: { model.cityInput = $0.name })
+            onSelect: { selectSuggestedCity($0) })
         }
         if snapshot == nil {
           ProgressView("Getting the atlas ready…")
@@ -307,6 +323,9 @@ private struct CityChainGamePane: View {
           } label: {
             Label("Actions", systemImage: "ellipsis.circle")
           }
+          .simultaneousGesture(TapGesture().onEnded {
+            model.recordHapticInteraction(.toolbarButtonPressed)
+          })
           .popover(isPresented: $showsCityHintsPopover, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
             cityHintsPopover
           }
@@ -320,7 +339,16 @@ private struct CityChainGamePane: View {
     }
     .onChange(of: snapshot?.usedCities.count) { _, _ in
       isCityHintsRevealed = snapshot?.usedCities.isEmpty != false
+      if showsCityHintsPopover { suppressHintsDismissHaptic = true }
       showsCityHintsPopover = false
+    }
+    .onChange(of: showsCityHintsPopover) { wasPresented, isPresented in
+      model.recordHapticInteraction(
+        .hintsPopoverVisibilityChanged(
+          wasPresented: wasPresented,
+          isPresented: isPresented,
+          programmaticDismissal: suppressHintsDismissHaptic))
+      suppressHintsDismissHaptic = false
     }
 #if DEBUG
     .sheet(isPresented: $showsDecisionTrace) {
@@ -389,11 +417,24 @@ private struct CityChainGamePane: View {
   }
 
   private var cityHintsPopover: some View {
-    CityHintsPopover(cities: suggestions, selectedName: model.cityInput, isDisabled: model.isSubmitting, isHidden: !isCityHintsRevealed, onReveal: { isCityHintsRevealed = true }, onSelect: {
-      model.cityInput = $0.name
-      showsCityHintsPopover = false
-    })
+    CityHintsPopover(
+      cities: suggestions, selectedName: model.cityInput, isDisabled: model.isSubmitting,
+      isHidden: !isCityHintsRevealed,
+      onReveal: {
+        model.recordHapticInteraction(.hintRevealed)
+        isCityHintsRevealed = true
+      },
+      onSelect: { selectSuggestedCity($0, dismissingPopover: true) })
     .presentationCompactAdaptation(.popover)
+  }
+
+  private func selectSuggestedCity(_ city: USCity, dismissingPopover: Bool = false) {
+    model.recordHapticInteraction(.suggestedCitySelected)
+    if dismissingPopover {
+      suppressHintsDismissHaptic = true
+      showsCityHintsPopover = false
+    }
+    model.cityInput = city.name
   }
 
   private func toolbarButton(
@@ -403,7 +444,10 @@ private struct CityChainGamePane: View {
     isDisabled: Bool = false,
     action: @escaping () -> Void
   ) -> some View {
-    Button(action: action) {
+    Button {
+      model.recordHapticInteraction(.toolbarButtonPressed)
+      action()
+    } label: {
       Label(title, systemImage: systemImage)
     }
     .accessibilityHint(hint)

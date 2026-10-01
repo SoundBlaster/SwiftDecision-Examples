@@ -195,6 +195,7 @@ final class CityChainPageModel {
   func dismissTurnFeedback() {
     scoutStateMachine.send(.feedbackDismissed)
     latestScoutFact = nil
+    recordHapticInteraction(.scoutQuoteDismissed)
     let draft = cityInput
     Task { @MainActor [weak self] in
       await self?.flushAutosave(draft: draft)
@@ -338,6 +339,15 @@ final class CityChainPageModel {
       result: result,
       failedUnexpectedly: failedUnexpectedly)
     guard let event = CityGameHapticFeedbackSpec().decide(context) else { return }
+    publishHaptic(event)
+  }
+
+  func recordHapticInteraction(_ interaction: CityGameHapticInteraction) {
+    guard let event = CityGameHapticInteractionSpec().decide(interaction) else { return }
+    publishHaptic(event)
+  }
+
+  private func publishHaptic(_ event: CityGameHapticEvent) {
     latestHapticEvent = event
     hapticRevision &+= 1
   }
