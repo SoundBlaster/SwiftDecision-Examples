@@ -54,7 +54,7 @@ struct CityChainPage: View {
 
               CityChainGamePane(
                 model: model, snapshot: snapshot, suggestions: suggestions,
-                onTapScout: model.isScoutIdle ? openMapFromScout : nil,
+                onTapScout: openMapFromScout,
                 onShowAtlas: { showsAtlas = true },
                 onShowMap: { showsMapDetailSheet = true },
                 onRequestNewTrip: { showsNewTripConfirmation = true },
@@ -65,7 +65,7 @@ struct CityChainPage: View {
           } else {
             CityChainGamePane(
               model: model, snapshot: snapshot, suggestions: suggestions,
-              onTapScout: model.isScoutIdle ? openMapFromScout : nil,
+              onTapScout: openMapFromScout,
               onShowAtlas: { showsAtlas = true },
               onShowMap: { showsMapDetailSheet = true },
               onRequestNewTrip: { showsNewTripConfirmation = true },
