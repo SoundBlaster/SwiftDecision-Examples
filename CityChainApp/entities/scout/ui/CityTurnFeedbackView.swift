@@ -82,7 +82,7 @@ struct ScoutSpeechFeedbackView: View {
           Group {
             if let maximumBubbleHeight {
               ScrollView {
-                speechContent(message)
+                ScoutSpeechContent(message: message, fact: fact)
                   .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
                     bubbleContentHeight = height
                   }
@@ -90,7 +90,7 @@ struct ScoutSpeechFeedbackView: View {
               .scrollBounceBehavior(.basedOnSize)
               .frame(height: min(bubbleContentHeight, max(44, maximumBubbleHeight - 16)))
             } else {
-              speechContent(message)
+              ScoutSpeechContent(message: message, fact: fact)
             }
           }
 
@@ -151,7 +151,21 @@ struct ScoutSpeechFeedbackView: View {
     .accessibilityAction(named: "Dismiss message", onDismiss)
   }
 
-  private func speechContent(_ message: String) -> some View {
+  private var scoutCompanion: some View {
+    ScoutView(presentation: presentation, style: .cornerCompanion)
+      .frame(
+        width: companionSize ?? (isCompact ? 108 : 176),
+        height: companionSize ?? (isCompact ? 112 : 180))
+      .accessibilityHidden(true)
+  }
+}
+
+/// The spoken message and its optional source, independent of bubble layout and scrolling.
+private struct ScoutSpeechContent: View {
+  let message: String
+  let fact: ScoutFact?
+
+  var body: some View {
     VStack(alignment: .leading, spacing: 5) {
       Text(message)
         .font(.system(.body, design: .rounded))
@@ -171,14 +185,6 @@ struct ScoutSpeechFeedbackView: View {
         .accessibilityHint("Opens \(fact.sourceTitle)")
       }
     }
-  }
-
-  private var scoutCompanion: some View {
-    ScoutView(presentation: presentation, style: .cornerCompanion)
-      .frame(
-        width: companionSize ?? (isCompact ? 108 : 176),
-        height: companionSize ?? (isCompact ? 112 : 180))
-      .accessibilityHidden(true)
   }
 }
 
