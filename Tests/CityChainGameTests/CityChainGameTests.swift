@@ -774,6 +774,8 @@ struct CityChainGameTests {
   func fixtureRejectsInvalidRoute() async throws {
     let cases: [(String, CityGameFixtureError)] = [
       (#"{"version":2,"route":[]}"#, .unsupportedVersion(2)),
+      (#"{"version":2,"route":[{"role":"player","city":"Austin"}]}"#,
+       .unsupportedVersion(2)),
       (#"{"version":1,"route":[{"role":"player","city":"Austin"}]}"#,
        .invalidRouteLength(phase: "ready")),
       (#"{"version":1,"route":[{"role":"player","city":"Austin"},{"role":"player","city":"Nashville"}]}"#,

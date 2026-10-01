@@ -136,7 +136,9 @@ struct CityAtlasMapData {
     switch region {
     case .mainland: (-125, -66, 24, 50)
     case .alaska: (-190, -129, 51, 72)
-    case .hawaii: (-179, -154, 18, 29)
+    // The Hawaii inset focuses on the main islands. The renderer clips the
+    // distant Northwestern Hawaiian Islands to the inset's display bounds.
+    case .hawaii: (-161, -154, 18, 23)
     }
   }
 

@@ -67,43 +67,44 @@ struct ScoutSpeechFeedbackView: View {
   var companionSize: CGFloat? = nil
   var horizontalPadding: CGFloat = 16
   var bubbleBottomInset: CGFloat = 0
+  var bubbleAlignment: VerticalAlignment = .bottom
+  var maximumBubbleHeight: CGFloat? = nil
+  var canDismissMessage = true
   var onTapScout: (() -> Void)? = nil
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var bubbleContentHeight: CGFloat = 44
 
   var body: some View {
     // Let the bubble tail reach into Scout's visual area, past the asset's transparent edge.
-    HStack(alignment: .bottom, spacing: -34) {
+    HStack(alignment: bubbleAlignment, spacing: -34) {
       if let message {
         HStack(alignment: .top, spacing: 4) {
-          VStack(alignment: .leading, spacing: 5) {
-            Text(message)
-              .font(.system(.body, design: .rounded))
-              .foregroundStyle(CityChainPalette.ink)
-              .fixedSize(horizontal: false, vertical: true)
-              .accessibilityAddTraits(.updatesFrequently)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .allowsHitTesting(false)
-
-            if let fact {
-              Link(destination: fact.sourceURL) {
-                Label("Fact source", systemImage: "arrow.up.right.square")
-                  .font(.caption.weight(.semibold))
+          Group {
+            if let maximumBubbleHeight {
+              ScrollView {
+                speechContent(message)
+                  .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                    bubbleContentHeight = height
+                  }
               }
-              .tint(CityChainPalette.teal)
-              .accessibilityLabel("Fact source")
-              .accessibilityHint("Opens \(fact.sourceTitle)")
+              .scrollBounceBehavior(.basedOnSize)
+              .frame(height: min(bubbleContentHeight, max(44, maximumBubbleHeight - 16)))
+            } else {
+              speechContent(message)
             }
           }
 
-          Button(action: onDismiss) {
-            Image(systemName: "xmark")
-              .font(.caption.weight(.semibold))
-              .foregroundStyle(CityChainPalette.secondaryInk)
-              .frame(width: 44, height: 44)
-              .contentShape(Rectangle())
+          if canDismissMessage {
+            Button(action: onDismiss) {
+              Image(systemName: "xmark")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(CityChainPalette.secondaryInk)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Dismiss message")
           }
-          .buttonStyle(.plain)
-          .accessibilityLabel("Dismiss message")
         }
         .padding(.leading, 18)
         .padding(.trailing, 28)
@@ -122,16 +123,14 @@ struct ScoutSpeechFeedbackView: View {
         }
         .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .trailing)))
         .offset(y: -bubbleBottomInset)
+        .zIndex(1)
       }
 
       Group {
         if let onTapScout {
           Button(action: onTapScout) {
-            ZStack {
-              Rectangle().fill(.clear)
-              scoutCompanion
-            }
-            .contentShape(Rectangle())
+            scoutCompanion
+              .contentShape(Rectangle())
           }
           .buttonStyle(.plain)
           .accessibilityLabel("Open atlas map")
@@ -139,16 +138,39 @@ struct ScoutSpeechFeedbackView: View {
           .accessibilityIdentifier("cityChain.scout.openMap")
         } else {
           scoutCompanion
+            .allowsHitTesting(false)
         }
       }
     }
     .padding(.horizontal, horizontalPadding)
-    .padding(.top, message == nil ? 0 : 8)
+    .padding(.top, 8)
     .padding(.bottom, 2)
     .frame(maxWidth: .infinity, alignment: .trailing)
     .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: message)
     .accessibilityElement(children: .contain)
     .accessibilityAction(named: "Dismiss message", onDismiss)
+  }
+
+  private func speechContent(_ message: String) -> some View {
+    VStack(alignment: .leading, spacing: 5) {
+      Text(message)
+        .font(.system(.body, design: .rounded))
+        .foregroundStyle(CityChainPalette.ink)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityAddTraits(.updatesFrequently)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .allowsHitTesting(false)
+
+      if let fact {
+        Link(destination: fact.sourceURL) {
+          Label("Fact source", systemImage: "arrow.up.right.square")
+            .font(.caption.weight(.semibold))
+        }
+        .tint(CityChainPalette.teal)
+        .accessibilityLabel("Fact source")
+        .accessibilityHint("Opens \(fact.sourceTitle)")
+      }
+    }
   }
 
   private var scoutCompanion: some View {

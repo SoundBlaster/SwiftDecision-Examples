@@ -9,11 +9,14 @@ struct CityAtlasMapView: View {
   @Binding var selectedCity: USCity?
   let transitionNamespace: Namespace.ID
   let onOpenMapDetail: () -> Void
+  var onHapticInteraction: (CityGameHapticInteraction) -> Void = { _ in }
   var onTapScout: (() -> Void)? = nil
   let feedbackMessage: String?
   let feedbackFact: ScoutFact?
   let feedbackIsFinished: Bool
   let onDismissFeedback: () -> Void
+  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+  @Environment(\.verticalSizeClass) private var verticalSizeClass
 
   private var mapData: CityAtlasMapData? { CityAtlasMapRepository.data }
   private var availableMarkers: [(city: USCity, point: CityAtlasPoint)] {
@@ -106,27 +109,36 @@ struct CityAtlasMapView: View {
               .foregroundStyle(CityChainPalette.secondaryInk)
           }
 
-          if availableMarkers.count > 1 {
-            ScrollView(.horizontal) {
-              HStack(spacing: 8) {
-                ForEach(availableMarkers, id: \.point.id) { marker in
-                  Button {
-                    selectedCity = marker.city
-                  } label: {
-                    Text(marker.city.name)
-                      .font(.caption.weight(.semibold))
-                      .padding(.horizontal, 11)
-                      .padding(.vertical, 8)
-                      .background(
-                        selectedCity?.id == marker.city.id ? CityChainPalette.sky : .white,
-                        in: Capsule())
+          if visitedCities.count > 1 {
+            if horizontalSizeClass == .regular && verticalSizeClass == .regular {
+              CityAtlasVisitedCityList(cities: Array(visitedCities.reversed()), onSelect: {
+                selectedCity = $0
+                onHapticInteraction(.mapCitySelected)
+              })
+                .accessibilityIdentifier("cityAtlas.map.visitedCities")
+            } else {
+              ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                  ForEach(availableMarkers, id: \.point.id) { marker in
+                    Button {
+                      selectedCity = marker.city
+                      onHapticInteraction(.mapCitySelected)
+                    } label: {
+                      Text(marker.city.name)
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 8)
+                        .background(
+                          selectedCity?.id == marker.city.id ? CityChainPalette.sky : .white,
+                          in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Shows this visited city on the map")
                   }
-                  .buttonStyle(.plain)
-                  .accessibilityHint("Shows this visited city on the map")
                 }
               }
+              .scrollIndicators(.hidden)
             }
-            .scrollIndicators(.hidden)
           }
         } else {
           ContentUnavailableView(
@@ -150,10 +162,66 @@ struct CityAtlasMapView: View {
       selectedCity: selectedCity,
       visitedStates: Set(visitedCities.compactMap(\.stateAbbreviation)),
       latestState: visitedCities.last?.stateAbbreviation,
-      onSelect: { selectedCity = $0 },
-      onOpenMapDetail: onOpenMapDetail)
-      .frame(height: 300)
-      .accessibilityLabel("Map of the United States with separately labeled Alaska and Hawaii insets")
+      onSelect: { city in
+        selectedCity = city
+        onHapticInteraction(.mapCitySelected)
+      },
+      onOpenMapDetail: onOpenMapDetail,
+      onTapMap: { onHapticInteraction(.mapTapped) })
+      .aspectRatio(1.16, contentMode: .fit)
+      .accessibilityLabel("Map of the United States. Visited states are highlighted in gold. Alaska and Hawaii are shown in separate insets.")
+  }
+}
+
+private struct CityAtlasVisitedCityList: View {
+  let cities: [USCity]
+  let onSelect: (USCity) -> Void
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      HStack {
+        Text("Our road trip")
+          .font(.system(.title3, design: .rounded, weight: .bold))
+          .foregroundStyle(CityChainPalette.ink)
+        Spacer()
+        Text(cities.count == 1 ? "1 stop" : "\(cities.count) stops")
+          .font(.subheadline.weight(.semibold).monospacedDigit())
+          .foregroundStyle(CityChainPalette.blue)
+      }
+      .padding(.bottom, 12)
+
+      LazyVStack(spacing: 8) {
+        ForEach(Array(cities.enumerated()), id: \.element.id) { index, city in
+          Button { onSelect(city) } label: {
+            HStack(spacing: 12) {
+              Text("\(cities.count - index)")
+                .font(.subheadline.weight(.bold).monospacedDigit())
+                .foregroundStyle(CityChainPalette.blue)
+                .frame(width: 34, height: 34)
+                .background(CityChainPalette.sky.opacity(0.72), in: Circle())
+              VStack(alignment: .leading, spacing: 3) {
+                Text(city.name)
+                  .font(.system(.body, design: .rounded, weight: .bold))
+                  .foregroundStyle(CityChainPalette.ink)
+                Text(city.state.map { "\($0.name) · \($0.abbreviation)" } ?? "United States")
+                  .font(.caption)
+                  .foregroundStyle(CityChainPalette.secondaryInk)
+              }
+              Spacer(minLength: 0)
+              Image(systemName: "mappin.and.ellipse")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(CityChainPalette.teal)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.white, in: RoundedRectangle(cornerRadius: 16))
+            .contentShape(RoundedRectangle(cornerRadius: 16))
+          }
+          .buttonStyle(.plain)
+          .accessibilityHint("Shows this visited city on the map")
+        }
+      }
+    }
   }
 }
 
@@ -166,6 +234,7 @@ private struct CityAtlasMapCanvas: View {
   let latestState: String?
   let onSelect: (USCity) -> Void
   var onOpenMapDetail: (() -> Void)? = nil
+  var onTapMap: () -> Void = {}
 
   var body: some View {
     GeometryReader { geometry in
@@ -173,44 +242,52 @@ private struct CityAtlasMapCanvas: View {
       ZStack(alignment: .topLeading) {
         LinearGradient(
           colors: [
-            Color(red: 0.98, green: 0.97, blue: 0.94),
-            Color(red: 0.91, green: 0.96, blue: 0.97),
+            Color(red: 1, green: 0.98, blue: 0.93),
+            Color(red: 0.95, green: 0.97, blue: 0.92),
           ],
           startPoint: .topLeading,
           endPoint: .bottomTrailing)
           .clipShape(RoundedRectangle(cornerRadius: 18))
+          .contentShape(RoundedRectangle(cornerRadius: 18))
+          .onTapGesture(perform: onTapMap)
 
         Canvas { context, _ in
-          var landmass = Path()
-          for state in data.states {
-            landmass.addPath(state.simplePath, transform: layout.transform(for: state.region))
+          for region in [CityAtlasMapData.Region.mainland, .alaska, .hawaii] {
+            var landmass = Path()
+            for state in data.states where state.region == region {
+              landmass.addPath(state.simplePath, transform: layout.transform(for: region))
+            }
+            var shadowContext = context
+            shadowContext.clip(to: Path(layout.frame(for: region)))
+            shadowContext.addFilter(.shadow(
+              color: Color(red: 0.35, green: 0.49, blue: 0.43).opacity(0.17),
+              radius: 4, x: 0, y: 2))
+            shadowContext.fill(landmass, with: .color(.black.opacity(0.28)), style: FillStyle(eoFill: true))
           }
-          var shadowContext = context
-          shadowContext.addFilter(.shadow(
-            color: Color(red: 0.35, green: 0.49, blue: 0.43).opacity(0.17),
-            radius: 4, x: 0, y: 2))
-          shadowContext.fill(landmass, with: .color(.black.opacity(0.28)), style: FillStyle(eoFill: true))
-          context.fill(
-            landmass,
-            with: .linearGradient(
-              Gradient(colors: [
-                Color(red: 0.84, green: 0.92, blue: 0.78),
-                Color(red: 0.74, green: 0.86, blue: 0.69),
-              ]),
-              startPoint: CGPoint(x: layout.mainland.minX, y: layout.mainland.minY),
-              endPoint: CGPoint(x: layout.mainland.maxX, y: layout.mainland.maxY)),
-            style: FillStyle(eoFill: true))
+          for (index, state) in data.states.enumerated() {
+            var path = Path()
+            path.addPath(state.simplePath, transform: layout.transform(for: state.region))
+            let colors: [Color] = visitedStates.contains(state.abbreviation)
+              ? [Color(red: 1, green: 0.87, blue: 0.49), Color(red: 0.98, green: 0.73, blue: 0.29)]
+              : [Color(red: 0.79, green: 0.89, blue: 0.72),
+                 Color(red: 0.62 + Double(index % 3) * 0.035, green: 0.80, blue: 0.66)]
+            let frame = layout.fittedFrame(for: state.region)
+            var regionContext = context
+            regionContext.clip(to: Path(layout.frame(for: state.region)))
+            regionContext.fill(path, with: .linearGradient(
+              Gradient(colors: colors), startPoint: frame.origin,
+              endPoint: CGPoint(x: frame.maxX, y: frame.maxY)), style: FillStyle(eoFill: true))
+          }
+          // Draw borders after every fill so neighboring shapes cannot cover them.
           for state in data.states {
             var path = Path()
             path.addPath(state.simplePath, transform: layout.transform(for: state.region))
+            var regionContext = context
+            regionContext.clip(to: Path(layout.frame(for: state.region)))
+            regionContext.stroke(path, with: .color(Color(red: 1, green: 0.98, blue: 0.90)), lineWidth: 1.1)
             if state.abbreviation == latestState {
-              context.fill(path, with: .color(Color(red: 0.99, green: 0.79, blue: 0.40).opacity(0.88)),
-                           style: FillStyle(eoFill: true))
-            } else if visitedStates.contains(state.abbreviation) {
-              context.fill(path, with: .color(Color(red: 0.94, green: 0.91, blue: 0.72).opacity(0.22)),
-                           style: FillStyle(eoFill: true))
+              regionContext.stroke(path, with: .color(Color(red: 0.85, green: 0.54, blue: 0.17)), lineWidth: 1.5)
             }
-            context.stroke(path, with: .color(Color(red: 1, green: 0.98, blue: 0.90)), lineWidth: 1.15)
           }
           drawAtlasLandmarks(in: &context, layout: layout)
           for (index, segment) in routeSegments.enumerated() {
@@ -237,9 +314,13 @@ private struct CityAtlasMapCanvas: View {
           }
         }
         .accessibilityHidden(true)
+        .allowsHitTesting(false)
 
         if let onOpenMapDetail {
-          Button(action: onOpenMapDetail) {
+          Button {
+            onTapMap()
+            onOpenMapDetail()
+          } label: {
             ZStack(alignment: .topTrailing) {
               Color.clear
               Image(systemName: "arrow.up.left.and.arrow.down.right")
@@ -263,7 +344,7 @@ private struct CityAtlasMapCanvas: View {
           .font(.system(.caption2, design: .rounded, weight: .bold))
           .tracking(1.1)
           .foregroundStyle(CityChainPalette.secondaryInk)
-          .position(x: layout.mainland.midX, y: layout.mainland.maxY - 6)
+          .position(x: layout.mainland.midX, y: 13)
           .accessibilityHidden(true)
           .allowsHitTesting(false)
 
@@ -273,12 +354,19 @@ private struct CityAtlasMapCanvas: View {
           Button {
             onSelect(marker.city)
           } label: {
-            Image(systemName: selectedCity?.id == marker.city.id ? "mappin.circle.fill" : "circle.fill")
-              .font(.system(size: selectedCity?.id == marker.city.id ? 26 : 12, weight: .bold))
-              .symbolRenderingMode(.palette)
-              .foregroundStyle(.white, selectedCity?.id == marker.city.id
-                ? Color(red: 0.91, green: 0.60, blue: 0.18)
-                : Color(red: 0.25, green: 0.48, blue: 0.69))
+            Group {
+              if selectedCity?.id == marker.city.id {
+                Image(systemName: "mappin.circle.fill")
+                  .font(.system(size: 26, weight: .bold))
+                  .symbolRenderingMode(.palette)
+                  .foregroundStyle(.white, Color(red: 0.91, green: 0.60, blue: 0.18))
+              } else {
+                Circle()
+                  .fill(CityChainPalette.blue)
+                  .overlay(Circle().strokeBorder(.white, lineWidth: 2))
+                  .frame(width: 13, height: 13)
+              }
+            }
               .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
               .frame(width: 44, height: 44)
               .contentShape(Circle())
@@ -316,11 +404,32 @@ private struct CityAtlasMapCanvas: View {
         }
 
         AtlasInsetLabel(title: "Alaska", abbreviation: "AK")
-          .position(x: layout.alaska.minX + 39, y: layout.alaska.minY + 16)
+          .position(x: layout.alaska.midX, y: layout.alaska.minY - 7)
           .allowsHitTesting(false)
         AtlasInsetLabel(title: "Hawaii", abbreviation: "HI")
-          .position(x: layout.hawaii.minX + 39, y: layout.hawaii.minY + 16)
+          .position(x: layout.hawaii.midX, y: layout.hawaii.minY - 7)
           .allowsHitTesting(false)
+
+        VStack(spacing: 3) {
+          Text("So much to explore!")
+            .font(.system(.caption2, design: .rounded, weight: .bold))
+            .foregroundStyle(CityChainPalette.teal)
+          HStack(spacing: 4) {
+            Circle().fill(Color(red: 0.98, green: 0.76, blue: 0.34))
+              .frame(width: 7, height: 7)
+            Text("Visited states")
+              .font(.caption2)
+              .foregroundStyle(CityChainPalette.secondaryInk)
+          }
+        }
+        .position(x: geometry.size.width * 0.73, y: geometry.size.height - 69)
+        .allowsHitTesting(false)
+
+        AtlasCompassView()
+          .frame(width: 43, height: 43)
+          .position(x: geometry.size.width * 0.82, y: geometry.size.height - 29)
+          .allowsHitTesting(false)
+          .accessibilityHidden(true)
       }
       .background(.clear, in: RoundedRectangle(cornerRadius: 18))
       .clipShape(RoundedRectangle(cornerRadius: 18))
@@ -329,7 +438,9 @@ private struct CityAtlasMapCanvas: View {
 
   private func drawAtlasLandmarks(in context: inout GraphicsContext, layout: AtlasMapFrames) {
     let frame = layout.fittedFrame(for: .mainland)
-    let waterPuffs: [(CGFloat, CGFloat, CGFloat)] = [(0.01, 0.69, 14), (0.99, 0.63, 17)]
+    let waterPuffs: [(CGFloat, CGFloat, CGFloat)] = [
+      (0.01, 0.69, 14), (0.99, 0.63, 17), (0.53, 0.99, 17),
+    ]
     for (x, y, radius) in waterPuffs {
       let center = CGPoint(x: frame.minX + frame.width * x, y: frame.minY + frame.height * y)
       var puff = Path()
@@ -341,7 +452,7 @@ private struct CityAtlasMapCanvas: View {
                                  width: radius, height: radius * 0.7))
       context.fill(puff, with: .color(Color(red: 0.81, green: 0.92, blue: 0.94).opacity(0.48)))
     }
-    let waves: [(CGFloat, CGFloat)] = [(0.01, 0.80), (0.99, 0.74)]
+    let waves: [(CGFloat, CGFloat)] = [(0.01, 0.80), (0.99, 0.74), (0.60, 0.99)]
     for (x, y) in waves {
       let center = CGPoint(x: frame.minX + frame.width * x, y: frame.minY + frame.height * y)
       var wave = Path()
@@ -398,22 +509,58 @@ private struct CityAtlasMapCanvas: View {
   }
 }
 
+private struct AtlasCompassView: View {
+  var body: some View {
+    Canvas { context, size in
+      let center = CGPoint(x: size.width / 2, y: size.height / 2)
+      let radius = size.width * 0.27
+      let ink = Color(red: 0.38, green: 0.57, blue: 0.63)
+      context.stroke(
+        Path(ellipseIn: CGRect(
+          x: center.x - radius, y: center.y - radius,
+          width: radius * 2, height: radius * 2)),
+        with: .color(ink.opacity(0.55)), lineWidth: 1)
+      for index in 0..<4 {
+        let angle = Double(index) * .pi / 2 - .pi / 2
+        let tip = CGPoint(
+          x: center.x + cos(angle) * radius * 1.2,
+          y: center.y + sin(angle) * radius * 1.2)
+        let side = CGPoint(x: -sin(angle) * radius * 0.22, y: cos(angle) * radius * 0.22)
+        var point = Path()
+        point.move(to: tip)
+        point.addLine(to: CGPoint(x: center.x + side.x, y: center.y + side.y))
+        point.addLine(to: center)
+        point.addLine(to: CGPoint(x: center.x - side.x, y: center.y - side.y))
+        point.closeSubpath()
+        context.fill(point, with: .color(ink.opacity(index.isMultiple(of: 2) ? 0.85 : 0.45)))
+      }
+      let directions: [(String, CGFloat, CGFloat)] = [
+        ("N", 0.5, 0.06), ("E", 0.94, 0.5), ("S", 0.5, 0.94), ("W", 0.06, 0.5),
+      ]
+      for (title, x, y) in directions {
+        context.draw(
+          Text(verbatim: title)
+            .font(.system(size: 8, weight: .bold, design: .rounded))
+            .foregroundStyle(ink),
+          at: CGPoint(x: size.width * x, y: size.height * y))
+      }
+    }
+  }
+}
+
 private struct AtlasInsetLabel: View {
   let title: String
   let abbreviation: String
 
   var body: some View {
-    VStack(spacing: 1) {
+    HStack(spacing: 3) {
       Text(title)
-        .font(.caption2.weight(.bold))
+        .font(.system(.caption2, design: .rounded, weight: .bold))
         .foregroundStyle(CityChainPalette.ink)
       Text(abbreviation)
         .font(.system(.caption2, design: .monospaced, weight: .semibold))
         .foregroundStyle(CityChainPalette.secondaryInk)
     }
-    .padding(4)
-    .background(.white.opacity(0.84), in: RoundedRectangle(cornerRadius: 7))
-    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(CityChainPalette.ink.opacity(0.16)))
     .accessibilityElement(children: .combine)
   }
 }
@@ -456,11 +603,18 @@ private struct SelectedAtlasCityCard: View {
   }
 }
 
-struct CityAtlasMapDetailView: View {
+struct CityAtlasMapDetailView<RouteContent: View>: View {
   let visitedCities: [USCity]
   let presentation: ScoutPresentation
   @Binding var selectedCity: USCity?
+  let fact: ScoutFact?
+  let onSelectCity: (USCity) -> Void
+  let onDismissFact: () -> Void
+  var onDismissMap: () -> Void = {}
+  var onHapticInteraction: (CityGameHapticInteraction) -> Void = { _ in }
+  @ViewBuilder let routeContent: () -> RouteContent
   @Environment(\.dismiss) private var dismiss
+  @State private var scoutOverlayHeight: CGFloat = 200
 
   private var mapData: CityAtlasMapData? { CityAtlasMapRepository.data }
   private var markers: [(city: USCity, point: CityAtlasPoint)] {
@@ -483,14 +637,11 @@ struct CityAtlasMapDetailView: View {
       ScrollView {
         VStack(alignment: .leading, spacing: 16) {
           HStack(alignment: .center) {
-            ScoutView(presentation: presentation)
-              .frame(width: 48, height: 48)
-              .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
               Text("Pocket Atlas")
                 .font(.system(.title2, design: .rounded, weight: .bold))
                 .foregroundStyle(CityChainPalette.ink)
-              Text("Tap a city marker to inspect that stop.")
+              Text("Tap a city to hear a fact from Scout.")
                 .font(.subheadline)
                 .foregroundStyle(CityChainPalette.secondaryInk)
             }
@@ -499,10 +650,10 @@ struct CityAtlasMapDetailView: View {
               dismiss()
             } label: {
               Label("Close", systemImage: "xmark")
+                .labelStyle(.iconOnly)
                 .font(.subheadline.weight(.semibold))
-                .frame(minWidth: 44, minHeight: 44)
-                .padding(.horizontal, 6)
-                .background(CityChainPalette.paper, in: Capsule())
+                .frame(width: 44, height: 44)
+                .background(CityChainPalette.paper, in: Circle())
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("cityAtlas.map.close")
@@ -514,13 +665,19 @@ struct CityAtlasMapDetailView: View {
               selectedCity: selectedCity,
               visitedStates: Set(visitedCities.compactMap(\.stateAbbreviation)),
               latestState: visitedCities.last?.stateAbbreviation,
-              onSelect: { selectedCity = $0 })
-              .frame(height: min(max(260, geometry.size.height * 0.62), 640))
-              .accessibilityLabel("Interactive map of the United States with Alaska and Hawaii insets")
+              onSelect: onSelectCity,
+              onTapMap: { onHapticInteraction(.mapTapped) })
+              .aspectRatio(1.16, contentMode: .fit)
+              .accessibilityLabel("Interactive map of the United States. Visited states are highlighted in gold. Alaska and Hawaii are shown in separate insets.")
 
             if let selectedCity {
-              SelectedAtlasCityCard(
-                city: selectedCity, isLatest: selectedCity.id == visitedCities.last?.id)
+              Button { onSelectCity(selectedCity) } label: {
+                SelectedAtlasCityCard(
+                  city: selectedCity, isLatest: selectedCity.id == visitedCities.last?.id)
+              }
+              .buttonStyle(.plain)
+              .accessibilityHint("Shows a fact about this city or its state")
+              .accessibilityIdentifier("cityAtlas.map.selectedCity")
               if mapData.point(for: selectedCity) == nil {
                 Label("Map position is not available for this city yet.", systemImage: "mappin.slash")
                   .font(.caption)
@@ -531,6 +688,7 @@ struct CityAtlasMapDetailView: View {
                 .font(.subheadline)
                 .foregroundStyle(CityChainPalette.secondaryInk)
             }
+            routeContent()
           } else {
             ContentUnavailableView(
               "Atlas map unavailable",
@@ -547,10 +705,30 @@ struct CityAtlasMapDetailView: View {
         .frame(maxWidth: .infinity, alignment: .top)
       }
       .scrollIndicators(.hidden)
+      // Keep the last stop reachable while the map scrolls behind Scout.
+      .contentMargins(.bottom, scoutOverlayHeight + 12, for: .scrollContent)
+      .overlay(alignment: .bottomTrailing) {
+        ScoutSpeechFeedbackView(
+          message: fact?.text,
+          presentation: presentation,
+          isCompact: false,
+          onDismiss: onDismissFact,
+          fact: fact,
+          companionSize: 176,
+          horizontalPadding: 20,
+          bubbleAlignment: .top)
+          .padding(.vertical, 8)
+          .frame(maxWidth: 620)
+          .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+            scoutOverlayHeight = height
+          }
+          .accessibilityIdentifier("cityAtlas.map.scout")
+      }
       .background(CityChainPalette.paper)
     }
     .toolbar(.hidden, for: .navigationBar)
     .navigationBarBackButtonHidden(true)
+    .onDisappear(perform: onDismissMap)
   }
 }
 
@@ -560,15 +738,16 @@ private struct AtlasMapFrames {
   let hawaii: CGRect
 
   init(size: CGSize) {
-    let insetHeight = max(62, size.height * 0.24)
-    let gap: CGFloat = 8
-    mainland = CGRect(x: 9, y: 8, width: size.width - 18, height: size.height - insetHeight - 22)
+    let insetHeight = size.width * 0.22
+    mainland = CGRect(
+      x: 12, y: 27, width: size.width - 24,
+      height: size.height - insetHeight - 42)
     alaska = CGRect(
-      x: 10, y: size.height - insetHeight - 8,
-      width: (size.width - 28) * 0.6, height: insetHeight - 2)
+      x: 14, y: size.height - insetHeight - 8,
+      width: size.width * 0.28, height: insetHeight)
     hawaii = CGRect(
-      x: alaska.maxX + gap, y: alaska.minY,
-      width: size.width - alaska.maxX - gap - 10, height: insetHeight - 2)
+      x: alaska.maxX + 8, y: alaska.minY + insetHeight * 0.28,
+      width: size.width * 0.18, height: insetHeight * 0.62)
   }
 
   func frame(for region: CityAtlasMapData.Region) -> CGRect {
@@ -609,7 +788,9 @@ private struct AtlasMapFrames {
 }
 
 private struct CityAtlasRoutePreview: View {
+  var showsDetail = false
   @State private var selectedCity: USCity? = USCity("Nashville", state: .tennessee, isStateCapital: true)
+  @State private var fact = ScoutFactCatalog.bundled()?.facts.first { $0.stateCode == "TN" }
   @Namespace private var transitionNamespace
 
   private let visitedCities = [
@@ -618,21 +799,41 @@ private struct CityAtlasRoutePreview: View {
   ]
 
   var body: some View {
-    CityAtlasMapView(
-      visitedCities: visitedCities,
-      presentation: ScoutPresentation(),
-      selectedCity: $selectedCity,
-      transitionNamespace: transitionNamespace,
-      onOpenMapDetail: {},
-      feedbackMessage: nil,
-      feedbackFact: nil,
-      feedbackIsFinished: false,
-      onDismissFeedback: {})
-      .frame(width: 390, height: 844)
-      .background(CityChainPalette.paper)
+    Group {
+      if showsDetail {
+        CityAtlasMapDetailView(
+          visitedCities: visitedCities,
+          presentation: ScoutPresentation(pose: fact == nil ? .welcome : .tryAnother),
+          selectedCity: $selectedCity,
+          fact: fact,
+          onSelectCity: { city in
+            selectedCity = city
+            fact = ScoutFactCatalog.bundled()?.facts.first { $0.stateCode == city.stateAbbreviation }
+          },
+          onDismissFact: { fact = nil }) {
+            EmptyView()
+          }
+      } else {
+        CityAtlasMapView(
+          visitedCities: visitedCities,
+          presentation: ScoutPresentation(),
+          selectedCity: $selectedCity,
+          transitionNamespace: transitionNamespace,
+          onOpenMapDetail: {},
+          feedbackMessage: nil,
+          feedbackFact: nil,
+          feedbackIsFinished: false,
+          onDismissFeedback: {})
+      }
+    }
+    .background(CityChainPalette.paper)
   }
 }
 
 #Preview("Pocket Atlas — Austin to Nashville") {
   CityAtlasRoutePreview()
+}
+
+#Preview("Pocket Atlas detail — Austin to Nashville") {
+  CityAtlasRoutePreview(showsDetail: true)
 }
