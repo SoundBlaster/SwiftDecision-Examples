@@ -125,12 +125,7 @@ private struct RouteScoutBubble: View {
           ScrollView { words }.scrollBounceBehavior(.basedOnSize)
         }
         if let fact {
-          Link(destination: fact.sourceURL) {
-            Label("Fact source", systemImage: "arrow.up.right.square")
-              .font(.caption.weight(.semibold))
-          }
-          .tint(CityChainPalette.teal)
-          .accessibilityHint("Opens \(fact.sourceTitle)")
+          ScoutFactSourceLink(fact: fact)
         }
       })
     .overlay(alignment: .topTrailing) {

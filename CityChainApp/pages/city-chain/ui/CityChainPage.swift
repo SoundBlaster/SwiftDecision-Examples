@@ -623,13 +623,7 @@ private struct CityScoutResponseCard: View {
             .font(.caption2.weight(.semibold))
             .tint(CityChainPalette.blue)
           if let fact {
-            Link(destination: fact.sourceURL) {
-              Label("Fact source", systemImage: "arrow.up.right.square")
-                .font(.caption2.weight(.semibold))
-            }
-            .tint(CityChainPalette.teal)
-            .accessibilityLabel("Fact source")
-            .accessibilityHint("Opens \(fact.sourceTitle)")
+            ScoutFactSourceLink(fact: fact, font: .caption2.weight(.semibold))
           }
         } else if city == nil {
           Text("Take turns with Scout. The last letter points to your next city.")

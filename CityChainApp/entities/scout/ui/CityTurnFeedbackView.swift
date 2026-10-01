@@ -176,13 +176,7 @@ private struct ScoutSpeechContent: View {
         .allowsHitTesting(false)
 
       if let fact {
-        Link(destination: fact.sourceURL) {
-          Label("Fact source", systemImage: "arrow.up.right.square")
-            .font(.caption.weight(.semibold))
-        }
-        .tint(CityChainPalette.teal)
-        .accessibilityLabel("Fact source")
-        .accessibilityHint("Opens \(fact.sourceTitle)")
+        ScoutFactSourceLink(fact: fact)
       }
     }
   }
@@ -256,13 +250,7 @@ private struct CityTurnFeedbackContent: View {
           .fixedSize(horizontal: false, vertical: true)
           .accessibilityAddTraits(.updatesFrequently)
         if let fact {
-          Link(destination: fact.sourceURL) {
-            Label("Fact source", systemImage: "arrow.up.right.square")
-              .font(.caption.weight(.semibold))
-          }
-          .tint(CityChainPalette.teal)
-          .accessibilityLabel("Fact source")
-          .accessibilityHint("Opens \(fact.sourceTitle)")
+          ScoutFactSourceLink(fact: fact)
         }
       }
       .frame(maxWidth: .infinity, alignment: .leading)

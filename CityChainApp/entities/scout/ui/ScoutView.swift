@@ -106,6 +106,22 @@ private struct ScoutMotion {
   var rotation: Double = 0
 }
 
+/// Link to the source of a Scout fact, shared by feedback and atlas surfaces.
+struct ScoutFactSourceLink: View {
+  let fact: ScoutFact
+  var font: Font = .caption.weight(.semibold)
+
+  var body: some View {
+    Link(destination: fact.sourceURL) {
+      Label("Fact source", systemImage: "arrow.up.right.square")
+        .font(font)
+    }
+    .tint(CityChainPalette.teal)
+    .accessibilityLabel("Fact source")
+    .accessibilityHint("Opens \(fact.sourceTitle)")
+  }
+}
+
 private struct ScoutSprite: View {
   let pose: ScoutPose
   let style: ScoutViewStyle
