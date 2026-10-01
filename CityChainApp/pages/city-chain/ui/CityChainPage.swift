@@ -1,22 +1,88 @@
 import CityChainGame
-import SpecificationCore
+import CityChainPresentation
 import SwiftUI
 
-private struct CityChainLayoutContext {
-  let hasRegularWidth: Bool
-  let hasRegularHeight: Bool
-  let width: CGFloat
-  let usesAccessibilityTextSize: Bool
-}
+/// Converts window-local reserved regions into pure policy facts and view frames.
+/// GeometryReader already reflects the keyboard safe area; never subtract it again.
+private struct CityChainAdaptiveFrames {
+  let context: CityChainLayoutContext
+  let plan: CityChainLayoutPlan
+  let atlas: CGRect
+  let game: CGRect
+  let showsScenicRoute: Bool
 
-private enum CityChainLayoutSpec {
-  static func usesExpandedAtlasColumns() -> PredicateSpec<CityChainLayoutContext> {
-    PredicateSpec(description: "city.layout.expanded-atlas-columns") { context in
-      context.hasRegularWidth
-        && context.hasRegularHeight
-        && context.width >= 700
-        && !context.usesAccessibilityTextSize
+  init(
+    geometry: GeometryProxy, restingHeight: CGFloat, hasRegularWidth: Bool,
+    hasRegularHeight: Bool, usesAccessibilityTextSize: Bool
+  ) {
+    let bounds = CGRect(origin: .zero, size: geometry.size)
+    let fold: CGRect?
+#if CITYCHAIN_HAS_RESERVED_REGIONS
+    if #available(iOS 27.1, *) {
+      fold = geometry.reservedRegions(kind: .division).first.map { $0.frame.intersection(bounds) }
+        .flatMap { $0.isNull ? nil : $0 }
+    } else {
+      fold = nil
     }
+#else
+    // Xcode 27.0's SDK cannot name the iOS 27.1 API, even behind #available.
+    fold = nil
+#endif
+
+    let before: CGRect
+    let after: CGRect
+    let division: CityChainLayoutContext.Division?
+    if let fold {
+      let isVertical = fold.height >= fold.width
+      before = CGRect(x: 0, y: 0,
+        width: isVertical ? max(0, fold.minX) : bounds.width,
+        height: isVertical ? bounds.height : max(0, fold.minY))
+      after = CGRect(
+        x: isVertical ? fold.maxX : 0, y: isVertical ? 0 : fold.maxY,
+        width: isVertical ? max(0, bounds.width - fold.maxX) : bounds.width,
+        height: isVertical ? bounds.height : max(0, bounds.height - fold.maxY))
+      division = .init(
+        axis: isVertical ? .vertical : .horizontal,
+        before: .init(width: before.width, height: before.height),
+        after: .init(width: after.width, height: after.height))
+    } else {
+      before = bounds
+      after = bounds
+      division = nil
+    }
+    context = CityChainLayoutContext(
+      width: bounds.width, height: bounds.height, restingHeight: restingHeight,
+      hasRegularWidth: hasRegularWidth, hasRegularHeight: hasRegularHeight,
+      usesAccessibilityTextSize: usesAccessibilityTextSize, division: division)
+    plan = CityChainLayoutPolicy().decide(context) ?? .singleColumn
+    switch plan {
+    case .expandedPanes:
+      let inset = CityChainLayoutPolicy.columnInsets
+      let gap = CityChainLayoutPolicy.columnSpacing
+      let available = bounds.width - inset * 2 - gap
+      let atlasWidth = max(CityChainLayoutPolicy.minimumAtlasWidth,
+        min(available * 0.46, available - CityChainLayoutPolicy.minimumGameWidth))
+      atlas = CGRect(x: inset, y: 0, width: atlasWidth, height: bounds.height)
+      game = CGRect(x: inset + atlasWidth + gap, y: 0,
+        width: available - atlasWidth, height: bounds.height)
+    case .foldAwareBook, .foldAwareNotebook:
+      atlas = before
+      game = after
+    case .focusedBeforeFold:
+      atlas = bounds
+      game = before
+    case .focusedAfterFold:
+      atlas = bounds
+      game = after
+    case .singleColumn:
+      atlas = bounds
+      game = bounds
+    }
+    // The single column spans the whole viewport, so judge it at rest: the route
+    // card must not unmount (and lose its travel animation) while the player types.
+    showsScenicRoute = CityChainScenicRouteSpec().isSatisfiedBy(.init(
+      plan: plan, gameHeight: plan == .singleColumn ? context.restingHeight : game.height,
+      usesAccessibilityTextSize: usesAccessibilityTextSize))
   }
 }
 
@@ -36,66 +102,90 @@ struct CityChainPage: View {
   @State private var atlasFactReactionID: UInt64 = 0
   @Namespace private var atlasMapTransitionNamespace
   @FocusState private var isCityFocused: Bool
+  /// Content height with the software keyboard hidden; see CityChainLayoutContext.
+  @State private var restingContentHeight: CGFloat = 0
 
   var body: some View {
     let snapshot = model.snapshot
     let suggestions = suggestedCities(for: snapshot)
     NavigationStack {
       GeometryReader { geometry in
-        let layoutContext = CityChainLayoutContext(
+        let frames = CityChainAdaptiveFrames(
+          geometry: geometry,
+          restingHeight: restingContentHeight,
           hasRegularWidth: horizontalSizeClass == .regular,
           hasRegularHeight: verticalSizeClass == .regular,
-          width: geometry.size.width,
           usesAccessibilityTextSize: dynamicTypeSize.isAccessibilitySize)
-        let usesColumns = CityChainLayoutSpec.usesExpandedAtlasColumns()
-          .isSatisfiedBy(layoutContext)
         let openMapFromScout = {
-          if usesColumns { showsFullScreenMap = true }
-          else { showsMapDetailSheet = true }
-        }
-
-        Group {
-          if usesColumns {
-            HStack(alignment: .top, spacing: 18) {
-              CityAtlasMapView(
-                visitedCities: snapshot?.usedCities ?? [],
-                presentation: model.scoutPresentation,
-                selectedCity: $selectedAtlasCity,
-                transitionNamespace: atlasMapTransitionNamespace,
-                onOpenMapDetail: openMapDetail,
-                onHapticInteraction: model.recordHapticInteraction,
-                onTapScout: model.isScoutIdle ? openMapFromScout : nil,
-                feedbackMessage: nil,
-                feedbackFact: nil,
-                feedbackIsFinished: snapshot?.isFinished == true,
-                onDismissFeedback: model.dismissTurnFeedback)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .simultaneousGesture(TapGesture().onEnded {
-                  if isCityFocused { isCityFocused = false }
-                })
-
-              CityChainGamePane(
-                model: model, snapshot: snapshot, suggestions: suggestions,
-                onTapScout: openMapFromScout,
-                onShowAtlas: { showsAtlas = true },
-                onShowMap: { showsMapDetailSheet = true },
-                onRequestNewTrip: { showsNewTripConfirmation = true },
-                isCityFocused: $isCityFocused)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .padding(.horizontal, 18)
+          if CityChainFullScreenMapSpec().isSatisfiedBy(frames.context) {
+            showsFullScreenMap = true
           } else {
-            CityChainGamePane(
-              model: model, snapshot: snapshot, suggestions: suggestions,
-              onTapScout: openMapFromScout,
-              onShowAtlas: { showsAtlas = true },
-              onShowMap: { showsMapDetailSheet = true },
-              onRequestNewTrip: { showsNewTripConfirmation = true },
-              isCityFocused: $isCityFocused)
+            showsMapDetailSheet = true
           }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        // The game keeps a stable identity, preserving the draft and focus while it
+        // moves between windows and fold regions. The atlas is only built while shown.
+        ZStack(alignment: .topLeading) {
+          if frames.plan.showsAtlas {
+            CityAtlasMapView(
+              visitedCities: snapshot?.usedCities ?? [],
+              presentation: model.scoutPresentation,
+              selectedCity: $selectedAtlasCity,
+              transitionNamespace: atlasMapTransitionNamespace,
+              onOpenMapDetail: openMapDetail,
+              onHapticInteraction: model.recordHapticInteraction,
+              onTapScout: openMapFromScout,
+              feedbackMessage: nil,
+              feedbackFact: nil,
+              feedbackIsFinished: snapshot?.isFinished == true,
+              onDismissFeedback: model.dismissTurnFeedback,
+              isNotebook: frames.plan == .foldAwareNotebook,
+              notebookScoutGuide: frames.plan == .foldAwareNotebook
+                ? AnyView(RouteScoutGuide(
+                  message: model.scoutLine,
+                  fact: model.latestScoutFact,
+                  presentation: model.scoutPresentation,
+                  onTapScout: openMapFromScout,
+                  canDismiss: model.hasTurnFeedback,
+                  onDismiss: model.dismissTurnFeedback,
+                  placement: .notebookMap))
+                : nil)
+              .frame(width: max(1, frames.atlas.width), height: max(1, frames.atlas.height))
+              // Cut at the fold and the sides; the notebook map may rise under the bar.
+              .mask {
+                Rectangle()
+                  .padding(.top, frames.plan == .foldAwareNotebook ? -200 : 0)
+              }
+              .offset(x: frames.atlas.minX, y: frames.atlas.minY)
+              .simultaneousGesture(TapGesture().onEnded {
+                if isCityFocused { isCityFocused = false }
+              })
+          }
+
+          CityChainGamePane(
+            model: model, snapshot: snapshot, suggestions: suggestions,
+            showsScenicRoute: frames.showsScenicRoute,
+            isNotebook: frames.plan == .foldAwareNotebook,
+            onTapScout: openMapFromScout,
+            onShowAtlas: { showsAtlas = true },
+            onShowMap: { showsMapDetailSheet = true },
+            onRequestNewTrip: { showsNewTripConfirmation = true },
+            isCityFocused: $isCityFocused)
+            .frame(width: frames.game.width, height: frames.game.height)
+            .clipped()
+            .offset(x: frames.game.minX, y: frames.game.minY)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(CityChainBackdrop())
+      }
+      .background {
+        // Extends under the keyboard to report the resting height.
+        Color.clear
+          .ignoresSafeArea(.keyboard)
+          .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+            restingContentHeight = $0
+          }
       }
       .navigationDestination(isPresented: $isMapDetailPresented) {
         cityMapDetailDestination
@@ -265,12 +355,37 @@ struct CityChainPage: View {
   }
 }
 
+extension CityChainPageModel {
+  /// What Scout says right now; every Scout on the page speaks the same line.
+  fileprivate var scoutLine: String? {
+    switch scoutState {
+    case .preparingTurn:
+      return String(localized: "Checking your city…")
+    case .thinking:
+      return String(localized: "One moment, I'm thinking!")
+    case .ready, .celebrating, .tryAnother:
+      break
+    }
+    if hasTurnFeedback || autosaveErrorMessage != nil
+      || isSubmitting || snapshot?.isFinished == true || snapshot?.usedCities.isEmpty != false
+    {
+      return statusMessage
+    } else {
+      return nil
+    }
+  }
+}
+
 /// Content stays anchored at the top while the scrollable viewport and composer
 /// follow the keyboard safe area.
 private struct CityChainGamePane: View {
   @Bindable var model: CityChainPageModel
   let snapshot: CityGameSnapshot?
   let suggestions: [USCity]
+  let showsScenicRoute: Bool
+  /// Notebook fold: Scout speaks over the map above, so this pane keeps only the
+  /// turn and the composer.
+  let isNotebook: Bool
   let onTapScout: (() -> Void)?
   let onShowAtlas: () -> Void
   let onShowMap: () -> Void
@@ -286,23 +401,39 @@ private struct CityChainGamePane: View {
   var body: some View {
     ScrollView {
       VStack(spacing: 14) {
-        ScenicRouteJourneyCard(
-          cities: snapshot?.usedCities,
-          isWaitingForScout: model.isSubmitting && model.hasCommittedPlayerCityForCurrentTurn)
-          .accessibilityIdentifier("cityChain.home.lastLeg")
-          .overlay {
-            RouteScoutGuide(
-              message: scoutMessage,
-              fact: model.latestScoutFact,
-              presentation: model.scoutPresentation,
-              onTapScout: onTapScout,
-              canDismiss: model.hasTurnFeedback,
-              onDismiss: model.dismissTurnFeedback)
-              .accessibilityIdentifier("cityChain.home.routeScout")
-          }
+        if showsScenicRoute {
+          ScenicRouteJourneyCard(
+            cities: snapshot?.usedCities,
+            isWaitingForScout: model.isSubmitting && model.hasCommittedPlayerCityForCurrentTurn)
+            .accessibilityIdentifier("cityChain.home.lastLeg")
+            .overlay {
+              RouteScoutGuide(
+                message: scoutMessage,
+                fact: model.latestScoutFact,
+                presentation: model.scoutPresentation,
+                onTapScout: onTapScout,
+                canDismiss: model.hasTurnFeedback,
+                onDismiss: model.dismissTurnFeedback)
+                .accessibilityIdentifier("cityChain.home.routeScout")
+            }
+        }
         LetterPromptCard(snapshot: snapshot, scoutState: model.scoutState)
           .accessibilityIdentifier("cityChain.home.letterPrompt")
-        if showsInlineCityHints && !suggestions.isEmpty {
+        if !showsScenicRoute, !isNotebook, scoutMessage != nil {
+          ScoutSpeechFeedbackView(
+            message: scoutMessage,
+            presentation: model.scoutPresentation,
+            isCompact: true,
+            onDismiss: model.dismissTurnFeedback,
+            fact: model.latestScoutFact,
+            companionSize: 76,
+            horizontalPadding: 0,
+            bubbleAlignment: .top,
+            maximumBubbleHeight: 120,
+            canDismissMessage: model.hasTurnFeedback,
+            onTapScout: onTapScout)
+        }
+        if showsInlineCityHints && !isNotebook && !suggestions.isEmpty {
           InlineCityHints(
             cities: suggestions,
             selectedName: model.cityInput,
@@ -388,29 +519,13 @@ private struct CityChainGamePane: View {
     snapshot?.usedCities.isEmpty != false
   }
 
-  private var scoutMessage: String? {
-    switch model.scoutState {
-    case .preparingTurn:
-      return String(localized: "Checking your city…")
-    case .thinking:
-      return String(localized: "One moment, I'm thinking!")
-    case .ready, .celebrating, .tryAnother:
-      break
-    }
-    if model.hasTurnFeedback || model.autosaveErrorMessage != nil
-      || model.isSubmitting || snapshot?.isFinished == true || showsInlineCityHints
-    {
-      return model.statusMessage
-    } else {
-      return nil
-    }
-  }
+  private var scoutMessage: String? { model.scoutLine }
 
   @ViewBuilder
   private var toolbarActions: some View {
     toolbarButton("City atlas", systemImage: "book.closed", hint: "Browse cities", action: onShowAtlas)
     toolbarButton("Pocket Atlas map", systemImage: "map", hint: "Open the route map", action: onShowMap)
-    if !showsInlineCityHints && !suggestions.isEmpty {
+    if (!showsInlineCityHints || isNotebook) && !suggestions.isEmpty {
       cityHintsToolbarButton
     }
     if snapshot?.usedCities.isEmpty == false || snapshot?.isFinished == true {

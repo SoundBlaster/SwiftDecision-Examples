@@ -1,4 +1,5 @@
 import CityChainGame
+import CityChainPresentation
 import SwiftUI
 
 struct CityAtlasMapView: View {
@@ -15,8 +16,10 @@ struct CityAtlasMapView: View {
   let feedbackFact: ScoutFact?
   let feedbackIsFinished: Bool
   let onDismissFeedback: () -> Void
-  @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-  @Environment(\.verticalSizeClass) private var verticalSizeClass
+  var isNotebook = false
+  /// Page-provided overlay keeps this feature independent from higher-layer widgets.
+  var notebookScoutGuide: AnyView? = nil
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   private var mapData: CityAtlasMapData? { CityAtlasMapRepository.data }
   private var availableMarkers: [(city: USCity, point: CityAtlasPoint)] {
@@ -38,126 +41,138 @@ struct CityAtlasMapView: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 12) {
-        HStack(alignment: .center, spacing: 10) {
-          Group {
-            if let onTapScout {
-              Button(action: onTapScout) {
-                ZStack {
-                  Rectangle().fill(.clear)
-                  ScoutView(presentation: presentation)
-                    .frame(width: 52, height: 52)
-                }
-                .frame(width: 52, height: 52)
-                .contentShape(Rectangle())
-              }
-              .buttonStyle(.plain)
-              .accessibilityLabel("Open atlas map")
-              .accessibilityHint("Shows the map of your road trip")
-              .accessibilityIdentifier("cityChain.scout.mapPanel.openMap")
-            } else {
+    if isNotebook {
+      notebookMap
+    } else {
+      pocketAtlas
+    }
+  }
+
+  /// Notebook upper half: the map alone, as large as the region allows. The map shows
+  /// the route; the page layers Scout and his speech over its trailing corner.
+  @ViewBuilder
+  private var notebookMap: some View {
+    if let mapData {
+      VStack(spacing: 8) {
+        mapCanvas(data: mapData)
+          .overlay {
+            if let notebookScoutGuide {
+              notebookScoutGuide
+                .accessibilityIdentifier("cityChain.notebook.scout")
+            }
+          }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+        CityAtlasSelectionSummary(
+          city: selectedCity, latestCity: visitedCities.last,
+          hasMapPosition: selectedCity.map { mapData.point(for: $0) != nil } ?? true)
+          .padding(.horizontal, 10)
+      }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // The navigation bar is transparent here, so the map runs up beneath it.
+        .ignoresSafeArea(.container, edges: .top)
+    } else {
+      unavailableMap
+    }
+  }
+
+  private var unavailableMap: some View {
+    ContentUnavailableView(
+      "Atlas map unavailable",
+      systemImage: "map",
+      description: Text("Use the searchable city list while the offline map is unavailable."))
+  }
+
+  private var pocketAtlas: some View {
+    GeometryReader { geometry in
+      ScrollView {
+        VStack(alignment: .leading, spacing: 12) {
+          HStack(alignment: .center, spacing: 10) {
+            ScoutMapTapTarget(
+              presentation: presentation, onTapScout: onTapScout,
+              accessibilityIdentifier: "cityChain.scout.mapPanel.openMap"
+            ) {
               ScoutView(presentation: presentation)
                 .frame(width: 52, height: 52)
             }
-          }
-          VStack(alignment: .leading, spacing: 3) {
-            Text("Pocket Atlas")
-              .font(.system(.title2, design: .rounded, weight: .bold))
-              .foregroundStyle(CityChainPalette.ink)
-            Text("Scout keeps track of our discoveries.")
-              .font(.caption)
-              .foregroundStyle(CityChainPalette.secondaryInk)
-          }
-          Spacer(minLength: 8)
-          Text("50 states")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(CityChainPalette.secondaryInk)
-        }
-
-        if let mapData {
-          Group {
-            if #available(iOS 18.0, *) {
-              mapCanvas(data: mapData)
-                .matchedTransitionSource(id: Self.transitionSourceID, in: transitionNamespace)
-            } else {
-              mapCanvas(data: mapData)
-            }
-          }
-
-          if let feedbackMessage {
-            CityTurnFeedbackView(
-              message: feedbackMessage,
-              presentation: presentation,
-              isFinished: feedbackIsFinished,
-              fact: feedbackFact,
-              onDismiss: onDismissFeedback)
-          }
-
-          if let selectedCity {
-            SelectedAtlasCityCard(
-              city: selectedCity, isLatest: selectedCity.id == visitedCities.last?.id)
-            if mapData.point(for: selectedCity) == nil {
-              Label("Map position is not available for this city yet.", systemImage: "mappin.slash")
+            VStack(alignment: .leading, spacing: 3) {
+              Text("Pocket Atlas")
+                .font(.system(.title2, design: .rounded, weight: .bold))
+                .foregroundStyle(CityChainPalette.ink)
+              Text("Scout keeps track of our discoveries.")
                 .font(.caption)
                 .foregroundStyle(CityChainPalette.secondaryInk)
-                .accessibilityHint("The atlas leaves unknown city locations unmarked.")
             }
-          } else {
-            Text("Start your trip to mark a city on the map.")
-              .font(.subheadline)
+            Spacer(minLength: 8)
+            Text("50 states")
+              .font(.caption.weight(.semibold))
               .foregroundStyle(CityChainPalette.secondaryInk)
           }
 
-          if visitedCities.count > 1 {
-            if horizontalSizeClass == .regular && verticalSizeClass == .regular {
-              CityAtlasVisitedCityList(cities: Array(visitedCities.reversed()), onSelect: {
-                selectedCity = $0
-                onHapticInteraction(.mapCitySelected)
-              })
-                .accessibilityIdentifier("cityAtlas.map.visitedCities")
-            } else {
-              ScrollView(.horizontal) {
-                HStack(spacing: 8) {
-                  ForEach(availableMarkers, id: \.point.id) { marker in
-                    Button {
-                      selectedCity = marker.city
-                      onHapticInteraction(.mapCitySelected)
-                    } label: {
-                      Text(marker.city.name)
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 8)
-                        .background(
-                          selectedCity?.id == marker.city.id ? CityChainPalette.sky : .white,
-                          in: Capsule())
+          if let mapData {
+            mapCanvas(data: mapData)
+            CityAtlasSelectionSummary(
+              city: selectedCity, latestCity: visitedCities.last,
+              hasMapPosition: selectedCity.map { mapData.point(for: $0) != nil } ?? true)
+
+            if let feedbackMessage {
+              CityTurnFeedbackView(
+                message: feedbackMessage,
+                presentation: presentation,
+                isFinished: feedbackIsFinished,
+                fact: feedbackFact,
+                onDismiss: onDismissFeedback)
+            }
+
+            if visitedCities.count > 1 {
+              if CityAtlasVerticalListSpec().isSatisfiedBy(.init(
+                width: geometry.size.width,
+                usesAccessibilityTextSize: dynamicTypeSize.isAccessibilitySize)) {
+                CityAtlasVisitedCityList(cities: Array(visitedCities.reversed()), onSelect: {
+                  selectedCity = $0
+                  onHapticInteraction(.mapCitySelected)
+                })
+                  .accessibilityIdentifier("cityAtlas.map.visitedCities")
+              } else {
+                ScrollView(.horizontal) {
+                  HStack(spacing: 8) {
+                    ForEach(visitedCities) { city in
+                      Button {
+                        selectedCity = city
+                        onHapticInteraction(.mapCitySelected)
+                      } label: {
+                        Text(city.name)
+                          .font(.caption.weight(.semibold))
+                          .padding(.horizontal, 11)
+                          .padding(.vertical, 8)
+                          .background(
+                            selectedCity?.id == city.id ? CityChainPalette.sky : .white,
+                            in: Capsule())
+                      }
+                      .buttonStyle(.plain)
+                      .accessibilityHint("Shows this visited city on the map")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Shows this visited city on the map")
                   }
                 }
+                .scrollIndicators(.hidden)
               }
-              .scrollIndicators(.hidden)
             }
+          } else {
+            unavailableMap
           }
-        } else {
-          ContentUnavailableView(
-            "Atlas map unavailable",
-            systemImage: "map",
-            description: Text("Use the searchable city list while the offline map is unavailable."))
         }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
       }
-      .padding(18)
-      .frame(maxWidth: .infinity, alignment: .leading)
+      .scrollIndicators(.hidden)
+      .contentMargins(.top, 18, for: .scrollContent)
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    .scrollIndicators(.hidden)
-    .contentMargins(.top, 18, for: .scrollContent)
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
   }
 
   @ViewBuilder
   private func mapCanvas(data: CityAtlasMapData) -> some View {
-    CityAtlasMapCanvas(
+    let canvas = CityAtlasMapCanvas(
       data: data, markers: availableMarkers, routeSegments: routeSegments,
       selectedCity: selectedCity,
       visitedStates: Set(visitedCities.compactMap(\.stateAbbreviation)),
@@ -166,10 +181,43 @@ struct CityAtlasMapView: View {
         selectedCity = city
         onHapticInteraction(.mapCitySelected)
       },
-      onOpenMapDetail: onOpenMapDetail,
-      onTapMap: { onHapticInteraction(.mapTapped) })
-      .aspectRatio(1.16, contentMode: .fit)
+      // The notebook map opens in full from Scout and the toolbar instead.
+      onOpenMapDetail: isNotebook ? nil : onOpenMapDetail,
+      onTapMap: { onHapticInteraction(.mapTapped) },
+      showsChrome: !isNotebook,
+      insets: isNotebook ? .leading : .below)
+      // The card keeps its proportions; the notebook map fills whatever region it gets.
+      .aspectRatio(1.16, contentMode: .fit, isEnabled: !isNotebook)
       .accessibilityLabel("Map of the United States. Visited states are highlighted in gold. Alaska and Hawaii are shown in separate insets.")
+    if #available(iOS 18.0, *) {
+      canvas.matchedTransitionSource(id: Self.transitionSourceID, in: transitionNamespace)
+    } else {
+      canvas
+    }
+  }
+}
+
+private struct CityAtlasSelectionSummary: View {
+  let city: USCity?
+  let latestCity: USCity?
+  let hasMapPosition: Bool
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      if let city {
+        SelectedAtlasCityCard(city: city, isLatest: city.id == latestCity?.id)
+        if !hasMapPosition {
+          Label("Map position is not available for this city yet.", systemImage: "mappin.slash")
+            .font(.caption)
+            .foregroundStyle(CityChainPalette.secondaryInk)
+            .accessibilityHint("The atlas leaves unknown city locations unmarked.")
+        }
+      } else {
+        Text("Start your trip to mark a city on the map.")
+          .font(.subheadline)
+          .foregroundStyle(CityChainPalette.secondaryInk)
+      }
+    }
   }
 }
 
@@ -235,10 +283,14 @@ private struct CityAtlasMapCanvas: View {
   let onSelect: (USCity) -> Void
   var onOpenMapDetail: (() -> Void)? = nil
   var onTapMap: () -> Void = {}
+  /// Card treatment: background, title, legend and compass. The notebook map drops it
+  /// and blends into the page instead.
+  var showsChrome = true
+  var insets = AtlasMapFrames.InsetPlacement.below
 
   var body: some View {
     GeometryReader { geometry in
-      let layout = AtlasMapFrames(size: geometry.size)
+      let layout = AtlasMapFrames(size: geometry.size, insets: insets)
       ZStack(alignment: .topLeading) {
         LinearGradient(
           colors: [
@@ -247,6 +299,7 @@ private struct CityAtlasMapCanvas: View {
           ],
           startPoint: .topLeading,
           endPoint: .bottomTrailing)
+          .opacity(showsChrome ? 1 : 0)
           .clipShape(RoundedRectangle(cornerRadius: 18))
           .contentShape(RoundedRectangle(cornerRadius: 18))
           .onTapGesture(perform: onTapMap)
@@ -340,13 +393,15 @@ private struct CityAtlasMapCanvas: View {
           .accessibilityHint("Opens a larger interactive map")
         }
 
-        Text("UNITED STATES")
-          .font(.system(.caption2, design: .rounded, weight: .bold))
-          .tracking(1.1)
-          .foregroundStyle(CityChainPalette.secondaryInk)
-          .position(x: layout.mainland.midX, y: 13)
-          .accessibilityHidden(true)
-          .allowsHitTesting(false)
+        if showsChrome {
+          Text("UNITED STATES")
+            .font(.system(.caption2, design: .rounded, weight: .bold))
+            .tracking(1.1)
+            .foregroundStyle(CityChainPalette.secondaryInk)
+            .position(x: layout.mainland.midX, y: 13)
+            .accessibilityHidden(true)
+            .allowsHitTesting(false)
+        }
 
         ForEach(markers, id: \.point.id) { marker in
           let projected = data.projectedPoint(for: marker.point)
@@ -410,29 +465,31 @@ private struct CityAtlasMapCanvas: View {
           .position(x: layout.hawaii.midX, y: layout.hawaii.minY - 7)
           .allowsHitTesting(false)
 
-        VStack(spacing: 3) {
-          Text("So much to explore!")
-            .font(.system(.caption2, design: .rounded, weight: .bold))
-            .foregroundStyle(CityChainPalette.teal)
-          HStack(spacing: 4) {
-            Circle().fill(Color(red: 0.98, green: 0.76, blue: 0.34))
-              .frame(width: 7, height: 7)
-            Text("Visited states")
-              .font(.caption2)
-              .foregroundStyle(CityChainPalette.secondaryInk)
+        if showsChrome {
+          VStack(spacing: 3) {
+            Text("So much to explore!")
+              .font(.system(.caption2, design: .rounded, weight: .bold))
+              .foregroundStyle(CityChainPalette.teal)
+            HStack(spacing: 4) {
+              Circle().fill(Color(red: 0.98, green: 0.76, blue: 0.34))
+                .frame(width: 7, height: 7)
+              Text("Visited states")
+                .font(.caption2)
+                .foregroundStyle(CityChainPalette.secondaryInk)
+            }
           }
-        }
-        .position(x: geometry.size.width * 0.73, y: geometry.size.height - 69)
-        .allowsHitTesting(false)
-
-        AtlasCompassView()
-          .frame(width: 43, height: 43)
-          .position(x: geometry.size.width * 0.82, y: geometry.size.height - 29)
+          .position(x: geometry.size.width * 0.73, y: geometry.size.height - 69)
           .allowsHitTesting(false)
-          .accessibilityHidden(true)
+
+          AtlasCompassView()
+            .frame(width: 43, height: 43)
+            .position(x: geometry.size.width * 0.82, y: geometry.size.height - 29)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
       }
       .background(.clear, in: RoundedRectangle(cornerRadius: 18))
-      .clipShape(RoundedRectangle(cornerRadius: 18))
+      .clipShape(RoundedRectangle(cornerRadius: showsChrome ? 18 : 0))
     }
   }
 
@@ -733,21 +790,47 @@ struct CityAtlasMapDetailView<RouteContent: View>: View {
 }
 
 private struct AtlasMapFrames {
+  enum InsetPlacement {
+    /// Alaska and Hawaii in a row under the mainland (the square card map).
+    case below
+    /// Alaska over Hawaii in a narrow leading column under the west coast, keeping
+    /// the trailing side clear for Scout (the notebook map).
+    case leading
+  }
+
   let mainland: CGRect
   let alaska: CGRect
   let hawaii: CGRect
 
-  init(size: CGSize) {
-    let insetHeight = size.width * 0.22
-    mainland = CGRect(
-      x: 12, y: 27, width: size.width - 24,
-      height: size.height - insetHeight - 42)
-    alaska = CGRect(
-      x: 14, y: size.height - insetHeight - 8,
-      width: size.width * 0.28, height: insetHeight)
-    hawaii = CGRect(
-      x: alaska.maxX + 8, y: alaska.minY + insetHeight * 0.28,
-      width: size.width * 0.18, height: insetHeight * 0.62)
+  init(size: CGSize, insets: InsetPlacement = .below) {
+    switch insets {
+    case .below:
+      let insetHeight = size.width * 0.22
+      mainland = CGRect(
+        x: 12, y: 27, width: size.width - 24,
+        height: size.height - insetHeight - 42)
+      alaska = CGRect(
+        x: 14, y: size.height - insetHeight - 8,
+        width: size.width * 0.28, height: insetHeight)
+      hawaii = CGRect(
+        x: alaska.maxX + 8, y: alaska.minY + insetHeight * 0.28,
+        width: size.width * 0.18, height: insetHeight * 0.62)
+    case .leading:
+      // Hug the top-leading corner: the mainland rises under the transparent bar and
+      // its east coast ends before the trailing third, where Scout stands.
+      let width = size.width * 0.7 - 8
+      let top = min(40, size.height * 0.08)
+      mainland = CGRect(
+        x: 8, y: top, width: width,
+        height: min(size.height - top - 8, width / Self.aspect(for: .mainland)))
+      // Alaska over Hawaii in the Pacific, under the west coast.
+      let column = min(size.width * 0.18, size.height * 0.36)
+      alaska = CGRect(
+        x: 10, y: max(mainland.midY + 10, size.height * 0.56),
+        width: column, height: size.height * 0.2)
+      hawaii = CGRect(
+        x: 14, y: alaska.maxY + 22, width: column * 0.8, height: size.height * 0.12)
+    }
   }
 
   func frame(for region: CityAtlasMapData.Region) -> CGRect {
@@ -773,12 +856,16 @@ private struct AtlasMapFrames {
       tx: frame.minX, ty: frame.minY)
   }
 
-  func fittedFrame(for region: CityAtlasMapData.Region) -> CGRect {
-    let container = frame(for: region)
+  static func aspect(for region: CityAtlasMapData.Region) -> CGFloat {
     let bounds = CityAtlasMapData.bounds(for: region)
     let centerLatitude = (bounds.north + bounds.south) / 2 * .pi / 180
-    let aspect = CGFloat((bounds.east - bounds.west) * cos(centerLatitude)
+    return CGFloat((bounds.east - bounds.west) * cos(centerLatitude)
       / (bounds.north - bounds.south))
+  }
+
+  func fittedFrame(for region: CityAtlasMapData.Region) -> CGRect {
+    let container = frame(for: region)
+    let aspect = Self.aspect(for: region)
     let width = container.width / container.height > aspect ? container.height * aspect : container.width
     let height = width / aspect
     return CGRect(
@@ -836,4 +923,15 @@ private struct CityAtlasRoutePreview: View {
 
 #Preview("Pocket Atlas detail — Austin to Nashville") {
   CityAtlasRoutePreview(showsDetail: true)
+}
+
+private extension View {
+  @ViewBuilder
+  func aspectRatio(_ ratio: CGFloat, contentMode: ContentMode, isEnabled: Bool) -> some View {
+    if isEnabled {
+      aspectRatio(ratio, contentMode: contentMode)
+    } else {
+      self
+    }
+  }
 }

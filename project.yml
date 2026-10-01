@@ -31,6 +31,8 @@ targets:
     dependencies:
       - package: SwiftDecisionExamples
         product: CityChainGame
+      - package: SwiftDecisionExamples
+        product: CityChainPresentation
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
@@ -45,6 +47,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.citychain
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]": "$(inherited) CITYCHAIN_HAS_RESERVED_REGIONS"
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]": "$(inherited) CITYCHAIN_HAS_RESERVED_REGIONS"
 
   CityChainAppUITests:
     type: bundle.ui-testing

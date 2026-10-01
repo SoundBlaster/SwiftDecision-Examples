@@ -126,20 +126,11 @@ struct ScoutSpeechFeedbackView: View {
         .zIndex(1)
       }
 
-      Group {
-        if let onTapScout {
-          Button(action: onTapScout) {
-            scoutCompanion
-              .contentShape(Rectangle())
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel("Open atlas map")
-          .accessibilityHint("Shows the map of your road trip")
-          .accessibilityIdentifier("cityChain.scout.openMap")
-        } else {
-          scoutCompanion
-            .allowsHitTesting(false)
-        }
+      ScoutMapTapTarget(
+        presentation: presentation, onTapScout: onTapScout,
+        accessibilityIdentifier: "cityChain.scout.openMap"
+      ) {
+        scoutCompanion
       }
     }
     .padding(.horizontal, horizontalPadding)

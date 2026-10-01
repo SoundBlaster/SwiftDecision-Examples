@@ -61,7 +61,7 @@ The atlas is a learning aid, not a penalty or a limited hint currency. The catal
 
 ## Adaptive exploration on iPhone Duo
 
-Status: Pocket Atlas is approved and implemented as an adaptive prototype. Tabletop posture behavior remains deferred.
+Status: Pocket Atlas is approved and implemented as an adaptive prototype. The first SpecificationCore layout policy and Duo book/notebook adaptation are implemented; runtime validation remains pending.
 
 Use the compact outer display for a focused turn-by-turn game. Use additional space on the unfolded inner display for useful companion content: a U.S. atlas, the current city's state information, or the trip collection. Both sizes share the same game, input draft and selected city.
 
@@ -72,7 +72,7 @@ Use the compact outer display for a focused turn-by-turn game. Use additional sp
 - [x] Prototype a persistent expanded atlas and game pane using available geometry and one game session.
 - [ ] Verify display transitions, safe areas, rotations, Dynamic Type, keyboard focus and Reduce Motion on device.
 
-Research, constraints and concept images are recorded in [the Duo concept proposal](DESIGN/CITY_CHAIN_DUO_CONCEPTS.md).
+The implementation contract for iPad, Duo book fold, and Duo notebook/tabletop layouts is in the [adaptive layout specification](CITY_CHAIN_ADAPTIVE_LAYOUT_SPEC.md). Research, constraints and concept images are recorded in [the Duo concept proposal](DESIGN/CITY_CHAIN_DUO_CONCEPTS.md).
 
 ## Design boundaries
 

@@ -145,6 +145,31 @@ private struct ScoutSprite: View {
   }
 }
 
+/// Scout as a map shortcut. Always the same button, only switched on and off, so a
+/// pose change never swaps Scout's view identity and its reaction keyframes still play.
+struct ScoutMapTapTarget<Content: View>: View {
+  let presentation: ScoutPresentation
+  let onTapScout: (() -> Void)?
+  let accessibilityIdentifier: String
+  @ViewBuilder let content: Content
+
+  var body: some View {
+    let isEnabled = onTapScout != nil
+      && ScoutMapInteractionSpec.allowsMapOpening(for: presentation)
+    Button {
+      onTapScout?()
+    } label: {
+      content.contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .allowsHitTesting(isEnabled)
+    .accessibilityHidden(!isEnabled)
+    .accessibilityLabel("Open atlas map")
+    .accessibilityHint("Shows the map of your road trip")
+    .accessibilityIdentifier(accessibilityIdentifier)
+  }
+}
+
 struct ScoutAvatar: View {
   var body: some View {
     Image("ScoutAvatar")
