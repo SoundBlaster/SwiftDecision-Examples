@@ -1,4 +1,5 @@
 import CityChainGame
+import SpecificationCore
 import SwiftUI
 
 /// Scout standing on a rock in the corner of the route card, sharing the same facts
@@ -45,7 +46,9 @@ struct RouteScoutGuide: View {
           .allowsHitTesting(false)
 
         Group {
-          if let onTapScout {
+          if let onTapScout,
+            RouteScoutMapInteractionSpec.allowsMapOpening(for: presentation.pose)
+          {
             Button(action: onTapScout) {
               ScoutView(presentation: presentation, style: .cornerCompanion)
                 .frame(width: scoutSide, height: scoutSide)
@@ -91,6 +94,15 @@ struct RouteScoutGuide: View {
     if let fact { return ("Fun fact!", fact.text) }
     if let message { return (nil, message) }
     return nil
+  }
+}
+
+private enum RouteScoutMapInteractionSpec {
+  static func allowsMapOpening(for pose: ScoutPose) -> Bool {
+    PredicateSpec<ScoutPose>(description: "city.scout-map.available-when-holding-map") {
+      $0.holdsMap
+    }
+    .isSatisfiedBy(pose)
   }
 }
 

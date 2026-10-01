@@ -15,6 +15,13 @@ enum ScoutPose: String, CaseIterable {
   case celebration
   case tryAnother
 
+  var holdsMap: Bool {
+    switch self {
+    case .welcome, .thinking: true
+    case .celebration, .tryAnother: false
+    }
+  }
+
   var assetName: String {
     switch self {
     case .welcome: "ScoutWelcome"
