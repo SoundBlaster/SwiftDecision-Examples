@@ -1,5 +1,24 @@
 import CityChainGame
+import SpecificationCore
 import SwiftUI
+
+private struct CityChainLayoutContext {
+  let hasRegularWidth: Bool
+  let hasRegularHeight: Bool
+  let width: CGFloat
+  let usesAccessibilityTextSize: Bool
+}
+
+private enum CityChainLayoutSpec {
+  static func usesExpandedAtlasColumns() -> PredicateSpec<CityChainLayoutContext> {
+    PredicateSpec(description: "city.layout.expanded-atlas-columns") { context in
+      context.hasRegularWidth
+        && context.hasRegularHeight
+        && context.width >= 700
+        && !context.usesAccessibilityTextSize
+    }
+  }
+}
 
 struct CityChainPage: View {
   let model: CityChainPageModel
@@ -23,10 +42,13 @@ struct CityChainPage: View {
     let suggestions = suggestedCities(for: snapshot)
     NavigationStack {
       GeometryReader { geometry in
-        let usesColumns = horizontalSizeClass == .regular
-          && verticalSizeClass == .regular
-          && geometry.size.width >= 700
-          && !dynamicTypeSize.isAccessibilitySize
+        let layoutContext = CityChainLayoutContext(
+          hasRegularWidth: horizontalSizeClass == .regular,
+          hasRegularHeight: verticalSizeClass == .regular,
+          width: geometry.size.width,
+          usesAccessibilityTextSize: dynamicTypeSize.isAccessibilitySize)
+        let usesColumns = CityChainLayoutSpec.usesExpandedAtlasColumns()
+          .isSatisfiedBy(layoutContext)
         let openMapFromScout = {
           if usesColumns { showsFullScreenMap = true }
           else { showsMapDetailSheet = true }
