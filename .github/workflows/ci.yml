@@ -8,8 +8,12 @@ on:
 jobs:
   iOS:
     runs-on: xcode-27
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.0.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode 27.1
+        run: xcodebuild -version
       - name: Install Metal compiler for the Oracle shader
         run: xcodebuild -downloadComponent MetalToolchain
       - name: Build iOS simulator app
