@@ -10,6 +10,7 @@ let package = Package(
     .macOS(.v10_15),
   ],
   products: [
+    .library(name: "CityChainPresentation", targets: ["CityChainPresentation"]),
     .library(name: "CityChainGame", targets: ["CityChainGame"]),
     .library(name: "OraclePresentation", targets: ["OraclePresentation"]),
     .library(name: "OracleGame", targets: ["OracleGame"]),
@@ -24,6 +25,11 @@ let package = Package(
     .package(url: "https://github.com/SoundBlaster/SwiftJev.git", exact: "0.2.0"),
   ],
   targets: [
+    .target(
+      name: "CityChainPresentation",
+      dependencies: [.product(name: "SpecificationCore", package: "SpecificationCore")]
+    ),
+    .testTarget(name: "CityChainPresentationTests", dependencies: ["CityChainPresentation"]),
     .target(name: "OraclePresentation"),
     .testTarget(name: "OraclePresentationTests", dependencies: ["OraclePresentation"]),
     .target(

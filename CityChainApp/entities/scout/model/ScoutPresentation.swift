@@ -1,11 +1,26 @@
+import SpecificationCore
+
+enum ScoutMapInteractionSpec {
+  /// Scout offers the map while holding it, but never over a turn still being checked.
+  static func allowsMapOpening(for presentation: ScoutPresentation) -> Bool {
+    PredicateSpec<ScoutPresentation>(description: "city.scout-map.available-when-holding-map-and-idle") {
+      $0.pose.holdsMap && !$0.isAwaitingReply
+    }
+    .isSatisfiedBy(presentation)
+  }
+}
+
 /// Immutable visual snapshot consumed by Scout views.
 struct ScoutPresentation: Equatable {
   let pose: ScoutPose
   let reactionID: UInt64
+  /// A submitted turn is still being checked; Scout's interactions stay paused.
+  let isAwaitingReply: Bool
 
-  init(pose: ScoutPose = .welcome, reactionID: UInt64 = 0) {
+  init(pose: ScoutPose = .welcome, reactionID: UInt64 = 0, isAwaitingReply: Bool = false) {
     self.pose = pose
     self.reactionID = reactionID
+    self.isAwaitingReply = isAwaitingReply
   }
 }
 
@@ -94,7 +109,7 @@ struct ScoutStateMachine {
   var hasTurnFeedback: Bool { state.hasTurnFeedback }
   var isIdle: Bool { state == .ready }
   var presentation: ScoutPresentation {
-    ScoutPresentation(pose: state.pose, reactionID: reactionID)
+    ScoutPresentation(pose: state.pose, reactionID: reactionID, isAwaitingReply: state.isSubmitting)
   }
 
   @discardableResult

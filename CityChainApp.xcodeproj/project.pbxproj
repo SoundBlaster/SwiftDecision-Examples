@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CCAD00000000000000000001 /* CityChainPresentation in Frameworks */ = {isa = PBXBuildFile; productRef = CCAD00000000000000000002 /* CityChainPresentation */; };
 		05AB46FBE54D49FA367F8C75 /* OracleAnswerTexture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4FEBB2DA601F4435F8A4D24 /* OracleAnswerTexture.swift */; };
 		070C17965265C50BE178E613 /* OracleGame in Frameworks */ = {isa = PBXBuildFile; productRef = 4E5F7613A5B4238BF6496ACD /* OracleGame */; };
 		086AAE21D06E4D2B0B970A17 /* OracleWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A74CBD7C2E32A5A6D5FAED /* OracleWidgetsBundle.swift */; };
@@ -221,6 +222,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				48C4C4E3A605725A5B907DF4 /* CityChainGame in Frameworks */,
+				CCAD00000000000000000001 /* CityChainPresentation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -821,6 +823,7 @@
 			name = CityChainApp;
 			packageProductDependencies = (
 				BCFC25CE5B72400FF274C46C /* CityChainGame */,
+				CCAD00000000000000000002 /* CityChainPresentation */,
 			);
 			productName = CityChainApp;
 			productReference = 7D2B12290F6ADAE2F1B1DBB2 /* CityChainApp.app */;
@@ -1448,6 +1451,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		CCAD00000000000000000002 /* CityChainPresentation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CityChainPresentation;
+		};
 		01B68DE758911AE15B2AAEBE /* OraclePresentation */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OraclePresentation;

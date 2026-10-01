@@ -21,7 +21,7 @@ for the offline fixture.
 
 ## City Chain
 
-See the [City Chain roadmap](DOCS/CITY_CHAIN_ROADMAP.md) for Scout and the searchable City atlas. The [iPhone Duo design concepts](DOCS/DESIGN/CITY_CHAIN_DUO_CONCEPTS.md) remain proposals for dedicated foldable layouts.
+See the [City Chain roadmap](DOCS/CITY_CHAIN_ROADMAP.md) for Scout and the searchable City atlas, and the [adaptive layout specification](DOCS/CITY_CHAIN_ADAPTIVE_LAYOUT_SPEC.md) for iPad and iPhone Duo implementation requirements. The [iPhone Duo design concepts](DOCS/DESIGN/CITY_CHAIN_DUO_CONCEPTS.md) contain illustrative layouts and deferred proposals.
 
 City Chain is an offline-testable game engine for a US cities word chain. The player may enter any city name; Noul checks whether it is a US city. The built-in catalog supplies computer replies and the searchable City atlas, with the 50 state capitals plus 100 additional cities. Search matches the beginning of a city name (for example, Y finds Yuma and Yonkers). The atlas highlights cities available for the current turn and copies a selected name into the composer without sending it.
 

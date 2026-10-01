@@ -1,5 +1,4 @@
 import CityChainGame
-import SpecificationCore
 import SwiftUI
 
 /// Scout standing on a rock in the corner of the route card, sharing the same facts
@@ -8,12 +7,35 @@ import SwiftUI
 /// Closing the bubble goes through the same dismissal as the header, so Scout's
 /// state machine moves on and both bubbles stay in sync.
 struct RouteScoutGuide: View {
+  /// Where Scout stands and how much room the bubble gets, as fractions of the host.
+  struct Placement {
+    /// The bottom corner Scout's rock sits in; the bubble opens towards the other side.
+    var corner: HorizontalEdge = .leading
+    var scoutHeight: CGFloat = 0.52
+    var bubbleTop: CGFloat = 0.34
+    var bubbleBottom: CGFloat = 0.84
+    /// How far across the host, measured from Scout's corner, the bubble may reach.
+    var bubbleReach: CGFloat = 0.76
+    /// Rock width relative to Scout.
+    var rockScale: CGFloat = 1.2
+    /// How much of the rock spills past the host's side edge.
+    var rockSpill: CGFloat = 0.1
+
+    /// Bottom-left of the route card, clear of its start and "Next" stops.
+    static let routeCard = Placement()
+    /// Bottom-right over the notebook map, speaking leftwards across it.
+    static let notebookMap = Placement(
+      corner: .trailing, scoutHeight: 0.82, bubbleTop: 0.3, bubbleBottom: 0.97,
+      bubbleReach: 0.84, rockScale: 0.9, rockSpill: 0)
+  }
+
   let message: String?
   let fact: ScoutFact?
   let presentation: ScoutPresentation
   var onTapScout: (() -> Void)? = nil
   var canDismiss = false
   var onDismiss: () -> Void = {}
+  var placement = Placement.routeCard
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   /// Pixel size of the cropped `ScoutRock` artwork.
@@ -22,60 +44,57 @@ struct RouteScoutGuide: View {
   var body: some View {
     GeometryReader { geometry in
       let size = geometry.size
-      let scoutSide = size.height * 0.52
-      let rockWidth = scoutSide * 1.2
+      let isMirrored = placement.corner == .trailing
+      // Laid out for the leading corner, then mirrored for the trailing one.
+      let x: (_ leadingX: CGFloat, _ width: CGFloat) -> CGFloat = { leadingX, width in
+        isMirrored ? size.width - leadingX - width : leadingX
+      }
+      let scoutSide = size.height * placement.scoutHeight
+      let rockWidth = scoutSide * placement.rockScale
       let rockHeight = rockWidth * Self.rockAspect
-      // Tucked into the corner: the bushes spill past the card's left edge and rounded
-      // corner, while the rock is cut flush with the card's bottom line.
-      let rockOrigin = CGPoint(x: -rockWidth * 0.1, y: size.height - rockHeight * 0.74)
-      // Planted on the stone just left of its crown.
+      // Tucked into the corner: the bushes spill past the host's side edge and rounded
+      // corner, while the rock is cut flush with the host's bottom line.
+      let rockOrigin = CGPoint(
+        x: -rockWidth * placement.rockSpill, y: size.height - rockHeight * 0.74)
+      // Planted on the stone just inside its crown.
       let feet = CGPoint(x: rockOrigin.x + rockWidth * 0.45, y: rockOrigin.y + rockHeight * 0.66)
       let scoutOrigin = CGPoint(x: feet.x - scoutSide / 2, y: feet.y - scoutSide * 0.94)
       // Anchored to the rock rather than to Scout, so nudging Scout keeps the bubble's width.
-      let bubbleLeading = rockOrigin.x + rockWidth * 0.4 + scoutSide * 0.32
-      // Grows upwards from above the "Next" caption, stopping short of the start stop.
-      let bubbleTop = size.height * 0.34
-      let bubbleBottom = size.height * 0.84
+      let bubbleStart = rockOrigin.x + rockWidth * 0.4 + scoutSide * 0.32
+      let bubbleWidth = min(size.width * placement.bubbleReach - bubbleStart, 300)
+      let bubbleTop = size.height * placement.bubbleTop
+      let bubbleBottom = size.height * placement.bubbleBottom
 
       ZStack(alignment: .topLeading) {
         Image("ScoutRock")
           .resizable()
           .frame(width: rockWidth, height: rockHeight)
-          .offset(x: rockOrigin.x, y: rockOrigin.y)
+          .scaleEffect(x: isMirrored ? -1 : 1)
+          .offset(x: x(rockOrigin.x, rockWidth), y: rockOrigin.y)
           .accessibilityHidden(true)
           .allowsHitTesting(false)
 
-        Group {
-          if let onTapScout,
-            RouteScoutMapInteractionSpec.allowsMapOpening(for: presentation.pose)
-          {
-            Button(action: onTapScout) {
-              ScoutView(presentation: presentation, style: .cornerCompanion)
-                .frame(width: scoutSide, height: scoutSide)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Open atlas map")
-            .accessibilityHint("Shows the map of your road trip")
-            .accessibilityIdentifier("cityChain.scout.openMap")
-          } else {
-            ScoutView(presentation: presentation, style: .cornerCompanion)
-              .frame(width: scoutSide, height: scoutSide)
-              .accessibilityHidden(true)
-          }
+        ScoutMapTapTarget(
+          presentation: presentation, onTapScout: onTapScout,
+          accessibilityIdentifier: "cityChain.scout.openMap"
+        ) {
+          // Mirrored so Scout always turns towards the bubble.
+          ScoutView(presentation: presentation, style: .cornerCompanion)
+            .frame(width: scoutSide, height: scoutSide)
+            .scaleEffect(x: isMirrored ? -1 : 1)
         }
         .frame(width: scoutSide, height: scoutSide)
-        .offset(x: scoutOrigin.x, y: scoutOrigin.y)
+        .offset(x: x(scoutOrigin.x, scoutSide), y: scoutOrigin.y)
 
         if let speech {
           RouteScoutBubble(
             title: speech.title, text: speech.text, fact: fact,
+            tailEdge: placement.corner,
             onDismiss: canDismiss ? onDismiss : nil)
-            .frame(
-              width: min(size.width * 0.76 - bubbleLeading, 300),
-              height: bubbleBottom - bubbleTop)
-            .offset(x: bubbleLeading, y: bubbleTop)
-            .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .leading)))
+            .frame(width: bubbleWidth, height: bubbleBottom - bubbleTop)
+            .offset(x: x(bubbleStart, bubbleWidth), y: bubbleTop)
+            .transition(.opacity.combined(
+              with: .scale(scale: 0.95, anchor: isMirrored ? .trailing : .leading)))
         }
       }
       .frame(width: size.width, height: size.height, alignment: .topLeading)
@@ -97,24 +116,18 @@ struct RouteScoutGuide: View {
   }
 }
 
-private enum RouteScoutMapInteractionSpec {
-  static func allowsMapOpening(for pose: ScoutPose) -> Bool {
-    PredicateSpec<ScoutPose>(description: "city.scout-map.available-when-holding-map") {
-      $0.holdsMap
-    }
-    .isSatisfiedBy(pose)
-  }
-}
-
-/// Comic bubble whose tail points left at Scout; scrolls when the text outgrows the card.
+/// Comic bubble whose tail points at Scout; scrolls when the text outgrows the card.
 private struct RouteScoutBubble: View {
   let title: LocalizedStringKey?
   let text: String
   let fact: ScoutFact?
+  /// The side Scout stands on, where the tail sits.
+  let tailEdge: HorizontalEdge
   let onDismiss: (() -> Void)?
 
   /// Keeps the first line clear of the close badge sitting on the corner.
   private var badgeClearance: CGFloat { onDismiss == nil ? 0 : 14 }
+  private var badgeEdge: Edge.Set { tailEdge == .leading ? .trailing : .leading }
 
   var body: some View {
     bubble(
@@ -128,7 +141,8 @@ private struct RouteScoutBubble: View {
           ScoutFactSourceLink(fact: fact)
         }
       })
-    .overlay(alignment: .topTrailing) {
+    // The badge takes the top corner away from the tail.
+    .overlay(alignment: badgeEdge == .trailing ? .topTrailing : .topLeading) {
       if let onDismiss {
         Button(action: onDismiss) {
           Image(systemName: "xmark")
@@ -142,7 +156,7 @@ private struct RouteScoutBubble: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .offset(x: 18, y: -18)
+        .offset(x: badgeEdge == .trailing ? 18 : -18, y: -18)
         .accessibilityLabel("Dismiss message")
       }
     }
@@ -159,30 +173,35 @@ private struct RouteScoutBubble: View {
           .font(.system(.subheadline, design: .rounded, weight: .heavy))
           .foregroundStyle(CityChainPalette.ink)
           .accessibilityAddTraits(.isHeader)
-          .padding(.trailing, badgeClearance)
+          .padding(badgeEdge, badgeClearance)
       }
       Text(text)
         .font(.footnote)
         .foregroundStyle(CityChainPalette.ink)
         .fixedSize(horizontal: false, vertical: true)
-        .padding(.trailing, title == nil ? badgeClearance : 0)
+        .padding(badgeEdge, title == nil ? badgeClearance : 0)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   private func bubble(_ content: some View) -> some View {
-    content
-      .padding(.leading, RouteScoutBubbleShape.tailWidth + 10)
-      .padding(.trailing, 10)
+    let tailIsLeading = tailEdge == .leading
+    // The shape is drawn with a leading tail and mirrored; the words never are.
+    let flip: CGFloat = tailIsLeading ? 1 : -1
+    return content
+      .padding(.leading, tailIsLeading ? RouteScoutBubbleShape.tailWidth + 10 : 10)
+      .padding(.trailing, tailIsLeading ? 10 : RouteScoutBubbleShape.tailWidth + 10)
       .padding(.vertical, 8)
       .background {
         RouteScoutBubbleShape()
           .fill(Color(red: 1, green: 0.985, blue: 0.94))
+          .scaleEffect(x: flip)
           .shadow(color: .black.opacity(0.06), radius: 7, y: 3)
       }
       .overlay {
         RouteScoutBubbleShape()
           .stroke(CityChainPalette.ink.opacity(0.11), lineWidth: 1)
+          .scaleEffect(x: flip)
           .accessibilityHidden(true)
       }
   }
