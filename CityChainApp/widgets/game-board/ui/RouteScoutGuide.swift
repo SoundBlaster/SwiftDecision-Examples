@@ -4,10 +4,15 @@ import SwiftUI
 /// Scout standing on a rock in the corner of the route card, sharing the same facts
 /// and status lines as the header companion. A pure overlay: the route card keeps
 /// its own layout, and only the speech bubble takes touches.
+/// Closing the bubble goes through the same dismissal as the header, so Scout's
+/// state machine moves on and both bubbles stay in sync.
 struct RouteScoutGuide: View {
   let message: String?
   let fact: ScoutFact?
   let presentation: ScoutPresentation
+  var onTapScout: (() -> Void)? = nil
+  var canDismiss = false
+  var onDismiss: () -> Void = {}
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   /// Pixel size of the cropped `ScoutRock` artwork.
@@ -39,13 +44,30 @@ struct RouteScoutGuide: View {
           .accessibilityHidden(true)
           .allowsHitTesting(false)
 
-        ScoutView(presentation: presentation, style: .cornerCompanion)
-          .frame(width: scoutSide, height: scoutSide)
-          .offset(x: scoutOrigin.x, y: scoutOrigin.y)
-          .accessibilityHidden(true)
+        Group {
+          if let onTapScout {
+            Button(action: onTapScout) {
+              ScoutView(presentation: presentation, style: .cornerCompanion)
+                .frame(width: scoutSide, height: scoutSide)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open atlas map")
+            .accessibilityHint("Shows the map of your road trip")
+            .accessibilityIdentifier("cityChain.scout.openMap")
+          } else {
+            ScoutView(presentation: presentation, style: .cornerCompanion)
+              .frame(width: scoutSide, height: scoutSide)
+              .accessibilityHidden(true)
+          }
+        }
+        .frame(width: scoutSide, height: scoutSide)
+        .offset(x: scoutOrigin.x, y: scoutOrigin.y)
 
         if let speech {
-          RouteScoutBubble(title: speech.title, text: speech.text, fact: fact)
+          RouteScoutBubble(
+            title: speech.title, text: speech.text, fact: fact,
+            onDismiss: canDismiss ? onDismiss : nil)
             .frame(
               width: min(size.width * 0.76 - bubbleLeading, 300),
               height: bubbleBottom - bubbleTop)
@@ -77,6 +99,10 @@ private struct RouteScoutBubble: View {
   let title: LocalizedStringKey?
   let text: String
   let fact: ScoutFact?
+  let onDismiss: (() -> Void)?
+
+  /// Keeps the first line clear of the close badge sitting on the corner.
+  private var badgeClearance: CGFloat { onDismiss == nil ? 0 : 14 }
 
   var body: some View {
     bubble(
@@ -95,9 +121,28 @@ private struct RouteScoutBubble: View {
           .accessibilityHint("Opens \(fact.sourceTitle)")
         }
       })
+    .overlay(alignment: .topTrailing) {
+      if let onDismiss {
+        Button(action: onDismiss) {
+          Image(systemName: "xmark")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(CityChainPalette.secondaryInk)
+            .frame(width: 24, height: 24)
+            .background(.white, in: Circle())
+            .overlay { Circle().strokeBorder(CityChainPalette.ink.opacity(0.11), lineWidth: 1) }
+            .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .offset(x: 18, y: -18)
+        .accessibilityLabel("Dismiss message")
+      }
+    }
     .frame(maxHeight: .infinity, alignment: .bottom)
     .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     .accessibilityElement(children: .contain)
+    .modifier(DismissAction(onDismiss: onDismiss))
   }
 
   private var words: some View {
@@ -107,11 +152,13 @@ private struct RouteScoutBubble: View {
           .font(.system(.subheadline, design: .rounded, weight: .heavy))
           .foregroundStyle(CityChainPalette.ink)
           .accessibilityAddTraits(.isHeader)
+          .padding(.trailing, badgeClearance)
       }
       Text(text)
         .font(.footnote)
         .foregroundStyle(CityChainPalette.ink)
         .fixedSize(horizontal: false, vertical: true)
+        .padding(.trailing, title == nil ? badgeClearance : 0)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
   }
@@ -134,6 +181,18 @@ private struct RouteScoutBubble: View {
   }
 }
 
+private struct DismissAction: ViewModifier {
+  let onDismiss: (() -> Void)?
+
+  func body(content: Content) -> some View {
+    if let onDismiss {
+      content.accessibilityAction(named: "Dismiss message", onDismiss)
+    } else {
+      content
+    }
+  }
+}
+
 private struct RouteScoutBubbleShape: Shape {
   static let tailWidth: CGFloat = 14
 
@@ -141,8 +200,13 @@ private struct RouteScoutBubbleShape: Shape {
     Path { path in
       let radius = min(18, rect.height * 0.3)
       let left = rect.minX + Self.tailWidth
-      let tailCenter = rect.minY + min(rect.height * 0.42, 56)
-      let tailHalfHeight: CGFloat = 10
+      // The tail must fit on the straight edge between the two left corners, or the
+      // outline doubles back on itself (visible on one-line bubbles).
+      let straightEdge = rect.height - radius * 2
+      let tailHalfHeight = min(10, max(straightEdge / 2, 0))
+      let tailCenter = min(
+        max(rect.minY + min(rect.height * 0.42, 56), rect.minY + radius + tailHalfHeight),
+        rect.maxY - radius - tailHalfHeight)
 
       path.move(to: CGPoint(x: left + radius, y: rect.minY))
       path.addLine(to: CGPoint(x: rect.maxX - radius, y: rect.minY))
@@ -177,11 +241,17 @@ private struct RouteScoutBubbleShape: Shape {
   RouteScoutGuidePreview(
     message: nil,
     fact: RouteScoutGuidePreview.fact(
-      "Ogden grew into a major railroad hub in the American West."))
+      "Ogden grew into a major railroad hub in the American West."),
+    canDismiss: true)
 }
 
 #Preview("Route Scout — status", traits: .sizeThatFitsLayout) {
   RouteScoutGuidePreview(message: "One moment, I'm thinking!", fact: nil)
+}
+
+#Preview("Route Scout — one line", traits: .sizeThatFitsLayout) {
+  // The shortest bubble: the tail must still sit between the rounded corners.
+  RouteScoutGuidePreview(message: "Hmm, let me look!", fact: nil)
 }
 
 #Preview("Route Scout — idle", traits: .sizeThatFitsLayout) {
@@ -198,13 +268,22 @@ private struct RouteScoutBubbleShape: Shape {
 
 private struct RouteScoutGuidePreview: View {
   let message: String?
-  let fact: ScoutFact?
+  @State var fact: ScoutFact?
+  var canDismiss = false
+  @State var presentation = ScoutPresentation(pose: .celebration, reactionID: 1)
 
   var body: some View {
     ScenicRouteJourneyCard(
       cities: [USCity("Ogden", state: .utah)], isWaitingForScout: false)
       .overlay {
-        RouteScoutGuide(message: message, fact: fact, presentation: ScoutPresentation())
+        RouteScoutGuide(
+          message: message, fact: fact, presentation: presentation,
+          canDismiss: canDismiss && fact != nil,
+          onDismiss: {
+            // Mirrors the page: the fact clears and Scout returns to idle.
+            fact = nil
+            presentation = ScoutPresentation(pose: .welcome, reactionID: presentation.reactionID &+ 1)
+          })
       }
       .frame(width: 350)
       .padding(20)

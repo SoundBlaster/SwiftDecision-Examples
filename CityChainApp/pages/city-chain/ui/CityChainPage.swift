@@ -272,7 +272,10 @@ private struct CityChainGamePane: View {
             RouteScoutGuide(
               message: scoutMessage,
               fact: model.latestScoutFact,
-              presentation: model.scoutPresentation)
+              presentation: model.scoutPresentation,
+              onTapScout: onTapScout,
+              canDismiss: model.hasTurnFeedback,
+              onDismiss: model.dismissTurnFeedback)
               .accessibilityIdentifier("cityChain.home.routeScout")
           }
         LetterPromptCard(snapshot: snapshot, scoutState: model.scoutState)
