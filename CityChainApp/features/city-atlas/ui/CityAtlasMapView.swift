@@ -17,7 +17,8 @@ struct CityAtlasMapView: View {
   let feedbackIsFinished: Bool
   let onDismissFeedback: () -> Void
   var isNotebook = false
-  var notebookScoutGuide: RouteScoutGuide? = nil
+  /// Page-provided overlay keeps this feature independent from higher-layer widgets.
+  var notebookScoutGuide: AnyView? = nil
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   private var mapData: CityAtlasMapData? { CityAtlasMapRepository.data }

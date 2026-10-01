@@ -142,14 +142,14 @@ struct CityChainPage: View {
               onDismissFeedback: model.dismissTurnFeedback,
               isNotebook: frames.plan == .foldAwareNotebook,
               notebookScoutGuide: frames.plan == .foldAwareNotebook
-                ? RouteScoutGuide(
+                ? AnyView(RouteScoutGuide(
                   message: model.scoutLine,
                   fact: model.latestScoutFact,
                   presentation: model.scoutPresentation,
                   onTapScout: openMapFromScout,
                   canDismiss: model.hasTurnFeedback,
                   onDismiss: model.dismissTurnFeedback,
-                  placement: .notebookMap)
+                  placement: .notebookMap))
                 : nil)
               .frame(width: max(1, frames.atlas.width), height: max(1, frames.atlas.height))
               // Cut at the fold and the sides; the notebook map may rise under the bar.
