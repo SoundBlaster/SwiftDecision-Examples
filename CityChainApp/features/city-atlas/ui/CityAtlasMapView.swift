@@ -17,6 +17,7 @@ struct CityAtlasMapView: View {
   let feedbackIsFinished: Bool
   let onDismissFeedback: () -> Void
   var isNotebook = false
+  var notebookScoutGuide: RouteScoutGuide? = nil
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   private var mapData: CityAtlasMapData? { CityAtlasMapRepository.data }
@@ -51,7 +52,20 @@ struct CityAtlasMapView: View {
   @ViewBuilder
   private var notebookMap: some View {
     if let mapData {
-      mapCanvas(data: mapData)
+      VStack(spacing: 8) {
+        mapCanvas(data: mapData)
+          .overlay {
+            if let notebookScoutGuide {
+              notebookScoutGuide
+                .accessibilityIdentifier("cityChain.notebook.scout")
+            }
+          }
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+        CityAtlasSelectionSummary(
+          city: selectedCity, latestCity: visitedCities.last,
+          hasMapPosition: selectedCity.map { mapData.point(for: $0) != nil } ?? true)
+          .padding(.horizontal, 10)
+      }
         .padding(.horizontal, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // The navigation bar is transparent here, so the map runs up beneath it.

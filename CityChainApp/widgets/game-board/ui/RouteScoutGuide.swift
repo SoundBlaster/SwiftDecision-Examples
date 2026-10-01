@@ -40,6 +40,7 @@ struct RouteScoutGuide: View {
 
   /// Pixel size of the cropped `ScoutRock` artwork.
   private static let rockAspect: CGFloat = 499.0 / 900.0
+  private static let minimumBubbleWidth: CGFloat = 160
 
   var body: some View {
     GeometryReader { geometry in
@@ -49,7 +50,12 @@ struct RouteScoutGuide: View {
       let x: (_ leadingX: CGFloat, _ width: CGFloat) -> CGFloat = { leadingX, width in
         isMirrored ? size.width - leadingX - width : leadingX
       }
-      let scoutSide = size.height * placement.scoutHeight
+      // Keep room for a readable bubble even when the notebook's upper pane is tall
+      // and narrow. The start position scales linearly with Scout's side length.
+      let bubbleStartPerScoutSide = placement.rockScale * (0.4 - placement.rockSpill) + 0.32
+      let spaceForScout = (size.width * placement.bubbleReach - Self.minimumBubbleWidth)
+        / bubbleStartPerScoutSide
+      let scoutSide = min(size.height * placement.scoutHeight, max(spaceForScout, 0))
       let rockWidth = scoutSide * placement.rockScale
       let rockHeight = rockWidth * Self.rockAspect
       // Tucked into the corner: the bushes spill past the host's side edge and rounded
@@ -61,7 +67,7 @@ struct RouteScoutGuide: View {
       let scoutOrigin = CGPoint(x: feet.x - scoutSide / 2, y: feet.y - scoutSide * 0.94)
       // Anchored to the rock rather than to Scout, so nudging Scout keeps the bubble's width.
       let bubbleStart = rockOrigin.x + rockWidth * 0.4 + scoutSide * 0.32
-      let bubbleWidth = min(size.width * placement.bubbleReach - bubbleStart, 300)
+      let bubbleWidth = max(min(size.width * placement.bubbleReach - bubbleStart, 300), 0)
       let bubbleTop = size.height * placement.bubbleTop
       let bubbleBottom = size.height * placement.bubbleBottom
 
@@ -86,7 +92,7 @@ struct RouteScoutGuide: View {
         .frame(width: scoutSide, height: scoutSide)
         .offset(x: x(scoutOrigin.x, scoutSide), y: scoutOrigin.y)
 
-        if let speech {
+        if let speech, bubbleWidth >= Self.minimumBubbleWidth {
           RouteScoutBubble(
             title: speech.title, text: speech.text, fact: fact,
             tailEdge: placement.corner,

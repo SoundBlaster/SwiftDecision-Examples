@@ -14,7 +14,7 @@ Implementation specification for iPhone, iPad, and iPhone Duo. The Duo notebook/
 
 ## Platform and source context
 
-The project targets iOS 17.0. New fold-aware APIs must be availability-gated; this work does not raise the deployment target.
+The project targets iOS 17.0. New fold-aware APIs must be availability-gated; this work does not raise the deployment target. The 27.1 API is also compile-time gated by SDK, so Xcode 27.0 builds the ordinary adaptive fallback while Xcode 27.1 builds enable active-fold layouts.
 
 Apple recommends adapting to the space and size classes reported by the system instead of branching on a physical pose. When the OS exposes a fold division or reserved region, the layout can keep important content clear of it. Environments without fold information need a useful fallback.
 
@@ -170,7 +170,7 @@ The adapter uses the viewport already reduced by the keyboard safe area for fold
 
 The game keeps a stable identity while frames change. The atlas is built only while a plan shows it, so single-column phones do not lay out or animate an invisible map; its selected city is page-owned and survives. The game model, input binding, focus binding, selected city, and pane-local state retain their owners. Shared-map and short layouts replace the full scenic route with the turn prompt and compact Scout feedback. Scout opens the map only in poses that hold a map and never while a submitted turn is being checked, using the shared interaction specification. Scout stays one button whose tap is switched on and off, so pose reactions keep playing.
 
-The compact notebook atlas puts the map beside selected-city details. Its full history remains available through the map action. Other atlas layouts choose history presentation from the local pane width and include cities without known coordinates.
+The notebook atlas keeps the map above selected-city details, so selecting a marker still exposes its state and capital status. Its full history remains available through the map action. Other atlas layouts choose history presentation from the local pane width and include cities without known coordinates.
 
 Runtime follow-up remains the complete UI matrix above, especially keyboard transitions across a horizontal fold, VoiceOver order, and Dynamic Type readability. Unit tests and compilation do not establish those visual results.
 

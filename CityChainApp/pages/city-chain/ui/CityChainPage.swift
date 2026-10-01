@@ -17,12 +17,17 @@ private struct CityChainAdaptiveFrames {
   ) {
     let bounds = CGRect(origin: .zero, size: geometry.size)
     let fold: CGRect?
+#if CITYCHAIN_HAS_RESERVED_REGIONS
     if #available(iOS 27.1, *) {
       fold = geometry.reservedRegions(kind: .division).first.map { $0.frame.intersection(bounds) }
         .flatMap { $0.isNull ? nil : $0 }
     } else {
       fold = nil
     }
+#else
+    // Xcode 27.0's SDK cannot name the iOS 27.1 API, even behind #available.
+    fold = nil
+#endif
 
     let before: CGRect
     let after: CGRect
@@ -135,21 +140,18 @@ struct CityChainPage: View {
               feedbackFact: nil,
               feedbackIsFinished: snapshot?.isFinished == true,
               onDismissFeedback: model.dismissTurnFeedback,
-              isNotebook: frames.plan == .foldAwareNotebook)
+              isNotebook: frames.plan == .foldAwareNotebook,
+              notebookScoutGuide: frames.plan == .foldAwareNotebook
+                ? RouteScoutGuide(
+                  message: model.scoutLine,
+                  fact: model.latestScoutFact,
+                  presentation: model.scoutPresentation,
+                  onTapScout: openMapFromScout,
+                  canDismiss: model.hasTurnFeedback,
+                  onDismiss: model.dismissTurnFeedback,
+                  placement: .notebookMap)
+                : nil)
               .frame(width: max(1, frames.atlas.width), height: max(1, frames.atlas.height))
-              .overlay {
-                if frames.plan == .foldAwareNotebook {
-                  RouteScoutGuide(
-                    message: model.scoutLine,
-                    fact: model.latestScoutFact,
-                    presentation: model.scoutPresentation,
-                    onTapScout: openMapFromScout,
-                    canDismiss: model.hasTurnFeedback,
-                    onDismiss: model.dismissTurnFeedback,
-                    placement: .notebookMap)
-                    .accessibilityIdentifier("cityChain.notebook.scout")
-                }
-              }
               // Cut at the fold and the sides; the notebook map may rise under the bar.
               .mask {
                 Rectangle()
