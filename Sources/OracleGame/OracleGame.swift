@@ -516,6 +516,7 @@ private extension DecisionTraceEvent.Stage {
 /// conformance is intentional: specifications are immutable after initialization.
 public final class OracleGameEngine: @unchecked Sendable {
   private let decisionEngine: DecisionEngine
+  private let configuration: DecisionEngine.Configuration
   private let maximumResponseTime: TimeInterval?
   private let requestPolicy = OracleRequestPolicy()
   private let answerValidation: AnyAsyncSpecification<OracleAnswer>
@@ -532,6 +533,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     fallbackEnabled: Bool = true
   ) {
     decisionEngine = DecisionEngine(backend: backend, configuration: configuration)
+    self.configuration = configuration
     self.fallbackEnabled = fallbackEnabled
     supportsTransientFailureFallback =
       (backend as? any OracleBackendMetadata)?.supportsTransientFailureFallback == true
