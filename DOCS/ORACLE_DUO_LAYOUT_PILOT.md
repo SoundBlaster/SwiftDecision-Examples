@@ -57,7 +57,8 @@ active `.division` reserved regions in fixed physical coordinates; an inactive
 or out-of-viewport division does not select a fold layout.
 
 The current viewport already excludes the keyboard safe area. A separate current
-measurement ignoring the keyboard supplies resting height to keep ordinary wide
+background GeometryReader inside a keyboard-ignoring region supplies resting
+height to keep ordinary wide
 composition stable while typing. Neither keyboard height subtraction nor a
 historical maximum window size is used. Active fold fit is evaluated against the
 currently usable regions, so a keyboard that consumes the lower tabletop region

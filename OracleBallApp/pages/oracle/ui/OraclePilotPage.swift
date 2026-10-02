@@ -91,12 +91,15 @@ struct OraclePilotPage: View {
       }
     }
     .background {
-      // A current window measurement, not a retained maximum from a previous pose.
-      Color.clear
-        .ignoresSafeArea(.keyboard)
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
-          restingHeight = $0
-        }
+      // Read inside the keyboard-ignoring region, so typing does not report the
+      // reduced viewport as the resting height or collapse ordinary wide panes.
+      GeometryReader { restingGeometry in
+        Color.clear
+          .onChange(of: restingGeometry.size.height, initial: true) { _, height in
+            restingHeight = height
+          }
+      }
+      .ignoresSafeArea(.keyboard)
     }
     .a11yRoot("oracle")
     .preferredColorScheme(.dark)
