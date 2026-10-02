@@ -30,7 +30,10 @@ let package = Package(
       dependencies: [.product(name: "SpecificationCore", package: "SpecificationCore")]
     ),
     .testTarget(name: "CityChainPresentationTests", dependencies: ["CityChainPresentation"]),
-    .target(name: "OraclePresentation"),
+    .target(
+      name: "OraclePresentation",
+      dependencies: [.product(name: "SpecificationCore", package: "SpecificationCore")]
+    ),
     .testTarget(name: "OraclePresentationTests", dependencies: ["OraclePresentation"]),
     .target(
       name: "OracleGame",
