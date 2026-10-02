@@ -19,6 +19,11 @@ an iOS 26+ simulator or device. Use the arrow to replay; the engine infers
 whether the question needs a Noul, Choice, or Score answer. No API key is needed
 for the offline fixture.
 
+The [Duo layout pilot](DOCS/ORACLE_DUO_LAYOUT_PILOT.md) adds adaptive single-pane,
+expanded, book, and tabletop arrangements selected by SpecificationCore. It is
+disabled by default; enable `ORACLE_DUO_LAYOUT_PILOT=1` in the OracleBallApp scheme
+to try it with Xcode 27.1.
+
 ## City Chain
 
 See the [City Chain roadmap](DOCS/CITY_CHAIN_ROADMAP.md) for Scout and the searchable City atlas, and the [adaptive layout specification](DOCS/CITY_CHAIN_ADAPTIVE_LAYOUT_SPEC.md) for iPad and iPhone Duo implementation requirements. The [iPhone Duo design concepts](DOCS/DESIGN/CITY_CHAIN_DUO_CONCEPTS.md) contain illustrative layouts and deferred proposals.
