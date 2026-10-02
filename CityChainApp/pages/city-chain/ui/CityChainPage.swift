@@ -180,12 +180,16 @@ struct CityChainPage: View {
         .background(CityChainBackdrop())
       }
       .background {
-        // Extends under the keyboard to report the resting height.
-        Color.clear
-          .ignoresSafeArea(.keyboard)
-          .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
-            restingContentHeight = $0
-          }
+        // Measure inside the view that ignores the keyboard safe area. Measuring
+        // outside that modifier reports the reduced viewport and switches the
+        // route card to the legacy Scout feedback while the player is typing.
+        GeometryReader { restingGeometry in
+          Color.clear
+            .onChange(of: restingGeometry.size.height, initial: true) { _, height in
+              restingContentHeight = height
+            }
+        }
+        .ignoresSafeArea(.keyboard)
       }
       .navigationDestination(isPresented: $isMapDetailPresented) {
         cityMapDetailDestination
