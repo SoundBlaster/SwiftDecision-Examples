@@ -344,7 +344,8 @@ private let legacyRussianPipelineKeys: [String: String] = [
 private func localizedDetailValue(_ detail: OraclePipelineDetail) -> String {
   switch detail.id {
   case "requested-mode", "selected-route", "answer-available", "fallback-used", "answer-type",
-       "resolution-reason", "validation-reason", "extraction-rule", "intent-scores", "probabilities":
+       "resolution-reason", "validation-reason", "extraction-rule", "intent-scores", "probabilities",
+       "failure-kind":
     localizedPipelineText(detail.value)
   default:
     detail.value

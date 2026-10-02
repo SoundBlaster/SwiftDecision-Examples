@@ -74,6 +74,15 @@ func oracleLocalized(_ key: String) -> String {
 /// Optional metadata a backend can expose without relying on SwiftDecision traces.
 public protocol OracleBackendMetadata: DecisionBackend {
   var modelIdentifier: String { get }
+  /// Whether temporary inference failures may use the local Oracle answer engine.
+  var supportsTransientFailureFallback: Bool { get }
+  /// Total inference budget shared by classification and answer generation.
+  var maximumResponseTime: TimeInterval? { get }
+}
+
+public extension OracleBackendMetadata {
+  var supportsTransientFailureFallback: Bool { false }
+  var maximumResponseTime: TimeInterval? { nil }
 }
 
 /// A display-ready answer. The UI does not need to understand DecisionResult.
@@ -286,6 +295,16 @@ private enum OracleOperation: Sendable, Equatable {
   case unsupported
   case automatic
 
+  var mode: OracleMode {
+    switch self {
+    case .noul: .noul
+    case .choice: .choice
+    case .score: .score
+    case .unsupported: .unsupported
+    case .automatic: .automatic
+    }
+  }
+
   var classifierIndex: Int {
     switch self {
     case .noul: 0
@@ -435,6 +454,12 @@ private struct OracleRequestPolicy {
   }
 }
 
+private struct OracleRoutedProviderFailure: Error {
+  let underlyingError: any Error
+  let mode: OracleMode
+  let pipeline: [OraclePipelineStage]
+}
+
 private struct OracleEvaluation: Sendable {
   let answer: OracleAnswer?
   let confidence: Double
@@ -491,12 +516,15 @@ private extension DecisionTraceEvent.Stage {
 public final class OracleGameEngine: @unchecked Sendable {
   private let decisionEngine: DecisionEngine
   private let configuration: DecisionEngine.Configuration
-  private let intentClassifier: OracleIntentClassifier
+  private let backend: any DecisionBackend
+  private let maximumResponseTime: TimeInterval?
   private let requestPolicy = OracleRequestPolicy()
   private let answerValidation: AnyAsyncSpecification<OracleAnswer>
   private let resolutionPolicy: AsyncFirstMatchSpec<OracleEvaluation, OracleResolution>
   private let backendIdentifier: String
   private let fallbackEnabled: Bool
+  private let supportsTransientFailureFallback: Bool
+  private let providerCircuitBreaker = OracleProviderCircuitBreaker()
 
   public init(
     backend: some DecisionBackend = OfflineOracleBackend(),
@@ -507,9 +535,10 @@ public final class OracleGameEngine: @unchecked Sendable {
     decisionEngine = DecisionEngine(backend: backend, configuration: configuration)
     self.configuration = configuration
     self.fallbackEnabled = fallbackEnabled
-    intentClassifier = OracleIntentClassifier(
-      engine: decisionEngine,
-      fallbackEnabled: fallbackEnabled)
+    supportsTransientFailureFallback =
+      (backend as? any OracleBackendMetadata)?.supportsTransientFailureFallback == true
+    self.backend = backend
+    maximumResponseTime = (backend as? any OracleBackendMetadata)?.maximumResponseTime
     if let backendIdentifier {
       self.backendIdentifier = backendIdentifier
     } else if let metadata = backend as? any OracleBackendMetadata {
@@ -622,6 +651,58 @@ public final class OracleGameEngine: @unchecked Sendable {
   }
 
   public func answerWithTrace(for request: OracleRequest) async throws -> OracleTracedOutcome {
+    if supportsTransientFailureFallback, await providerCircuitBreaker.isCoolingDown {
+      let cooldownContext = OracleProviderFallbackContext(
+        providerSupportsFallback: true,
+        failure: .circuitOpen)
+      if OracleProviderFallbackSpec().isSatisfiedBy(cooldownContext) {
+        return try await offlineFallback(for: request, failure: .circuitOpen)
+      }
+    }
+
+    do {
+      let deadline = maximumResponseTime.map { ProcessInfo.processInfo.systemUptime + $0 }
+      let result = try await answerWithConfiguredBackend(for: request, deadline: deadline)
+      if supportsTransientFailureFallback {
+        await providerCircuitBreaker.recordSuccess()
+      }
+      return result
+    } catch {
+      let routedFailure = error as? OracleRoutedProviderFailure
+      let underlyingError = routedFailure?.underlyingError ?? error
+      let failure = OracleProviderFailure.classify(underlyingError)
+      let context = OracleProviderFallbackContext(
+        providerSupportsFallback: supportsTransientFailureFallback,
+        failure: failure)
+      guard OracleProviderFallbackSpec().isSatisfiedBy(context) else { throw underlyingError }
+      await providerCircuitBreaker.recordTransientFailure()
+      return try await offlineFallback(
+        for: routedFailure.map { OracleRequest(question: request.question, mode: $0.mode) } ?? request,
+        failure: failure,
+        preserving: routedFailure?.pipeline ?? [])
+    }
+  }
+
+  private func inferenceEngine(deadline: TimeInterval?) throws -> DecisionEngine {
+    guard let deadline else { return decisionEngine }
+    try Task.checkCancellation()
+    let remaining = deadline - ProcessInfo.processInfo.systemUptime
+    guard remaining > 0 else { throw DecisionError.timedOut }
+    if let timeout = configuration.timeout, !timeout.isFinite || timeout < 0 {
+      return decisionEngine // Preserve SwiftDecision's configuration validation.
+    }
+    return DecisionEngine(
+      backend: backend,
+      configuration: .init(
+        policies: configuration.policies,
+        timeout: min(configuration.timeout ?? remaining, remaining),
+        traceMode: configuration.traceMode))
+  }
+
+  private func answerWithConfiguredBackend(
+    for request: OracleRequest,
+    deadline: TimeInterval?
+  ) async throws -> OracleTracedOutcome {
     var pipeline: [OraclePipelineStage] = []
     let eligibilityRecorder = SpecificationTraceRecorder()
     guard try await SpecificationTraceRuntime.evaluateAsync(
@@ -663,13 +744,14 @@ public final class OracleGameEngine: @unchecked Sendable {
         traceDetail("selected-route", "Selected route", selection.operation.traceLabel),
       ]))
 
-    let evaluation: OracleEvaluation
     if selection.operation == .unsupported {
-      evaluation = try await makeUnsupportedEvaluation(
+      return try await resolve(makeUnsupportedEvaluation(
         confidence: 1,
-        reason: "unsupported answer mode requested")
+        reason: "unsupported answer mode requested"), appendingTo: pipeline)
     } else if selection.operation == .automatic {
-      let intent = try await intentClassifier.classify(question)
+      let classifier = OracleIntentClassifier(
+        engine: try inferenceEngine(deadline: deadline), fallbackEnabled: fallbackEnabled)
+      let intent = try await classifier.classify(question)
       pipeline.append(decisionStage(
         "Question type",
         result: intent,
@@ -685,33 +767,61 @@ public final class OracleGameEngine: @unchecked Sendable {
         return OracleTracedOutcome(outcome: .abstained(reason: reason), pipeline: pipeline)
       }
 
-      if operation == .unsupported {
-        evaluation = try await makeUnsupportedEvaluation(
-          confidence: intent.confidence,
-          reason: "question is outside the supported answer types")
-      } else if operation == .choice {
-        if isChoicePlanValid {
-          evaluation = try await evaluate(
-            request,
-            selection: OracleOperationSelection(.choice, choicePlan: choicePlan))
-        } else {
-          evaluation = try await makeUnsupportedEvaluation(
-            confidence: intent.confidence,
-            reason: "choice alternatives could not be extracted")
-        }
-      } else {
-        evaluation = try await evaluate(
-          request,
-          selection: OracleOperationSelection(operation, choicePlan: choicePlan))
+      if operation == .unsupported || (operation == .choice && !isChoicePlanValid) {
+        let reason = operation == .unsupported
+          ? "question is outside the supported answer types"
+          : "choice alternatives could not be extracted"
+        return try await resolve(makeUnsupportedEvaluation(
+          confidence: intent.confidence, reason: reason), appendingTo: pipeline)
       }
-    } else {
-      if selection.operation == .choice {
-        selection = OracleOperationSelection(.choice, choicePlan: choicePlan)
-      }
-      evaluation = try await evaluate(request, selection: selection)
+      selection = OracleOperationSelection(operation, choicePlan: choicePlan)
+    } else if selection.operation == .choice {
+      selection = OracleOperationSelection(.choice, choicePlan: choicePlan)
     }
 
+    let evaluation: OracleEvaluation
+    do {
+      evaluation = try await evaluate(request, selection: selection, deadline: deadline)
+    } catch {
+      throw OracleRoutedProviderFailure(
+        underlyingError: error, mode: selection.operation.mode, pipeline: pipeline)
+    }
     return try await resolve(evaluation, appendingTo: pipeline)
+  }
+
+  private func offlineFallback(
+    for request: OracleRequest,
+    failure: OracleProviderFailure,
+    preserving completedPipeline: [OraclePipelineStage] = []
+  ) async throws -> OracleTracedOutcome {
+    let offlineEngine = OracleGameEngine(
+      configuration: configuration,
+      backendIdentifier: OfflineOracleBackend().modelIdentifier,
+      fallbackEnabled: fallbackEnabled)
+    let offlineResult = try await offlineEngine.answerWithTrace(for: request)
+    let reason = failure.userFacingReason
+    let outcome: OracleOutcome
+    switch offlineResult.outcome {
+    case let .accepted(answer), let .fallback(answer, _):
+      outcome = .fallback(answer, reason: reason)
+    case let .abstained(abstentionReason):
+      outcome = .abstained(reason: abstentionReason)
+    }
+    let fallbackStage = OraclePipelineStage(
+      id: "Provider fallback",
+      title: "Provider fallback",
+      summary: reason,
+      details: [
+        traceDetail("provider", "Provider", backendIdentifier),
+        traceDetail("fallback-provider", "Fallback provider", "offline-fixture"),
+        traceDetail("failure-kind", "Failure", failure.traceLabel),
+      ])
+    return OracleTracedOutcome(
+      outcome: outcome,
+      pipeline: completedPipeline
+        + offlineResult.pipeline.filter { stage in
+          !completedPipeline.contains(where: { $0.id == stage.id })
+        } + [fallbackStage])
   }
 
   private func resolve(
@@ -806,8 +916,10 @@ public final class OracleGameEngine: @unchecked Sendable {
 
   private func evaluate(
     _ request: OracleRequest,
-    selection: OracleOperationSelection
+    selection: OracleOperationSelection,
+    deadline: TimeInterval? = nil
   ) async throws -> OracleEvaluation {
+    let decisionEngine = try inferenceEngine(deadline: deadline)
     let question = request.question.trimmingCharacters(in: .whitespacesAndNewlines)
     switch selection.operation {
     case .noul:

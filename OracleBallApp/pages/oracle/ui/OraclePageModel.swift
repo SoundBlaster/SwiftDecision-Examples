@@ -32,6 +32,11 @@ final class OraclePageModel {
   enum Provider: Equatable {
     case offline
     case jev(model: String)
+
+    var isJev: Bool {
+      if case .jev = self { return true }
+      return false
+    }
   }
 
   private(set) var provider: Provider
@@ -86,6 +91,7 @@ final class OraclePageModel {
     requestTask?.cancel()
     requestTask = nil
     requestID += 1
+    terminalRequestID = requestID
     isSubmitting = false
     let key = input.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -145,7 +151,11 @@ final class OraclePageModel {
           self.historyEntries = self.historyStore.entries
           self.answerRequestID = requestID
           self.terminalRequestID = 0
-          self.statusMessage = isRandomSimulation ? String(localized: "Random answer") : nil
+          self.statusMessage = isRandomSimulation
+            ? String(localized: "Random answer")
+            : (self.provider.isJev && answer.source == .offlineFixture
+              ? String(localized: "Jev unavailable · offline answer used")
+              : nil)
           if answer.mode == .unsupported || answer.noulValue == false {
             self.haptics.play(.negativeResult)
           } else if answer.noulValue == true || answer.mode != .noul {

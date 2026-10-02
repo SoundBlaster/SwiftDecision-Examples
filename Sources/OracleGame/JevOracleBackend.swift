@@ -9,7 +9,9 @@ import SwiftJev
 /// offline fixture and Jev provider are interchangeable.
 public struct JevOracleBackend: OracleBackendMetadata {
   private let backend: JevDecisionBackend
+  public let maximumResponseTime: TimeInterval?
   public let modelIdentifier: String
+  public var supportsTransientFailureFallback: Bool { true }
 
   /// Creates a Jev-backed Oracle provider without making a network request.
   ///
@@ -18,7 +20,7 @@ public struct JevOracleBackend: OracleBackendMetadata {
   public init(
     apiKey: String? = nil,
     model: String = "jev-latest",
-    timeout: TimeInterval = 10,
+    timeout: TimeInterval = 2.5,
     transport: any JevHTTPTransport = URLSessionJevHTTPTransport()
   ) throws {
     backend = try JevDecisionBackend(
@@ -26,6 +28,7 @@ public struct JevOracleBackend: OracleBackendMetadata {
       model: model,
       timeout: timeout,
       transport: transport)
+    maximumResponseTime = timeout
     modelIdentifier = model
   }
 
