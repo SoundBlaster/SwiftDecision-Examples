@@ -1055,6 +1055,86 @@
         }
       }
     },
+    "Jev unavailable · offline answer used": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev unavailable · offline answer used"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev недоступен · дан офлайн-ответ"
+          }
+        }
+      }
+    },
+    "Provider fallback": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provider fallback" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Офлайн-ответ" } }
+      }
+    },
+    "Fallback provider": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Fallback provider" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Резервный источник" } }
+      }
+    },
+    "Failure": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Failure" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Причина сбоя" } }
+      }
+    },
+    "Inference timed out": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Inference timed out" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Истекло время ожидания" } }
+      }
+    },
+    "Network unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Network unavailable" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Сеть недоступна" } }
+      }
+    },
+    "Provider rate limited": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provider rate limited" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Ограничение частоты запросов" } }
+      }
+    },
+    "Provider temporarily unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provider temporarily unavailable" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Провайдер временно недоступен" } }
+      }
+    },
+    "Provider cooldown active": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Provider cooldown active" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Активна пауза перед повтором" } }
+      }
+    },
+    "Non-transient provider error": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Non-transient provider error" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Постоянная ошибка провайдера" } }
+      }
+    },
     "Learn more at TypeSafe.ai": {
       "extractionState": "manual",
       "localizations": {

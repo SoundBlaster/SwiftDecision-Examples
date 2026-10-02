@@ -10,6 +10,7 @@ import SwiftJev
 public struct JevOracleBackend: OracleBackendMetadata {
   private let backend: JevDecisionBackend
   public let modelIdentifier: String
+  public var supportsTransientFailureFallback: Bool { true }
 
   /// Creates a Jev-backed Oracle provider without making a network request.
   ///
@@ -18,7 +19,7 @@ public struct JevOracleBackend: OracleBackendMetadata {
   public init(
     apiKey: String? = nil,
     model: String = "jev-latest",
-    timeout: TimeInterval = 10,
+    timeout: TimeInterval = 2.5,
     transport: any JevHTTPTransport = URLSessionJevHTTPTransport()
   ) throws {
     backend = try JevDecisionBackend(

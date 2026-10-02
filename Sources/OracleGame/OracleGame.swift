@@ -74,6 +74,12 @@ func oracleLocalized(_ key: String) -> String {
 /// Optional metadata a backend can expose without relying on SwiftDecision traces.
 public protocol OracleBackendMetadata: DecisionBackend {
   var modelIdentifier: String { get }
+  /// Whether temporary inference failures may use the local Oracle answer engine.
+  var supportsTransientFailureFallback: Bool { get }
+}
+
+public extension OracleBackendMetadata {
+  var supportsTransientFailureFallback: Bool { false }
 }
 
 /// A display-ready answer. The UI does not need to understand DecisionResult.
@@ -497,6 +503,8 @@ public final class OracleGameEngine: @unchecked Sendable {
   private let resolutionPolicy: AsyncFirstMatchSpec<OracleEvaluation, OracleResolution>
   private let backendIdentifier: String
   private let fallbackEnabled: Bool
+  private let supportsTransientFailureFallback: Bool
+  private let providerCircuitBreaker = OracleProviderCircuitBreaker()
 
   public init(
     backend: some DecisionBackend = OfflineOracleBackend(),
@@ -507,6 +515,8 @@ public final class OracleGameEngine: @unchecked Sendable {
     decisionEngine = DecisionEngine(backend: backend, configuration: configuration)
     self.configuration = configuration
     self.fallbackEnabled = fallbackEnabled
+    supportsTransientFailureFallback =
+      (backend as? any OracleBackendMetadata)?.supportsTransientFailureFallback == true
     intentClassifier = OracleIntentClassifier(
       engine: decisionEngine,
       fallbackEnabled: fallbackEnabled)
@@ -622,6 +632,33 @@ public final class OracleGameEngine: @unchecked Sendable {
   }
 
   public func answerWithTrace(for request: OracleRequest) async throws -> OracleTracedOutcome {
+    if supportsTransientFailureFallback, await providerCircuitBreaker.isCoolingDown {
+      let cooldownContext = OracleProviderFallbackContext(
+        providerSupportsFallback: true,
+        failure: .circuitOpen)
+      if OracleProviderFallbackSpec().isSatisfiedBy(cooldownContext) {
+        return try await offlineFallback(for: request, failure: .circuitOpen)
+      }
+    }
+
+    do {
+      let result = try await answerWithConfiguredBackend(for: request)
+      if supportsTransientFailureFallback {
+        await providerCircuitBreaker.recordSuccess()
+      }
+      return result
+    } catch {
+      let failure = OracleProviderFailure.classify(error)
+      let context = OracleProviderFallbackContext(
+        providerSupportsFallback: supportsTransientFailureFallback,
+        failure: failure)
+      guard OracleProviderFallbackSpec().isSatisfiedBy(context) else { throw error }
+      await providerCircuitBreaker.recordTransientFailure()
+      return try await offlineFallback(for: request, failure: failure)
+    }
+  }
+
+  private func answerWithConfiguredBackend(for request: OracleRequest) async throws -> OracleTracedOutcome {
     var pipeline: [OraclePipelineStage] = []
     let eligibilityRecorder = SpecificationTraceRecorder()
     guard try await SpecificationTraceRuntime.evaluateAsync(
@@ -712,6 +749,37 @@ public final class OracleGameEngine: @unchecked Sendable {
     }
 
     return try await resolve(evaluation, appendingTo: pipeline)
+  }
+
+  private func offlineFallback(
+    for request: OracleRequest,
+    failure: OracleProviderFailure
+  ) async throws -> OracleTracedOutcome {
+    let offlineEngine = OracleGameEngine(
+      configuration: configuration,
+      backendIdentifier: OfflineOracleBackend().modelIdentifier,
+      fallbackEnabled: fallbackEnabled)
+    let offlineResult = try await offlineEngine.answerWithTrace(for: request)
+    let reason = failure.userFacingReason
+    let outcome: OracleOutcome
+    switch offlineResult.outcome {
+    case let .accepted(answer), let .fallback(answer, _):
+      outcome = .fallback(answer, reason: reason)
+    case let .abstained(abstentionReason):
+      outcome = .abstained(reason: abstentionReason)
+    }
+    let fallbackStage = OraclePipelineStage(
+      id: "Provider fallback",
+      title: "Provider fallback",
+      summary: reason,
+      details: [
+        traceDetail("provider", "Provider", backendIdentifier),
+        traceDetail("fallback-provider", "Fallback provider", "offline-fixture"),
+        traceDetail("failure-kind", "Failure", failure.traceLabel),
+      ])
+    return OracleTracedOutcome(
+      outcome: outcome,
+      pipeline: offlineResult.pipeline + [fallbackStage])
   }
 
   private func resolve(

@@ -579,6 +579,17 @@
         }
       }
     },
+    "Provider fallback": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": { "state": "translated", "value": "Provider fallback" }
+        },
+        "ru": {
+          "stringUnit": { "state": "translated", "value": "Офлайн-ответ" }
+        }
+      }
+    },
     "Answer validation": {
       "extractionState": "manual",
       "localizations": {
@@ -1409,6 +1420,17 @@
             "state": "translated",
             "value": "Политика решения выбрала запасной ответ."
           }
+        }
+      }
+    },
+    "Jev unavailable; an offline answer was used.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": { "state": "translated", "value": "Jev unavailable; an offline answer was used." }
+        },
+        "ru": {
+          "stringUnit": { "state": "translated", "value": "Jev недоступен; использован офлайн-ответ." }
         }
       }
     },

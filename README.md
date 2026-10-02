@@ -61,8 +61,11 @@ to invent options. Factual, open-ended, malformed, or absurd questions (for
 example, “What is the capital of Paris?”) use the distinct Unsupported fallback
 with a short varied phrase such as `Who knows?` or `The stars are silent.`;
 they do not trigger a fabricated Choice request. Classifier
-abstention remains an abstention when fallbacks are disabled, and provider
-errors still propagate as errors.
+abstention remains an abstention when fallbacks are disabled. Jev inference is
+bounded by a short timeout. Timeouts, network errors, rate limits, and server
+failures switch to a clearly identified local offline answer; a 30-second
+cooldown prevents repeated waits while Jev recovers. Cancellation, invalid
+requests, and permanent provider errors remain errors.
 
 ```swift
 let backend = try JevOracleBackend(
