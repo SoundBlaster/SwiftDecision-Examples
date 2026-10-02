@@ -38,34 +38,14 @@ enum OracleProviderFailure: Sendable, Equatable {
   }
 
   static func classify(_ error: any Error) -> Self {
-    if error is CancellationError { return .cancelled }
-    if let decisionError = error as? DecisionError,
-       case .timedOut = decisionError
-    {
-      return .timedOut
+    switch JevFailureClassifier.classify(error) {
+    case .cancelled: .cancelled
+    case .timedOut: .timedOut
+    case .transport: .transport
+    case .rateLimited: .rateLimited
+    case .serviceUnavailable: .serviceUnavailable
+    case .permanent: .permanent
     }
-    if let urlError = error as? URLError {
-      switch urlError.code {
-      case .cancelled:
-        return .cancelled
-      case .timedOut:
-        return .timedOut
-      case .cannotFindHost, .cannotConnectToHost, .networkConnectionLost,
-        .dnsLookupFailed, .notConnectedToInternet:
-        return .transport
-      default:
-        return .permanent
-      }
-    }
-    if let providerError = error as? JevDecisionBackendError,
-       case let .httpFailure(statusCode) = providerError
-    {
-      if statusCode == 429 { return .rateLimited }
-      if statusCode == 408 || statusCode == 425 || (500 ..< 600).contains(statusCode) {
-        return .serviceUnavailable
-      }
-    }
-    return .permanent
   }
 }
 
