@@ -91,6 +91,7 @@ final class OraclePageModel {
     requestTask?.cancel()
     requestTask = nil
     requestID += 1
+    terminalRequestID = requestID
     isSubmitting = false
     let key = input.trimmingCharacters(in: .whitespacesAndNewlines)
 
