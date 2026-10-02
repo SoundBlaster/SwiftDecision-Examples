@@ -48,7 +48,9 @@ enum OracleProviderFailure: Sendable, Equatable {
       switch urlError.code {
       case .cancelled:
         return .cancelled
-      case .timedOut, .cannotFindHost, .cannotConnectToHost, .networkConnectionLost,
+      case .timedOut:
+        return .timedOut
+      case .cannotFindHost, .cannotConnectToHost, .networkConnectionLost,
         .dnsLookupFailed, .notConnectedToInternet:
         return .transport
       default:

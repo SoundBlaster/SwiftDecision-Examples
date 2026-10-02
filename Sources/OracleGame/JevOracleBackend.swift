@@ -9,6 +9,7 @@ import SwiftJev
 /// offline fixture and Jev provider are interchangeable.
 public struct JevOracleBackend: OracleBackendMetadata {
   private let backend: JevDecisionBackend
+  public let maximumResponseTime: TimeInterval?
   public let modelIdentifier: String
   public var supportsTransientFailureFallback: Bool { true }
 
@@ -27,6 +28,7 @@ public struct JevOracleBackend: OracleBackendMetadata {
       model: model,
       timeout: timeout,
       transport: transport)
+    maximumResponseTime = timeout
     modelIdentifier = model
   }
 

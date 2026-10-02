@@ -62,7 +62,10 @@ example, “What is the capital of Paris?”) use the distinct Unsupported fallb
 with a short varied phrase such as `Who knows?` or `The stars are silent.`;
 they do not trigger a fabricated Choice request. Classifier
 abstention remains an abstention when fallbacks are disabled. Jev inference is
-bounded by a short timeout. Timeouts, network errors, rate limits, and server
+bounded by one 2.5-second inference budget shared by classification and answer
+generation, even when the response keeps delivering bytes. A successful live
+classification is retained when answer generation falls back. Timeouts, network
+errors, rate limits, and server
 failures switch to a clearly identified local offline answer; a 30-second
 cooldown prevents repeated waits while Jev recovers. Cancellation, invalid
 requests, and permanent provider errors remain errors.

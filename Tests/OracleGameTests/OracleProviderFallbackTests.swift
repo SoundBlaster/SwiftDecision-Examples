@@ -5,6 +5,58 @@ import SwiftDecision
 import SwiftJev
 
 final class OracleProviderFallbackTests: XCTestCase {
+  func testJevResponseBudgetBoundsAnInjectedSlowTransport() async throws {
+    let backend = try JevOracleBackend(
+      apiKey: "fixture-key", timeout: 0.05, transport: SlowJevTransport())
+    let result = try await OracleGameEngine(backend: backend).answerWithTrace(
+      for: OracleRequest(question: "Will it work?", mode: .noul))
+    guard case let .fallback(answer, _) = result.outcome else {
+      return XCTFail("expected deadline fallback before the slow transport responds")
+    }
+    XCTAssertEqual(answer.source, .offlineFixture)
+    XCTAssertEqual(result.pipeline.last?.details?.last?.value, "Inference timed out")
+  }
+
+  func testSuccessfulLiveClassificationSurvivesAnAnswerFailure() async throws {
+    let engine = OracleGameEngine(backend: RoutedFailureBackend())
+    let result = try await engine.answerWithTrace(
+      for: OracleRequest(question: "Какова вероятность успеха?"))
+    guard case let .fallback(answer, _) = result.outcome else {
+      return XCTFail("expected offline fallback")
+    }
+    XCTAssertEqual(answer.mode, .score)
+    XCTAssertEqual(answer.source, .offlineFixture)
+    XCTAssertEqual(result.pipeline.first(where: { $0.id == "Question type" })?.summary, "Score · 97%")
+    XCTAssertEqual(Set(result.pipeline.map(\.id)).count, result.pipeline.count)
+  }
+
+  func testClassificationAndAnswerShareOneResponseBudget() async throws {
+    let result = try await OracleGameEngine(backend: SharedBudgetBackend()).answer(
+      for: OracleRequest(question: "Will it work?"))
+    guard case let .fallback(answer, _) = result else {
+      return XCTFail("separate per-call timeouts would incorrectly accept both slow calls")
+    }
+    XCTAssertEqual(answer.mode, .noul)
+  }
+
+  func testCancellationDuringDeadlineWaitRemainsCancellation() async throws {
+    let backend = try JevOracleBackend(
+      apiKey: "fixture-key", timeout: 1, transport: SlowJevTransport())
+    let task = Task {
+      try await OracleGameEngine(backend: backend).answer(
+        for: OracleRequest(question: "Will it work?", mode: .noul))
+    }
+    task.cancel()
+    do {
+      _ = try await task.value
+      XCTFail("cancellation must not return an offline answer")
+    } catch is CancellationError {
+      // Cancellation remains outside the fallback specification.
+    } catch {
+      XCTFail("unexpected error: \(error)")
+    }
+  }
+
   func testTimeoutUsesAnOfflineAnswerAndRecordsFallback() async throws {
     let engine = OracleGameEngine(backend: FailingOracleBackend(
       failure: .timeout,
@@ -86,12 +138,46 @@ final class OracleProviderFallbackTests: XCTestCase {
     XCTAssertEqual(OracleProviderFailure.classify(URLError(.notConnectedToInternet)), .transport)
     XCTAssertEqual(OracleProviderFailure.classify(URLError(.networkConnectionLost)), .transport)
     XCTAssertEqual(OracleProviderFailure.classify(URLError(.cancelled)), .cancelled)
+    XCTAssertEqual(OracleProviderFailure.classify(URLError(.timedOut)), .timedOut)
     for code: URLError.Code in [.serverCertificateUntrusted, .badURL, .userAuthenticationRequired] {
       XCTAssertEqual(OracleProviderFailure.classify(URLError(code)), .permanent)
     }
     XCTAssertEqual(
       OracleProviderFailure.classify(JevDecisionBackendError.httpFailure(statusCode: 429)),
       .rateLimited)
+  }
+}
+
+private struct SlowJevTransport: JevHTTPTransport {
+  func send(_ request: JevHTTPRequest) async throws -> JevHTTPResponse {
+    try await Task.sleep(nanoseconds: 300_000_000)
+    return JevHTTPResponse(statusCode: 200, body: Data(
+      #"{"model":"fixture","answers":{"swiftdecision":{"type":"noul","noul":0.9}}}"#.utf8))
+  }
+}
+
+private struct RoutedFailureBackend: OracleBackendMetadata {
+  let modelIdentifier = "routed-failure-fixture"
+  let supportsTransientFailureFallback = true
+
+  func predict(for prompt: DecisionPrompt) async throws -> DecisionPrediction {
+    if prompt.kind == .choice {
+      return DecisionPrediction(probabilities: [0.01, 0.01, 0.97, 0.01], modelIdentifier: modelIdentifier)
+    }
+    throw URLError(.timedOut)
+  }
+}
+
+private struct SharedBudgetBackend: OracleBackendMetadata {
+  let modelIdentifier = "shared-budget-fixture"
+  let supportsTransientFailureFallback = true
+  let maximumResponseTime: TimeInterval? = 0.15
+
+  func predict(for prompt: DecisionPrompt) async throws -> DecisionPrediction {
+    try await Task.sleep(nanoseconds: 90_000_000)
+    return DecisionPrediction(
+      probabilities: prompt.kind == .choice ? [0.97, 0.01, 0.01, 0.01] : [0.1, 0.9],
+      modelIdentifier: modelIdentifier)
   }
 }
 
