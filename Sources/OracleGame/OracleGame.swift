@@ -402,7 +402,7 @@ private struct OracleIntentClassifier {
     self.fallbackEnabled = fallbackEnabled
   }
 
-  fileprivate func classify(_ question: String) async throws -> DecisionResult<OracleOperation> {
+  fileprivate func classify(_ question: String, budget: DecisionBudget? = nil) async throws -> DecisionResult<OracleOperation> {
     try await engine.choice(
       instructions: Self.instructions,
       context: question,
@@ -412,7 +412,8 @@ private struct OracleIntentClassifier {
         ChoiceOption(label: .score, description: "score: estimate likelihood, probability, or confidence"),
         ChoiceOption(label: .unsupported, description: "unsupported: factual, open-ended, malformed, absurd, or not a Magic 8-Ball question"),
       ],
-      fallback: fallbackEnabled ? .unsupported : nil)
+      fallback: fallbackEnabled ? .unsupported : nil,
+      budget: budget)
   }
 }
 
@@ -515,8 +516,6 @@ private extension DecisionTraceEvent.Stage {
 /// conformance is intentional: specifications are immutable after initialization.
 public final class OracleGameEngine: @unchecked Sendable {
   private let decisionEngine: DecisionEngine
-  private let configuration: DecisionEngine.Configuration
-  private let backend: any DecisionBackend
   private let maximumResponseTime: TimeInterval?
   private let requestPolicy = OracleRequestPolicy()
   private let answerValidation: AnyAsyncSpecification<OracleAnswer>
@@ -533,11 +532,9 @@ public final class OracleGameEngine: @unchecked Sendable {
     fallbackEnabled: Bool = true
   ) {
     decisionEngine = DecisionEngine(backend: backend, configuration: configuration)
-    self.configuration = configuration
     self.fallbackEnabled = fallbackEnabled
     supportsTransientFailureFallback =
       (backend as? any OracleBackendMetadata)?.supportsTransientFailureFallback == true
-    self.backend = backend
     maximumResponseTime = (backend as? any OracleBackendMetadata)?.maximumResponseTime
     if let backendIdentifier {
       self.backendIdentifier = backendIdentifier
@@ -661,8 +658,8 @@ public final class OracleGameEngine: @unchecked Sendable {
     }
 
     do {
-      let deadline = maximumResponseTime.map { ProcessInfo.processInfo.systemUptime + $0 }
-      let result = try await answerWithConfiguredBackend(for: request, deadline: deadline)
+      let budget = try maximumResponseTime.map { try DecisionBudget(timeout: $0) }
+      let result = try await answerWithConfiguredBackend(for: request, budget: budget)
       if supportsTransientFailureFallback {
         await providerCircuitBreaker.recordSuccess()
       }
@@ -683,25 +680,9 @@ public final class OracleGameEngine: @unchecked Sendable {
     }
   }
 
-  private func inferenceEngine(deadline: TimeInterval?) throws -> DecisionEngine {
-    guard let deadline else { return decisionEngine }
-    try Task.checkCancellation()
-    let remaining = deadline - ProcessInfo.processInfo.systemUptime
-    guard remaining > 0 else { throw DecisionError.timedOut }
-    if let timeout = configuration.timeout, !timeout.isFinite || timeout < 0 {
-      return decisionEngine // Preserve SwiftDecision's configuration validation.
-    }
-    return DecisionEngine(
-      backend: backend,
-      configuration: .init(
-        policies: configuration.policies,
-        timeout: min(configuration.timeout ?? remaining, remaining),
-        traceMode: configuration.traceMode))
-  }
-
   private func answerWithConfiguredBackend(
     for request: OracleRequest,
-    deadline: TimeInterval?
+    budget: DecisionBudget?
   ) async throws -> OracleTracedOutcome {
     var pipeline: [OraclePipelineStage] = []
     let eligibilityRecorder = SpecificationTraceRecorder()
@@ -750,8 +731,8 @@ public final class OracleGameEngine: @unchecked Sendable {
         reason: "unsupported answer mode requested"), appendingTo: pipeline)
     } else if selection.operation == .automatic {
       let classifier = OracleIntentClassifier(
-        engine: try inferenceEngine(deadline: deadline), fallbackEnabled: fallbackEnabled)
-      let intent = try await classifier.classify(question)
+        engine: decisionEngine, fallbackEnabled: fallbackEnabled)
+      let intent = try await classifier.classify(question, budget: budget)
       pipeline.append(decisionStage(
         "Question type",
         result: intent,
@@ -781,7 +762,7 @@ public final class OracleGameEngine: @unchecked Sendable {
 
     let evaluation: OracleEvaluation
     do {
-      evaluation = try await evaluate(request, selection: selection, deadline: deadline)
+      evaluation = try await evaluate(request, selection: selection, budget: budget)
     } catch {
       throw OracleRoutedProviderFailure(
         underlyingError: error, mode: selection.operation.mode, pipeline: pipeline)
@@ -917,16 +898,16 @@ public final class OracleGameEngine: @unchecked Sendable {
   private func evaluate(
     _ request: OracleRequest,
     selection: OracleOperationSelection,
-    deadline: TimeInterval? = nil
+    budget: DecisionBudget? = nil
   ) async throws -> OracleEvaluation {
-    let decisionEngine = try inferenceEngine(deadline: deadline)
     let question = request.question.trimmingCharacters(in: .whitespacesAndNewlines)
     switch selection.operation {
     case .noul:
       let result = try await decisionEngine.noul(
         statement: question,
         context: question,
-        fallback: fallbackEnabled ? true : nil
+        fallback: fallbackEnabled ? true : nil,
+        budget: budget
       )
       return try await makeEvaluation(
         request: request,
@@ -952,7 +933,8 @@ public final class OracleGameEngine: @unchecked Sendable {
         options: options.map { option in
           ChoiceOption(label: option, description: option)
         },
-        fallback: choiceFallback
+        fallback: choiceFallback,
+        budget: budget
       )
       let isDynamicChoice = !selection.choicePlan.options.isEmpty
       return try await makeEvaluation(
@@ -983,7 +965,8 @@ public final class OracleGameEngine: @unchecked Sendable {
           (description: "Likely", value: 0.75),
           (description: "Very likely", value: 0.90),
         ],
-        fallback: fallbackEnabled ? ScoreValue(level: 1, expectedValue: 0.50) : nil
+        fallback: fallbackEnabled ? ScoreValue(level: 1, expectedValue: 0.50) : nil,
+        budget: budget
       )
       let text = result.value.map { "\(Int(($0.expectedValue * 100).rounded()))%" }
       return try await makeEvaluation(

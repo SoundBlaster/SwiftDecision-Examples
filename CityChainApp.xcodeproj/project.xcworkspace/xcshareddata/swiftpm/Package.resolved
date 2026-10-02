@@ -1,51 +1,48 @@
 {
-  "originHash" : "2cd3f2e2cb61a200816eb87c16a14bb042b00c20ac288ddd9e98a8fb6d5d885b",
-  "pins" : [
+  "pins": [
     {
-      "identity" : "nesteda11yids",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SoundBlaster/NestedA11yIDs.git",
-      "state" : {
-        "revision" : "ad123fbc8dda58f20de1e6fbd21120bcfbaabf85",
-        "version" : "1.0.0"
+      "identity": "nesteda11yids",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/SoundBlaster/NestedA11yIDs.git",
+      "state": {
+        "revision": "ad123fbc8dda58f20de1e6fbd21120bcfbaabf85",
+        "version": "1.0.0"
       }
     },
     {
-      "identity" : "specificationcore",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SoundBlaster/SpecificationCore.git",
-      "state" : {
-        "revision" : "9b5fc40c16677e868856d0b24b70019cd5ea4687",
-        "version" : "2.1.0"
+      "identity": "specificationcore",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/SoundBlaster/SpecificationCore.git",
+      "state": {
+        "revision": "9b5fc40c16677e868856d0b24b70019cd5ea4687",
+        "version": "2.1.0"
       }
     },
     {
-      "identity" : "swift-syntax",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-syntax",
-      "state" : {
-        "revision" : "f99ae8aa18f0cf0d53481901f88a0991dc3bd4a2",
-        "version" : "601.0.1"
+      "identity": "swift-syntax",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/swiftlang/swift-syntax",
+      "state": {
+        "revision": "f99ae8aa18f0cf0d53481901f88a0991dc3bd4a2",
+        "version": "601.0.1"
       }
     },
     {
-      "identity" : "swiftdecision",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SoundBlaster/SwiftDecision.git",
-      "state" : {
-        "revision" : "344db600d95260712c601de6adb0ad26794c0e7b",
-        "version" : "0.5.0"
+      "identity": "swiftdecision",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/SoundBlaster/SwiftDecision.git",
+      "state": {
+        "revision": "77171f9151eee022b268ce761d115298aa97860f"
       }
     },
     {
-      "identity" : "swiftjev",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SoundBlaster/SwiftJev.git",
-      "state" : {
-        "revision" : "4e6ff6eccab1805dc1824d179e3f44090fc9869f",
-        "version" : "0.2.0"
+      "identity": "swiftjev",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/SoundBlaster/SwiftJev.git",
+      "state": {
+        "revision": "7fde26e158390d861c5fb521fc518103581acb3c"
       }
     }
   ],
-  "version" : 3
+  "version": 3
 }
