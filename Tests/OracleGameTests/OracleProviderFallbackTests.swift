@@ -52,6 +52,21 @@ final class OracleProviderFallbackTests: XCTestCase {
     }
   }
 
+  func testPermanentURLErrorDoesNotUseOfflineFallback() async {
+    let engine = OracleGameEngine(backend: FailingOracleBackend(
+      failure: .permanentURLFailure,
+      requestCount: RequestCount()))
+
+    do {
+      _ = try await engine.answer(for: OracleRequest(question: "Will it work?"))
+      XCTFail("expected the permanent URL error")
+    } catch let error as URLError {
+      XCTAssertEqual(error.code, .serverCertificateUntrusted)
+    } catch {
+      XCTFail("unexpected error: \(error)")
+    }
+  }
+
   func testFallbackSpecificationRequiresTransientFailureAndEnabledProvider() {
     let specification = OracleProviderFallbackSpec()
 
@@ -69,7 +84,11 @@ final class OracleProviderFallbackTests: XCTestCase {
       failure: .cancelled)))
     XCTAssertEqual(OracleProviderFailure.classify(DecisionError.timedOut), .timedOut)
     XCTAssertEqual(OracleProviderFailure.classify(URLError(.notConnectedToInternet)), .transport)
+    XCTAssertEqual(OracleProviderFailure.classify(URLError(.networkConnectionLost)), .transport)
     XCTAssertEqual(OracleProviderFailure.classify(URLError(.cancelled)), .cancelled)
+    for code: URLError.Code in [.serverCertificateUntrusted, .badURL, .userAuthenticationRequired] {
+      XCTAssertEqual(OracleProviderFailure.classify(URLError(code)), .permanent)
+    }
     XCTAssertEqual(
       OracleProviderFailure.classify(JevDecisionBackendError.httpFailure(statusCode: 429)),
       .rateLimited)
@@ -80,6 +99,7 @@ private enum FailingBackendMode: Sendable {
   case timeout
   case unavailable
   case permanent
+  case permanentURLFailure
 }
 
 private struct FailingOracleBackend: OracleBackendMetadata {
@@ -97,6 +117,8 @@ private struct FailingOracleBackend: OracleBackendMetadata {
       throw JevDecisionBackendError.httpFailure(statusCode: 503)
     case .permanent:
       throw JevDecisionBackendError.httpFailure(statusCode: 400)
+    case .permanentURLFailure:
+      throw URLError(.serverCertificateUntrusted)
     }
   }
 }

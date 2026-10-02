@@ -45,7 +45,15 @@ enum OracleProviderFailure: Sendable, Equatable {
       return .timedOut
     }
     if let urlError = error as? URLError {
-      return urlError.code == .cancelled ? .cancelled : .transport
+      switch urlError.code {
+      case .cancelled:
+        return .cancelled
+      case .timedOut, .cannotFindHost, .cannotConnectToHost, .networkConnectionLost,
+        .dnsLookupFailed, .notConnectedToInternet:
+        return .transport
+      default:
+        return .permanent
+      }
     }
     if let providerError = error as? JevDecisionBackendError,
        case let .httpFailure(statusCode) = providerError
