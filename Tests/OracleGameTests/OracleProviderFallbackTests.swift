@@ -171,10 +171,10 @@ private struct RoutedFailureBackend: OracleBackendMetadata {
 private struct SharedBudgetBackend: OracleBackendMetadata {
   let modelIdentifier = "shared-budget-fixture"
   let supportsTransientFailureFallback = true
-  let maximumResponseTime: TimeInterval? = 0.15
+  let maximumResponseTime: TimeInterval? = 0.65
 
   func predict(for prompt: DecisionPrompt) async throws -> DecisionPrediction {
-    try await Task.sleep(nanoseconds: 90_000_000)
+    try await Task.sleep(nanoseconds: 400_000_000)
     return DecisionPrediction(
       probabilities: prompt.kind == .choice ? [0.97, 0.01, 0.01, 0.01] : [0.1, 0.9],
       modelIdentifier: modelIdentifier)
