@@ -1,4 +1,5 @@
 {
+  "originHash" : "0ef7b9dda870e12148363a0a2408129c3755ed792fe988f1d269d3cb62924498",
   "pins" : [
     {
       "identity" : "nesteda11yids",
@@ -32,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SoundBlaster/SwiftDecision.git",
       "state" : {
-        "revision" : "fc28e77976228885b225ca053d08ccbd08c57893",
-        "version" : "0.6.0"
+        "revision" : "0ea5a2ccd4b6aaa136094bf2f1326ba4dcec0cd1",
+        "version" : "0.7.0"
       }
     },
     {
@@ -41,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SoundBlaster/SwiftJev.git",
       "state" : {
-        "revision" : "aaecdeab577686a7205b052b0758d5089f84e7ef",
-        "version" : "0.3.0"
+        "revision" : "7f7c6596ec0ca2c682d8d80995709985df48c11d",
+        "version" : "0.4.0"
       }
     }
   ],
