@@ -17,6 +17,14 @@ final class OracleProviderFallbackTests: XCTestCase {
     XCTAssertEqual(result.pipeline.last?.details?.last?.value, "Inference timed out")
   }
 
+  func testNearTieJevClassificationReachesTheDecisionPolicy() async throws {
+    let backend = try JevOracleBackend(apiKey: "fixture-key", transport: NearTieJevTransport())
+    // A rejected near-tie response is a permanent provider error, so this would throw.
+    let result = try await OracleGameEngine(backend: backend).answerWithTrace(
+      for: OracleRequest(question: "Will it work?"))
+    XCTAssertNotNil(result.pipeline.first(where: { $0.id == "Question type" }))
+  }
+
   func testSuccessfulLiveClassificationSurvivesAnAnswerFailure() async throws {
     let engine = OracleGameEngine(backend: RoutedFailureBackend())
     let result = try await engine.answerWithTrace(
@@ -214,5 +222,32 @@ private actor RequestCount {
 
   func increment() {
     value += 1
+  }
+}
+
+/// Answers the intent classifier with a near tie where the returned `choice` label is
+/// 0.01 below the highest probability, as the TypeSafe API can do.
+private struct NearTieJevTransport: JevHTTPTransport {
+  func send(_ request: JevHTTPRequest) async throws -> JevHTTPResponse {
+    let payload = try JSONSerialization.jsonObject(with: request.body) as? [String: Any]
+    let questions = payload?["questions"] as? [String: [String: Any]]
+    let question = questions?["swiftdecision"] ?? [:]
+    let answer: [String: Any]
+    if question["type"] as? String == "choice" {
+      let ids = ((question["criteria"] as? [String: String]) ?? [:]).keys.sorted()
+      let rest = 0.01 / Double(max(ids.count - 2, 1))
+      var probabilities: [String: Double] = [:]
+      for (index, id) in ids.enumerated() {
+        probabilities[id] = index == 0 ? 0.50 : index == 1 ? 0.49 : rest
+      }
+      answer = [
+        "type": "choice", "choice": ids[1], "confidence": 0.49, "probabilities": probabilities,
+      ]
+    } else {
+      answer = ["type": "noul", "noul": 0.99]
+    }
+    return JevHTTPResponse(statusCode: 200, body: try JSONSerialization.data(withJSONObject: [
+      "model": "jev-near-tie-fixture", "answers": ["swiftdecision": answer],
+    ]))
   }
 }
