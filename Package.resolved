@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SoundBlaster/SwiftJev.git",
       "state" : {
-        "revision" : "7f7c6596ec0ca2c682d8d80995709985df48c11d",
-        "version" : "0.4.0"
+        "branch" : "claude/project-thread-lsthvz",
+        "revision" : "0c633f427230a078399a34f3a6421e968e541051"
       }
     }
   ],
