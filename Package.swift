@@ -22,7 +22,7 @@ let package = Package(
       url: "https://github.com/SoundBlaster/SpecificationCore.git",
       exact: "2.1.0"
     ),
-    .package(url: "https://github.com/SoundBlaster/SwiftJev.git", exact: "0.4.0"),
+    .package(url: "https://github.com/SoundBlaster/SwiftJev.git", branch: "claude/project-thread-lsthvz"),
   ],
   targets: [
     .target(
