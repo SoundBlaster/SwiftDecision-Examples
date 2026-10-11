@@ -1,0 +1,43 @@
+{
+  "projectRoot": "..",
+  "project": "CityChainApp.xcodeproj",
+  "scheme": "CityChainApp",
+  "buildConfiguration": "ScreenerScreenshots",
+  "bundleID": "com.soundblaster.citychain.screenshots",
+  "appProduct": "CityChainApp.app",
+  "testTarget": "CityChainAppUITests",
+  "testClass": "CityChainScreenshotTests",
+  "derivedData": ".build/DerivedData",
+  "generate": [
+    "xcodegen",
+    "generate",
+    "--spec",
+    "project.yml"
+  ],
+  "deviceType": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB",
+  "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+  "nativePortraitPixels": [
+    2064,
+    2752
+  ],
+  "locales": [
+    "en-US"
+  ],
+  "orientations": [
+    "portrait",
+    "landscapeLeft"
+  ],
+  "checkpoints": [
+    "01-main",
+    "02-atlas"
+  ],
+  "launchArguments": [
+    "-citychain-fixture-json",
+    "{\"version\":1,\"route\":[{\"role\":\"player\",\"city\":\"Austin\"},{\"role\":\"computer\",\"city\":\"Nashville\"},{\"role\":\"player\",\"city\":\"El Paso\"},{\"role\":\"computer\",\"city\":\"Olympia\"},{\"role\":\"player\",\"city\":\"Akron\"},{\"role\":\"computer\",\"city\":\"New Orleans\"}],\"draft\":\"Springfield\"}"
+  ],
+  "commandPrefix": [
+    "rtk",
+    "proxy"
+  ],
+  "minimumFreeGiB": 3
+}

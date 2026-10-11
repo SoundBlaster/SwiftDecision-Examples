@@ -41,3 +41,7 @@ asc-metadata-validate: ## Validate local metadata files without contacting App S
 asc-metadata-plan: _require-asc-app _require-asc-version ## Compare local metadata and save a review plan locally.
 	@test -d "$(ASC_METADATA_DIR)" || { echo "Metadata directory not found: $(ASC_METADATA_DIR)" >&2; exit 2; }
 	$(ASC) metadata plan --app "$(ASC_APP)" --version "$(ASC_VERSION)" --platform "$(ASC_PLATFORM)" --dir "$(ASC_METADATA_DIR)" --review-dir "$(ASC_REVIEW_DIR)" --output table
+
+.PHONY: screenshots-screener
+screenshots-screener: ## Capture native CityChain screenshot batches locally.
+	python3 screenshots/tools/run.py --config screenshots/capture.json $(SCREENSHOT_ARGS)
