@@ -11,8 +11,8 @@
   },
   {
     "source": "assets/ScreenshotHarness.swift",
-    "target": "CityChainApp/shared/screener/ScreenshotHarness.swift",
-    "sha256": "b5123fe7d16a2f9a043601ed13872c6903b484a80126f896d63873499322655d"
+    "target": "CityChainApp/pages/city-chain/ui/ScreenshotHarness.swift",
+    "sha256": "1a4f3079e075fc4f53f42312f7ec7fd1e106b4a2c53ee686202dee3a032bc9bd"
   },
   {
     "source": "assets/ScreenshotScenario.swift",

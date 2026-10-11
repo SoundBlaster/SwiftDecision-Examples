@@ -25,6 +25,9 @@ The runner does not erase devices or upload assets.
   No provider request or live AI generation is needed.
 - SpecificationCore owns the app readiness decision: loaded snapshot, no
   submission in flight, no fixture error. Main/Atlas presentation is observable.
+- The app-specific capture adapter and readiness spec live beside CityChainPage
+  in its FSD slice; the generic runner stays outside app source. This avoids a
+  pages-to-shared upward dependency while keeping capture mechanics flag-gated.
 - XCTest taps City atlas and Done, asserts visible English content, requests
   acknowledged Screener checkpoints and captures system references.
 - The runtime opt-out test launches the flagged binary without activation and
@@ -128,5 +131,8 @@ same canonical project. Only that app target links ScreenerKit. Ordinary
 `xcodegen generate --spec project.yml` before ordinary development/release work.
 The runner now preserves complete language identifiers and replaces deleted
 owned simulators; an invalid explicit `--simulator` still fails. Tool provenance
-is refreshed. Historical benchmark evidence applies to the earlier executable,
-not to this changed target graph. No new application execution was performed.
+is refreshed. The app-specific harness is colocated in the page slice so FSD lint sees only
+valid dependency direction; its `UIViewRepresentableContext` type is explicit to
+avoid resolving SwiftUI `Context` to the page preview type. Historical benchmark
+evidence applies to the earlier executable and architecture; no new app execution
+was performed for these changes.

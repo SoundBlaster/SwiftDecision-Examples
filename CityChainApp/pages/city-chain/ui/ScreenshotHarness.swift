@@ -163,8 +163,8 @@ final class ScreenshotRecorder {
 struct ScreenshotProbe: UIViewRepresentable {
     let isReady: Bool
     let presentation: String
-    func makeUIView(context: Context) -> ProbeView { ProbeView() }
-    func updateUIView(_ view: ProbeView, context: Context) {
+    func makeUIView(context: UIViewRepresentableContext<ProbeView>) -> ProbeView { ProbeView() }
+    func updateUIView(_ view: ProbeView, context: UIViewRepresentableContext<ProbeView>) {
         view.recorder.isReady = isReady
         view.recorder.presentation = presentation
     }
