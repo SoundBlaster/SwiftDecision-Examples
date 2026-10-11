@@ -23,6 +23,26 @@ struct CityChainGameTests {
     #expect(await transport.requestCount == 0)
   }
 
+  @Test("A near-tie Jev Choice response reaches the decision policy instead of failing")
+  func nearTieJevChoiceReachesDecisionPolicy() async throws {
+    let backend = try CityChainBackendFactory.makeJev(
+      apiKey: "fixture-key", transport: NearTieJevTransport())
+    let game = CityChainGame(
+      decisions: DecisionEngine(backend: backend),
+      catalog: catalog("Dover", "Detroit", "Durham"),
+      randomCandidateIndex: { $0.lowerBound }
+    )
+
+    let result = try await game.submit("Riverhead")
+
+    // The near tie is below the default acceptance probability, so the computer abstains.
+    // A rejected response would instead fall back to a random candidate.
+    guard case .playerWonBecauseComputerAbstained(USCity("Riverhead"), reason: _) = result else {
+      Issue.record("Expected the near-tie distribution to reach the decision policy, got \(result).")
+      return
+    }
+  }
+
   @Test("The player may enter a valid city outside the computer reply catalog")
   func playerCityIsNotRestrictedToReplyCatalog() async throws {
     let backend = FixtureBackend(choiceIndex: 2)
@@ -1017,4 +1037,35 @@ private final class MemoryCityChainAutosaveFileAccess: CityChainAutosaveFileAcce
       files[url] = data
     }
   }
+}
+
+/// Answers Noul with a confident yes and Choice with a near tie where the returned
+/// `choice` label is 0.01 below the highest probability, as the TypeSafe API can do.
+private struct NearTieJevTransport: JevHTTPTransport {
+  func send(_ request: JevHTTPRequest) async throws -> JevHTTPResponse {
+    JevHTTPResponse(statusCode: 200, body: try nearTieJevResponseBody(for: request))
+  }
+}
+
+private func nearTieJevResponseBody(for request: JevHTTPRequest) throws -> Data {
+  let payload = try JSONSerialization.jsonObject(with: request.body) as? [String: Any]
+  let questions = payload?["questions"] as? [String: [String: Any]]
+  let question = questions?["swiftdecision"] ?? [:]
+  let answer: [String: Any]
+  if question["type"] as? String == "choice" {
+    let ids = ((question["criteria"] as? [String: String]) ?? [:]).keys.sorted()
+    let rest = 0.01 / Double(max(ids.count - 2, 1))
+    var probabilities: [String: Double] = [:]
+    for (index, id) in ids.enumerated() {
+      probabilities[id] = index == 0 ? 0.50 : index == 1 ? 0.49 : rest
+    }
+    answer = [
+      "type": "choice", "choice": ids[1], "confidence": 0.49, "probabilities": probabilities,
+    ]
+  } else {
+    answer = ["type": "noul", "noul": 0.99]
+  }
+  return try JSONSerialization.data(withJSONObject: [
+    "model": "jev-near-tie-fixture", "answers": ["swiftdecision": answer],
+  ])
 }
