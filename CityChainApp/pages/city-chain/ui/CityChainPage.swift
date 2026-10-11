@@ -428,6 +428,21 @@ private struct CityChainGamePane: View {
         }
         LetterPromptCard(snapshot: snapshot, scoutState: model.scoutState)
           .accessibilityIdentifier("cityChain.home.letterPrompt")
+        if routePresentation != .scenic, !isNotebook, scoutMessage != nil {
+          ScoutSpeechFeedbackView(
+            message: scoutMessage,
+            presentation: model.scoutPresentation,
+            isCompact: true,
+            onDismiss: model.dismissTurnFeedback,
+            fact: model.latestScoutFact,
+            companionSize: 76,
+            horizontalPadding: 0,
+            bubbleAlignment: .top,
+            maximumBubbleHeight: 120,
+            canDismissMessage: model.hasTurnFeedback,
+            onTapScout: onTapScout)
+            .accessibilityIdentifier("cityChain.home.routeScout")
+        }
         if showsInlineCityHints && !isNotebook && !suggestions.isEmpty {
           InlineCityHints(
             cities: suggestions,
