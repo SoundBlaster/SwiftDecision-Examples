@@ -109,3 +109,12 @@ of visual reviews remains necessary. No model-token savings were measured.
 Preparation-only recovery completed in **12.873s** without building or launching
 the app; raw hashes and closed traces were checked again. The original capture
 metrics SHA256 remained unchanged. [Recovery metrics](validation/2026-10-11/preparation-metrics.json).
+
+## Matched interactive comparison
+
+A [one-pair A/B experiment](validation/2026-10-11/ab/README.md) measured
+111.571s interactive versus78.744s configured automation for the same8native
+PNGs, without builds:32.827s(29.42%) less elapsed time and33→2agent-visible
+tool calls. This compares an equipped agent with a ready UI-test runner, not
+human speed. Failed1×capture and disk-preflight attempts are recorded separately.
+No token or billed-cost savings were measured.

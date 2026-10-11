@@ -1,0 +1,166 @@
+{
+  "root": "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples",
+  "out": "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/screenshots/output/interactive-benchmark-20261011T143201Z",
+  "udid": "B38366D9-61FF-4672-A72B-CADE724D73D7",
+  "config": {
+    "projectRoot": "..",
+    "project": "CityChainApp.xcodeproj",
+    "scheme": "CityChainApp",
+    "buildConfiguration": "ScreenerScreenshots",
+    "bundleID": "com.soundblaster.citychain.screenshots",
+    "appProduct": "CityChainApp.app",
+    "testTarget": "CityChainAppUITests",
+    "testClass": "CityChainScreenshotTests",
+    "derivedData": ".build/DerivedData",
+    "generate": [
+      "xcodegen",
+      "generate",
+      "--spec",
+      "project.yml"
+    ],
+    "deviceType": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB",
+    "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+    "nativePortraitPixels": [
+      2064,
+      2752
+    ],
+    "locales": [
+      "en-US"
+    ],
+    "orientations": [
+      "portrait",
+      "landscapeLeft"
+    ],
+    "checkpoints": [
+      "01-main",
+      "02-atlas"
+    ],
+    "launchArguments": [
+      "-citychain-fixture-json",
+      "{\"version\":1,\"route\":[{\"role\":\"player\",\"city\":\"Austin\"},{\"role\":\"computer\",\"city\":\"Nashville\"},{\"role\":\"player\",\"city\":\"El Paso\"},{\"role\":\"computer\",\"city\":\"Olympia\"},{\"role\":\"player\",\"city\":\"Akron\"},{\"role\":\"computer\",\"city\":\"New Orleans\"}],\"draft\":\"Springfield\"}"
+    ],
+    "commandPrefix": [
+      "rtk",
+      "proxy"
+    ],
+    "minimumFreeGiB": 3,
+    "resolvedRoot": "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples"
+  },
+  "startedUTC": "2026-10-11T14:32:01Z",
+  "startedMonotonic": 336282.356435791,
+  "ledger": [
+    {
+      "action": "StartSession boot",
+      "utc": "14:32:01Z"
+    },
+    {
+      "action": "redundant boot failed already Booted",
+      "utc": "14:32:19Z"
+    },
+    {
+      "action": [
+        "xcrun",
+        "simctl",
+        "bootstatus",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "-b"
+      ],
+      "startMonotonic": 336305.356437416,
+      "seconds": 0.44209795899223536,
+      "code": 0
+    },
+    {
+      "action": [
+        "xcrun",
+        "simctl",
+        "ui",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "appearance",
+        "light"
+      ],
+      "startMonotonic": 336305.798545125,
+      "seconds": 0.6934033330180682,
+      "code": 0
+    },
+    {
+      "action": [
+        "xcrun",
+        "simctl",
+        "status_bar",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "override",
+        "--time",
+        "9:41",
+        "--batteryState",
+        "discharging",
+        "--batteryLevel",
+        "100"
+      ],
+      "startMonotonic": 336306.491967625,
+      "seconds": 0.70769587502582,
+      "code": 0
+    },
+    {
+      "action": [
+        "xcrun",
+        "simctl",
+        "install",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/.build/DerivedData/Build/Products/ScreenerScreenshots-iphonesimulator/CityChainApp.app"
+      ],
+      "startMonotonic": 336307.199742208,
+      "seconds": 7.498467041994445,
+      "code": 0
+    },
+    {
+      "action": [
+        "xcrun",
+        "simctl",
+        "get_app_container",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "com.soundblaster.citychain.screenshots",
+        "data"
+      ],
+      "startMonotonic": 336314.698223625,
+      "seconds": 0.45363262499449775,
+      "code": 0
+    },
+    {
+      "action": [
+        "stop"
+      ],
+      "startMonotonic": 336377.583177083,
+      "seconds": 0.3828354579745792
+    },
+    {
+      "action": [
+        "launch",
+        "landscapeLeft"
+      ],
+      "startMonotonic": 336383.286313541,
+      "seconds": 2.2083669590065256
+    },
+    {
+      "action": [
+        "stop"
+      ],
+      "startMonotonic": 336422.600145291,
+      "seconds": 0.24331333400914446
+    }
+  ],
+  "app": "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/.build/DerivedData/Build/Products/ScreenerScreenshots-iphonesimulator/CityChainApp.app",
+  "data": "/Users/egor/Library/Developer/CoreSimulator/Devices/B38366D9-61FF-4672-A72B-CADE724D73D7/data/Containers/Data/Application/050CD19C-CA14-44A1-84F0-4776719DE893",
+  "previous": [
+    "95A33E43-6B1F-42B5-A9FD-ED8A053A668D",
+    "3E03E15A-926D-44BC-A7FC-B75700BE11C2",
+    "95D64FA4-9A05-435F-AD3B-AB030991EDEA",
+    "2422E84C-0E86-45B6-87CD-552B887C482D"
+  ],
+  "setupEndMonotonic": 336315.152482,
+  "runID": "3EC05AD7-636C-4DB5-B189-48D932553F10",
+  "orientation": "landscapeLeft",
+  "captureStartMonotonic": 336325.218357375,
+  "run": "/Users/egor/Library/Developer/CoreSimulator/Devices/B38366D9-61FF-4672-A72B-CADE724D73D7/data/Containers/Data/Application/050CD19C-CA14-44A1-84F0-4776719DE893/Library/Caches/Screener/Screenshots/3EC05AD7-636C-4DB5-B189-48D932553F10",
+  "failure": "DeviceInteraction screenshots are1x; nativeassertionsfailed, no systemPNGcopied, collector rejected batch",
+  "failedEndUTC": "2026-10-11T14:34:44Z"
+}
