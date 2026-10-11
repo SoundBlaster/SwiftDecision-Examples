@@ -2,7 +2,7 @@
   {
     "source": "scripts/run.py",
     "target": "screenshots/tools/run.py",
-    "sha256": "e97e5fecdd3fc7880682474e119256e841a9c4e57ea20d399021c1051b47b76d"
+    "sha256": "f2336b968f618db5b05b4db23a4e2bbd73209f1e2f8ba78dd716aa12c5a0f634"
   },
   {
     "source": "scripts/prepare.swift",

@@ -118,3 +118,15 @@ PNGs, without builds:32.827s(29.42%) less elapsed time and33→2agent-visible
 tool calls. This compares an equipped agent with a ready UI-test runner, not
 human speed. Failed1×capture and disk-preflight attempts are recorded separately.
 No token or billed-cost savings were measured.
+
+## Review fixes (2026-10-11)
+
+The opt-in `project.screenshots.yml` adds the `CityChainScreenshotApp` and
+`CityChainScreenshotUITests` targets and the `CityChainScreenshots` scheme to the
+same canonical project. Only that app target links ScreenerKit. Ordinary
+`project.yml` does not declare Screener at all; regenerate with
+`xcodegen generate --spec project.yml` before ordinary development/release work.
+The runner now preserves complete language identifiers and replaces deleted
+owned simulators; an invalid explicit `--simulator` still fails. Tool provenance
+is refreshed. Historical benchmark evidence applies to the earlier executable,
+not to this changed target graph. No new application execution was performed.

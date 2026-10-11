@@ -1,18 +1,18 @@
 {
   "projectRoot": "..",
   "project": "CityChainApp.xcodeproj",
-  "scheme": "CityChainApp",
+  "scheme": "CityChainScreenshots",
   "buildConfiguration": "ScreenerScreenshots",
   "bundleID": "com.soundblaster.citychain.screenshots",
-  "appProduct": "CityChainApp.app",
-  "testTarget": "CityChainAppUITests",
+  "appProduct": "CityChainScreenshotApp.app",
+  "testTarget": "CityChainScreenshotUITests",
   "testClass": "CityChainScreenshotTests",
   "derivedData": ".build/DerivedData",
   "generate": [
     "xcodegen",
     "generate",
     "--spec",
-    "project.yml"
+    "project.screenshots.yml"
   ],
   "deviceType": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB",
   "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",

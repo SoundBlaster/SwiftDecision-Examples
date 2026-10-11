@@ -1,0 +1,44 @@
+# Opt-in spec: generate the same canonical project with screenshot-only targets.
+include:
+  - project.yml
+configs:
+  ScreenerScreenshots: debug
+packages:
+  Screener:
+    url: https://github.com/SoundBlaster/Screener.git
+    exactVersion: 0.1.0
+schemes:
+  CityChainScreenshots:
+    build:
+      targets:
+        CityChainScreenshotApp: all
+    test:
+      targets: [CityChainScreenshotUITests]
+targets:
+  CityChainScreenshotApp:
+    templates: [CityChainApplication]
+    dependencies:
+      - package: Screener
+        products: [ScreenerKit]
+    settings:
+      base:
+        PRODUCT_NAME: CityChainScreenshotApp
+        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.citychain.screenshots
+      configs:
+        ScreenerScreenshots:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG SCREENER_SCREENSHOTS"
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]": "$(inherited) DEBUG CITYCHAIN_HAS_RESERVED_REGIONS SCREENER_SCREENSHOTS"
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]": "$(inherited) DEBUG CITYCHAIN_HAS_RESERVED_REGIONS SCREENER_SCREENSHOTS"
+  CityChainScreenshotUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources: [CityChainAppUITests]
+    dependencies:
+      - target: CityChainScreenshotApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.citychain.screenshots.uitests
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"

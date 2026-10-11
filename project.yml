@@ -2,16 +2,12 @@ name: CityChainApp
 configs:
   Debug: debug
   Release: release
-  ScreenerScreenshots: debug
 options:
   bundleIdPrefix: com.soundblaster
   developmentLanguage: en
   deploymentTarget:
     iOS: "17.0"
 packages:
-  Screener:
-    url: https://github.com/SoundBlaster/Screener.git
-    exactVersion: 0.1.0
   SwiftDecisionExamples:
     path: .
   NestedA11yIDs:
@@ -25,8 +21,8 @@ schemes:
     test:
       targets:
         - CityChainAppUITests
-targets:
-  CityChainApp:
+targetTemplates:
+  CityChainApplication:
     type: application
     platform: iOS
     sources:
@@ -36,8 +32,6 @@ targets:
       - path: CityChainApp/Resources/ScoutFacts/state-facts-v1.json
         buildPhase: resources
     dependencies:
-      - package: Screener
-        product: ScreenerKit
       - package: SwiftDecisionExamples
         product: CityChainGame
       - package: SwiftDecisionExamples
@@ -58,12 +52,10 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]": "$(inherited) CITYCHAIN_HAS_RESERVED_REGIONS"
         "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]": "$(inherited) CITYCHAIN_HAS_RESERVED_REGIONS"
-      configs:
-        ScreenerScreenshots:
-          PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.citychain.screenshots
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG SCREENER_SCREENSHOTS"
-          "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]": "$(inherited) DEBUG CITYCHAIN_HAS_RESERVED_REGIONS SCREENER_SCREENSHOTS"
-          "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]": "$(inherited) DEBUG CITYCHAIN_HAS_RESERVED_REGIONS SCREENER_SCREENSHOTS"
+
+targets:
+  CityChainApp:
+    templates: [CityChainApplication]
 
   CityChainAppUITests:
     type: bundle.ui-testing
