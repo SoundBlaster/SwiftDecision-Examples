@@ -1,0 +1,151 @@
+{
+  "elapsedSeconds": 111.571,
+  "commonSetupSeconds": 9.523,
+  "interactiveCaptureAndOrchestrationSeconds": 88.74,
+  "collectionSeconds": 0.083,
+  "preparationSeconds": 13.095,
+  "captureCheckpointHelperSeconds": 8.456,
+  "launchHelpersSeconds": 9.839,
+  "stopHelpersSeconds": 0.577,
+  "functionsExecCalls": 14,
+  "nestedPurposeBuiltToolCalls": 33,
+  "deviceSynthesizeCalls": 6,
+  "uiTaps": 4,
+  "orientationEvents": 2,
+  "viewImageCalls": 4,
+  "execCommandCalls": 16,
+  "writeStdinCalls": 5,
+  "StartEndSessionCalls": 2,
+  "scriptOperations": [
+    {
+      "action": [
+        "boot",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7"
+      ],
+      "startMonotonic": 336516.649177125,
+      "seconds": 0.49290933297015727
+    },
+    {
+      "action": [
+        "bootstatus",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "-b"
+      ],
+      "startMonotonic": 336517.142098541,
+      "seconds": 1.4216828749631532
+    },
+    {
+      "action": [
+        "ui",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "appearance",
+        "light"
+      ],
+      "startMonotonic": 336518.563788708,
+      "seconds": 0.1691421249997802
+    },
+    {
+      "action": [
+        "status_bar",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "override",
+        "--time",
+        "9:41",
+        "--batteryState",
+        "discharging",
+        "--batteryLevel",
+        "100"
+      ],
+      "startMonotonic": 336518.732941583,
+      "seconds": 0.39941620803438127
+    },
+    {
+      "action": [
+        "install",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/.build/DerivedData/Build/Products/ScreenerScreenshots-iphonesimulator/CityChainApp.app"
+      ],
+      "startMonotonic": 336519.132365916,
+      "seconds": 6.788439834024757
+    },
+    {
+      "action": [
+        "launch",
+        "portrait"
+      ],
+      "startMonotonic": 336526.302126291,
+      "seconds": 6.603220999997575
+    },
+    {
+      "action": [
+        "capture",
+        "01-main",
+        "main"
+      ],
+      "startMonotonic": 336538.954437041,
+      "seconds": 2.737817458983045
+    },
+    {
+      "action": [
+        "capture",
+        "02-atlas",
+        "atlas"
+      ],
+      "startMonotonic": 336553.243233333,
+      "seconds": 2.0765107920160517
+    },
+    {
+      "action": [
+        "stop"
+      ],
+      "startMonotonic": 336561.148118291,
+      "seconds": 0.3304930420126766
+    },
+    {
+      "action": [
+        "launch",
+        "landscapeLeft"
+      ],
+      "startMonotonic": 336566.31525125,
+      "seconds": 3.235382375016343
+    },
+    {
+      "action": [
+        "capture",
+        "01-main",
+        "main"
+      ],
+      "startMonotonic": 336578.708561875,
+      "seconds": 1.8404043749906123
+    },
+    {
+      "action": [
+        "capture",
+        "02-atlas",
+        "atlas"
+      ],
+      "startMonotonic": 336592.390962458,
+      "seconds": 1.801364042039495
+    },
+    {
+      "action": [
+        "stop"
+      ],
+      "startMonotonic": 336600.6837855,
+      "seconds": 0.24641020799754187
+    }
+  ],
+  "notes": [
+    "Timer begins before cold boot and installation; ends after preparation; shutdown overlaps preparation and is included",
+    "Native system backend simctl io screenshot; DeviceInteraction captures are1x and used only for UI inspection",
+    "No source or build change; same installed executable",
+    "Planning/skill reading excluded; in-run tool gaps and reasoning included",
+    "First failed native attempt separately retained; do not fold into successful repeat comparison",
+    "SixUIevents adaptively based on fresh AX hitPoints, nofixednavigationmacro",
+    "No direct token or billed cost measurement"
+  ],
+  "startedAt": "2026-10-11T14:36:05.847312+00:00",
+  "preparedAt": "2026-10-11T14:37:57.418031+00:00",
+  "visualReview": "All8native prepared images inspected as contact sheet after timer end; expectedEnglishmain andAtlas states; no newfunctional/visualissue observed; landscape route list scrolls/crops belowviewport as usual",
+  "caveat": "Manualbaselinealreadybenefitsfromfixture,readinessharness,genericcollectorandpreparer. ThisisinteractiveagentversusUITestrunner,capturingpaired8,notunassistedhumanmanual."
+}

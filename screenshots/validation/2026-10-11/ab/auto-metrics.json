@@ -1,0 +1,150 @@
+{
+  "elapsedSeconds": 78.744,
+  "operations": [
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "list",
+        "devices",
+        "available",
+        "--json"
+      ],
+      "seconds": 0.114
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "seconds": 0.016
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "seconds": 0.026
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "boot",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7"
+      ],
+      "seconds": 0.452
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "bootstatus",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "-b"
+      ],
+      "seconds": 4.123
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "ui",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "appearance",
+        "light"
+      ],
+      "seconds": 0.237
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "status_bar",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "override",
+        "--time",
+        "9:41",
+        "--batteryState",
+        "discharging",
+        "--batteryLevel",
+        "100"
+      ],
+      "seconds": 0.318
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "install",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/.build/DerivedData/Build/Products/ScreenerScreenshots-iphonesimulator/CityChainApp.app"
+      ],
+      "seconds": 11.19
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "get_app_container",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "com.soundblaster.citychain.screenshots",
+        "data"
+      ],
+      "seconds": 0.32
+    },
+    {
+      "command": [
+        "xcodebuild",
+        "test-without-building",
+        "-xctestrun",
+        "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/.build/DerivedData/Build/Products/Screener-en-US.xctestrun",
+        "-destination",
+        "platform=iOS Simulator,id=B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "-parallel-testing-enabled",
+        "NO",
+        "-collect-test-diagnostics",
+        "never",
+        "-test-timeouts-enabled",
+        "YES",
+        "-maximum-test-execution-time-allowance",
+        "300",
+        "-only-testing:CityChainAppUITests/CityChainScreenshotTests/testScreenshots",
+        "-resultBundlePath",
+        "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/screenshots/output/20261011T144017900118Z/en-US.xcresult"
+      ],
+      "seconds": 40.698
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "get_app_container",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7",
+        "com.soundblaster.citychain.screenshots",
+        "data"
+      ],
+      "seconds": 0.405
+    },
+    {
+      "command": [
+        "xcrun",
+        "swift",
+        "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/screenshots/tools/prepare.swift",
+        "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/screenshots/output/20261011T144017900118Z/prepare.json"
+      ],
+      "seconds": 17.404
+    },
+    {
+      "command": [
+        "xcrun",
+        "simctl",
+        "shutdown",
+        "B38366D9-61FF-4672-A72B-CADE724D73D7"
+      ],
+      "seconds": 3.265
+    }
+  ]
+}

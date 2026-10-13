@@ -1,0 +1,359 @@
+{
+  "configuration": {
+    "projectRoot": "..",
+    "project": "CityChainApp.xcodeproj",
+    "scheme": "CityChainApp",
+    "buildConfiguration": "ScreenerScreenshots",
+    "bundleID": "com.soundblaster.citychain.screenshots",
+    "appProduct": "CityChainApp.app",
+    "testTarget": "CityChainAppUITests",
+    "testClass": "CityChainScreenshotTests",
+    "derivedData": ".build/DerivedData",
+    "generate": [
+      "xcodegen",
+      "generate",
+      "--spec",
+      "project.yml"
+    ],
+    "deviceType": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB",
+    "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+    "nativePortraitPixels": [
+      2064,
+      2752
+    ],
+    "locales": [
+      "en-US"
+    ],
+    "orientations": [
+      "portrait",
+      "landscapeLeft"
+    ],
+    "checkpoints": [
+      "01-main",
+      "02-atlas"
+    ],
+    "launchArguments": [
+      "-citychain-fixture-json",
+      "{\"version\":1,\"route\":[{\"role\":\"player\",\"city\":\"Austin\"},{\"role\":\"computer\",\"city\":\"Nashville\"},{\"role\":\"player\",\"city\":\"El Paso\"},{\"role\":\"computer\",\"city\":\"Olympia\"},{\"role\":\"player\",\"city\":\"Akron\"},{\"role\":\"computer\",\"city\":\"New Orleans\"}],\"draft\":\"Springfield\"}"
+    ],
+    "commandPrefix": [
+      "rtk",
+      "proxy"
+    ],
+    "minimumFreeGiB": 3,
+    "resolvedRoot": "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples"
+  },
+  "simulator": "B38366D9-61FF-4672-A72B-CADE724D73D7",
+  "state": "complete",
+  "collectionComplete": true,
+  "executableSHA256": "e5f9755102fc2a616437b4aef53f5ec5125a47d09229765963a3767ea58e1f30",
+  "assets": [
+    {
+      "backend": "screener",
+      "locale": "en-US",
+      "orientation": "landscapeLeft",
+      "screen": "01-main",
+      "source": "raw/screener/en-US/landscapeLeft/01-main.png",
+      "pixels": [
+        2752,
+        2064
+      ],
+      "encodedPixels": [
+        2752,
+        2064
+      ],
+      "bitDepth": 16,
+      "scale": 2.0,
+      "rawSHA256": "a41ca6331c2d2023e3c6cd2db65e13629f7e4d0d39de34d77687c722633d66c0",
+      "trace": "traces/en-US/3E03E15A-926D-44BC-A7FC-B75700BE11C2/BC2814E5-C4F7-4F7A-8462-F484A3E27E59.vtrace",
+      "recordID": "84D5818A-B45B-4569-A0A5-80594B20BE46",
+      "png": "png/screener/en-US/landscapeLeft/01-main.png",
+      "sha256": "a41ca6331c2d2023e3c6cd2db65e13629f7e4d0d39de34d77687c722633d66c0"
+    },
+    {
+      "backend": "system",
+      "locale": "en-US",
+      "orientation": "landscapeLeft",
+      "screen": "01-main",
+      "source": "raw/system/en-US/landscapeLeft/01-main.png",
+      "pixels": [
+        2752,
+        2064
+      ],
+      "encodedPixels": [
+        2064,
+        2752
+      ],
+      "bitDepth": 8,
+      "scale": 2.0,
+      "rawSHA256": "1a9d107216bf264cf19e276d306e925a4c6f1c75f1b8954c6dd7e85f3ee7e703",
+      "trace": "traces/en-US/3E03E15A-926D-44BC-A7FC-B75700BE11C2/BC2814E5-C4F7-4F7A-8462-F484A3E27E59.vtrace",
+      "recordID": "84D5818A-B45B-4569-A0A5-80594B20BE46",
+      "png": "png/system/en-US/landscapeLeft/01-main.png",
+      "sha256": "bf066843f24579c03bafe3f0654bb368b1cd2eed923f79cb76d8423f082ce743"
+    },
+    {
+      "backend": "screener",
+      "locale": "en-US",
+      "orientation": "landscapeLeft",
+      "screen": "02-atlas",
+      "source": "raw/screener/en-US/landscapeLeft/02-atlas.png",
+      "pixels": [
+        2752,
+        2064
+      ],
+      "encodedPixels": [
+        2752,
+        2064
+      ],
+      "bitDepth": 16,
+      "scale": 2.0,
+      "rawSHA256": "772189a2f2f8764cd37ab6312f60008069fbf008ff104bf9a57e1e1c6c917436",
+      "trace": "traces/en-US/3E03E15A-926D-44BC-A7FC-B75700BE11C2/BC2814E5-C4F7-4F7A-8462-F484A3E27E59.vtrace",
+      "recordID": "787047D2-2A86-4915-B7CA-6506F6E35168",
+      "png": "png/screener/en-US/landscapeLeft/02-atlas.png",
+      "sha256": "772189a2f2f8764cd37ab6312f60008069fbf008ff104bf9a57e1e1c6c917436"
+    },
+    {
+      "backend": "system",
+      "locale": "en-US",
+      "orientation": "landscapeLeft",
+      "screen": "02-atlas",
+      "source": "raw/system/en-US/landscapeLeft/02-atlas.png",
+      "pixels": [
+        2752,
+        2064
+      ],
+      "encodedPixels": [
+        2064,
+        2752
+      ],
+      "bitDepth": 8,
+      "scale": 2.0,
+      "rawSHA256": "b41190e37fad7e38cd26dae6693a09940ee90b4b271b6371ec73eac739ae7b88",
+      "trace": "traces/en-US/3E03E15A-926D-44BC-A7FC-B75700BE11C2/BC2814E5-C4F7-4F7A-8462-F484A3E27E59.vtrace",
+      "recordID": "787047D2-2A86-4915-B7CA-6506F6E35168",
+      "png": "png/system/en-US/landscapeLeft/02-atlas.png",
+      "sha256": "d88cf5bb25df676bfcad3bfe27d6cf42c5a4e7698c78d8235a2a291410494558"
+    },
+    {
+      "backend": "screener",
+      "locale": "en-US",
+      "orientation": "portrait",
+      "screen": "01-main",
+      "source": "raw/screener/en-US/portrait/01-main.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "encodedPixels": [
+        2064,
+        2752
+      ],
+      "bitDepth": 16,
+      "scale": 2.0,
+      "rawSHA256": "ca4358c1b54cc62a7c6a1ba45a5060e2077d25353b3f2bf8e80caeabf7ae707e",
+      "trace": "traces/en-US/95D64FA4-9A05-435F-AD3B-AB030991EDEA/EDA67369-FCE2-49C1-B27E-A89333AD0F0A.vtrace",
+      "recordID": "37F18628-D6E3-45B3-8DE7-3CD5428B9F26",
+      "png": "png/screener/en-US/portrait/01-main.png",
+      "sha256": "ca4358c1b54cc62a7c6a1ba45a5060e2077d25353b3f2bf8e80caeabf7ae707e"
+    },
+    {
+      "backend": "system",
+      "locale": "en-US",
+      "orientation": "portrait",
+      "screen": "01-main",
+      "source": "raw/system/en-US/portrait/01-main.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "encodedPixels": [
+        2064,
+        2752
+      ],
+      "bitDepth": 8,
+      "scale": 2.0,
+      "rawSHA256": "8f8d18766736f11db7e11dc26b612d824e47830d4a424dbd3bbf33b1a822879e",
+      "trace": "traces/en-US/95D64FA4-9A05-435F-AD3B-AB030991EDEA/EDA67369-FCE2-49C1-B27E-A89333AD0F0A.vtrace",
+      "recordID": "37F18628-D6E3-45B3-8DE7-3CD5428B9F26",
+      "png": "png/system/en-US/portrait/01-main.png",
+      "sha256": "8d48fae779595f64766a1cfb1158a8037fe083bc5cc2a0ed177c7d31009de15a"
+    },
+    {
+      "backend": "screener",
+      "locale": "en-US",
+      "orientation": "portrait",
+      "screen": "02-atlas",
+      "source": "raw/screener/en-US/portrait/02-atlas.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "encodedPixels": [
+        2064,
+        2752
+      ],
+      "bitDepth": 16,
+      "scale": 2.0,
+      "rawSHA256": "a5731366c6ff676771ede496204c65cb09b94f2001632e804f8f448a4c0ca21a",
+      "trace": "traces/en-US/95D64FA4-9A05-435F-AD3B-AB030991EDEA/EDA67369-FCE2-49C1-B27E-A89333AD0F0A.vtrace",
+      "recordID": "A8479C6E-7618-4DE7-A642-9E0302A904E4",
+      "png": "png/screener/en-US/portrait/02-atlas.png",
+      "sha256": "a5731366c6ff676771ede496204c65cb09b94f2001632e804f8f448a4c0ca21a"
+    },
+    {
+      "backend": "system",
+      "locale": "en-US",
+      "orientation": "portrait",
+      "screen": "02-atlas",
+      "source": "raw/system/en-US/portrait/02-atlas.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "encodedPixels": [
+        2064,
+        2752
+      ],
+      "bitDepth": 8,
+      "scale": 2.0,
+      "rawSHA256": "6a12757b38da1db69e7288069f845bfc6950aef7fc23e632408972d98655b245",
+      "trace": "traces/en-US/95D64FA4-9A05-435F-AD3B-AB030991EDEA/EDA67369-FCE2-49C1-B27E-A89333AD0F0A.vtrace",
+      "recordID": "A8479C6E-7618-4DE7-A642-9E0302A904E4",
+      "png": "png/system/en-US/portrait/02-atlas.png",
+      "sha256": "2c9c3b997e82db16d07abb6f126375867ecdc9d1eedc97f85ebda71834be6360"
+    }
+  ],
+  "gitHead": "a3db8e055072cf355282403e16a18803140e3a02",
+  "gitStatus": " M .gitignore\n M CityChainApp.xcodeproj/project.pbxproj\n M CityChainApp.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved\n M CityChainApp.xcodeproj/xcshareddata/xcschemes/OracleBallApp.xcscheme\n M CityChainApp/Resources/AppIcon.icon/icon.json\n M CityChainApp/pages/city-chain/ui/CityChainPage.swift\n M Makefile\n M project.yml\n?? CityChainApp/shared/screener/\n?? CityChainAppUITests/CityChainScreenshotTests.swift\n?? CityChainAppUITests/ScreenshotScenario.swift\n?? screenshots/\n",
+  "toolSHA256": {
+    "run.py": "e97e5fecdd3fc7880682474e119256e841a9c4e57ea20d399021c1051b47b76d",
+    "prepare.swift": "5439d1a9a4246d581ba4fb557a2bf74a56bb2d2c0b724172beb40e41e96573f3"
+  },
+  "packageResolution": {
+    "originHash": "4c2ad82ea1ea7425e87b703ba20be7052cc90daf032569e0f855025b0c92b9fb",
+    "pins": [
+      {
+        "identity": "eventsource",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/mattt/eventsource.git",
+        "state": {
+          "revision": "86b5096ac59ab46e66bd1f6377c604bc1dab0bc2",
+          "version": "1.5.1"
+        }
+      },
+      {
+        "identity": "nesteda11yids",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/SoundBlaster/NestedA11yIDs.git",
+        "state": {
+          "revision": "ad123fbc8dda58f20de1e6fbd21120bcfbaabf85",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "identity": "screener",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/SoundBlaster/Screener.git",
+        "state": {
+          "revision": "fd6cc12f37c875ed57f62454318363cbf3de8705",
+          "version": "0.1.0"
+        }
+      },
+      {
+        "identity": "specificationcore",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/SoundBlaster/SpecificationCore.git",
+        "state": {
+          "revision": "9b5fc40c16677e868856d0b24b70019cd5ea4687",
+          "version": "2.1.0"
+        }
+      },
+      {
+        "identity": "swift-atomics",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/apple/swift-atomics.git",
+        "state": {
+          "revision": "0442cb5a3f98ab802acb777929fdb446bda11a34",
+          "version": "1.3.1"
+        }
+      },
+      {
+        "identity": "swift-collections",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/apple/swift-collections.git",
+        "state": {
+          "revision": "3b69cedbaa49957e97c092ae400bb57602ef941f",
+          "version": "1.7.2"
+        }
+      },
+      {
+        "identity": "swift-log",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/apple/swift-log.git",
+        "state": {
+          "revision": "4038b6a4f74a1426f47eb1dd5b4bb5628a15d597",
+          "version": "1.16.1"
+        }
+      },
+      {
+        "identity": "swift-nio",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/apple/swift-nio.git",
+        "state": {
+          "revision": "6db9d9abd92ad7399b8a564cafbb87d3507245fa",
+          "version": "2.104.0"
+        }
+      },
+      {
+        "identity": "swift-sdk",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/modelcontextprotocol/swift-sdk.git",
+        "state": {
+          "revision": "a0ae212ebf6eab5f754c3129608bc5557637e605",
+          "version": "0.12.1"
+        }
+      },
+      {
+        "identity": "swift-syntax",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/swiftlang/swift-syntax",
+        "state": {
+          "revision": "f99ae8aa18f0cf0d53481901f88a0991dc3bd4a2",
+          "version": "601.0.1"
+        }
+      },
+      {
+        "identity": "swift-system",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/apple/swift-system.git",
+        "state": {
+          "revision": "869129b7bf4ecc57b97d0193ad29690ca2134750",
+          "version": "1.8.1"
+        }
+      },
+      {
+        "identity": "swiftdecision",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/SoundBlaster/SwiftDecision.git",
+        "state": {
+          "revision": "fc28e77976228885b225ca053d08ccbd08c57893",
+          "version": "0.6.0"
+        }
+      },
+      {
+        "identity": "swiftjev",
+        "kind": "remoteSourceControl",
+        "location": "https://github.com/SoundBlaster/SwiftJev.git",
+        "state": {
+          "revision": "aaecdeab577686a7205b052b0758d5089f84e7ef",
+          "version": "0.3.0"
+        }
+      }
+    ],
+    "version": 3
+  },
+  "packageResolutionSHA256": "22f8de71fd4abcb7111617274bbed738142dfcf6b27b560386989220abd4eb2e",
+  "preparedAt": "2026-10-11T14:20:18.233583+00:00"
+}

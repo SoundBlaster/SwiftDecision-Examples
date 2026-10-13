@@ -1,4 +1,7 @@
 name: CityChainApp
+configs:
+  Debug: debug
+  Release: release
 options:
   bundleIdPrefix: com.soundblaster
   developmentLanguage: en
@@ -18,8 +21,8 @@ schemes:
     test:
       targets:
         - CityChainAppUITests
-targets:
-  CityChainApp:
+targetTemplates:
+  CityChainApplication:
     type: application
     platform: iOS
     sources:
@@ -49,6 +52,10 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]": "$(inherited) CITYCHAIN_HAS_RESERVED_REGIONS"
         "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]": "$(inherited) CITYCHAIN_HAS_RESERVED_REGIONS"
+
+targets:
+  CityChainApp:
+    templates: [CityChainApplication]
 
   CityChainAppUITests:
     type: bundle.ui-testing

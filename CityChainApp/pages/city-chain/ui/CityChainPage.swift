@@ -210,6 +210,17 @@ struct CityChainPage: View {
     .fullScreenCover(isPresented: $showsFullScreenMap) {
       cityMapDetail
     }
+#if SCREENER_SCREENSHOTS
+    .background {
+      ScreenshotProbe(
+        isReady: CityChainScreenshotReadinessSpec().isSatisfiedBy(.init(
+          hasSnapshot: model.snapshot != nil, isSubmitting: model.isSubmitting,
+          hasFixtureError: model.debugFixtureDiagnostic != nil)),
+        presentation: showsAtlas ? "atlas" : "main")
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+#endif
     .onChange(of: snapshot?.usedCities.last, initial: true) { _, latestCity in
       selectedAtlasCity = latestCity
       clearAtlasFact()

@@ -1,0 +1,14 @@
+{
+  "elapsedSeconds": 12.873,
+  "operations": [
+    {
+      "command": [
+        "xcrun",
+        "swift",
+        "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/screenshots/tools/prepare.swift",
+        "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples/screenshots/output/20261011T141744724911Z/prepare.json"
+      ],
+      "seconds": 12.855
+    }
+  ]
+}

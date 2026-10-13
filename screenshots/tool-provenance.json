@@ -1,0 +1,22 @@
+[
+  {
+    "source": "scripts/run.py",
+    "target": "screenshots/tools/run.py",
+    "sha256": "f2336b968f618db5b05b4db23a4e2bbd73209f1e2f8ba78dd716aa12c5a0f634"
+  },
+  {
+    "source": "scripts/prepare.swift",
+    "target": "screenshots/tools/prepare.swift",
+    "sha256": "5439d1a9a4246d581ba4fb557a2bf74a56bb2d2c0b724172beb40e41e96573f3"
+  },
+  {
+    "source": "assets/ScreenshotHarness.swift",
+    "target": "CityChainApp/pages/city-chain/ui/ScreenshotHarness.swift",
+    "sha256": "1a4f3079e075fc4f53f42312f7ec7fd1e106b4a2c53ee686202dee3a032bc9bd"
+  },
+  {
+    "source": "assets/ScreenshotScenario.swift",
+    "target": "CityChainAppUITests/ScreenshotScenario.swift",
+    "sha256": "bb544905cef8305372f78e1abdf036c6851ce995d5640a7491f3b0712ed0c8e5"
+  }
+]

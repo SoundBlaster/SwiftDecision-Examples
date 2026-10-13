@@ -1,0 +1,234 @@
+{
+  "configuration": {
+    "projectRoot": "..",
+    "project": "CityChainApp.xcodeproj",
+    "scheme": "CityChainApp",
+    "buildConfiguration": "ScreenerScreenshots",
+    "bundleID": "com.soundblaster.citychain.screenshots",
+    "appProduct": "CityChainApp.app",
+    "testTarget": "CityChainAppUITests",
+    "testClass": "CityChainScreenshotTests",
+    "derivedData": ".build/DerivedData",
+    "generate": [
+      "xcodegen",
+      "generate",
+      "--spec",
+      "project.yml"
+    ],
+    "deviceType": "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB",
+    "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+    "nativePortraitPixels": [
+      2064,
+      2752
+    ],
+    "locales": [
+      "en-US"
+    ],
+    "orientations": [
+      "portrait",
+      "landscapeLeft"
+    ],
+    "checkpoints": [
+      "01-main",
+      "02-atlas"
+    ],
+    "launchArguments": [
+      "-citychain-fixture-json",
+      "{\"version\":1,\"route\":[{\"role\":\"player\",\"city\":\"Austin\"},{\"role\":\"computer\",\"city\":\"Nashville\"},{\"role\":\"player\",\"city\":\"El Paso\"},{\"role\":\"computer\",\"city\":\"Olympia\"},{\"role\":\"player\",\"city\":\"Akron\"},{\"role\":\"computer\",\"city\":\"New Orleans\"}],\"draft\":\"Springfield\"}"
+    ],
+    "commandPrefix": [
+      "rtk",
+      "proxy"
+    ],
+    "minimumFreeGiB": 3,
+    "resolvedRoot": "/Users/egor/Development/GitHub/Specification Project/SwiftDecision-Examples"
+  },
+  "simulator": "B38366D9-61FF-4672-A72B-CADE724D73D7",
+  "state": "complete",
+  "collectionComplete": true,
+  "executableSHA256": "e5f9755102fc2a616437b4aef53f5ec5125a47d09229765963a3767ea58e1f30",
+  "assets": [
+    {
+      "backend": "screener",
+      "locale": "en-US",
+      "orientation": "portrait",
+      "screen": "01-main",
+      "source": "raw/screener/en-US/portrait/01-main.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "encodedPixels": [
+        2064,
+        2752
+      ],
+      "bitDepth": 16,
+      "scale": 2.0,
+      "rawSHA256": "b68a152a3de326f59a98fcf437d0f3620bfbb61c8bab15c5a66b2d4f5e055637",
+      "trace": "traces/en-US/63CD3E73-3A3C-4BFF-B83F-E9436AC2BB7C/A08B9BA7-896A-4842-80BC-4450B93E00C6.vtrace",
+      "recordID": "8D7C841C-C69C-41FA-AB9B-22D6440F44D5",
+      "png": "png/screener/en-US/portrait/01-main.png",
+      "sha256": "b68a152a3de326f59a98fcf437d0f3620bfbb61c8bab15c5a66b2d4f5e055637"
+    },
+    {
+      "backend": "system",
+      "locale": "en-US",
+      "orientation": "portrait",
+      "screen": "01-main",
+      "source": "raw/system/en-US/portrait/01-main.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "encodedPixels": [
+        2064,
+        2752
+      ],
+      "bitDepth": 8,
+      "scale": 2.0,
+      "rawSHA256": "7a1504ba163858cbee71ddda23cfea53e1c618f0acdec06f2c4ab64f9ed4220d",
+      "trace": "traces/en-US/63CD3E73-3A3C-4BFF-B83F-E9436AC2BB7C/A08B9BA7-896A-4842-80BC-4450B93E00C6.vtrace",
+      "recordID": "8D7C841C-C69C-41FA-AB9B-22D6440F44D5",
+      "png": "png/system/en-US/portrait/01-main.png",
+      "sha256": "03b691e7ce013f4fb29294ba0bf9c84911f0449a4a8725c1865a66ef3f977295"
+    },
+    {
+      "backend": "screener",
+      "locale": "en-US",
+      "orientation": "portrait",
+      "screen": "02-atlas",
+      "source": "raw/screener/en-US/portrait/02-atlas.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "encodedPixels": [
+        2064,
+        2752
+      ],
+      "bitDepth": 16,
+      "scale": 2.0,
+      "rawSHA256": "253787149ca2961af2c160aabbf62e1cc74b2a55cddbb704bede610ab98502c9",
+      "trace": "traces/en-US/63CD3E73-3A3C-4BFF-B83F-E9436AC2BB7C/A08B9BA7-896A-4842-80BC-4450B93E00C6.vtrace",
+      "recordID": "75C92E9D-B04B-444C-AB52-5B0611768DA9",
+      "png": "png/screener/en-US/portrait/02-atlas.png",
+      "sha256": "253787149ca2961af2c160aabbf62e1cc74b2a55cddbb704bede610ab98502c9"
+    },
+    {
+      "backend": "system",
+      "locale": "en-US",
+      "orientation": "portrait",
+      "screen": "02-atlas",
+      "source": "raw/system/en-US/portrait/02-atlas.png",
+      "pixels": [
+        2064,
+        2752
+      ],
+      "encodedPixels": [
+        2064,
+        2752
+      ],
+      "bitDepth": 8,
+      "scale": 2.0,
+      "rawSHA256": "01775b35a39d73cf7e91600daf6e7baf42db467de7705bfa7d613bc6d03d4365",
+      "trace": "traces/en-US/63CD3E73-3A3C-4BFF-B83F-E9436AC2BB7C/A08B9BA7-896A-4842-80BC-4450B93E00C6.vtrace",
+      "recordID": "75C92E9D-B04B-444C-AB52-5B0611768DA9",
+      "png": "png/system/en-US/portrait/02-atlas.png",
+      "sha256": "d32010879af5e47e297253e66c5b57f7aca34ba2db3170bf5af5c3e018066576"
+    },
+    {
+      "backend": "screener",
+      "locale": "en-US",
+      "orientation": "landscapeLeft",
+      "screen": "01-main",
+      "source": "raw/screener/en-US/landscapeLeft/01-main.png",
+      "pixels": [
+        2752,
+        2064
+      ],
+      "encodedPixels": [
+        2752,
+        2064
+      ],
+      "bitDepth": 16,
+      "scale": 2.0,
+      "rawSHA256": "a280811bd636aee12d8cc027550315097e7f94576adb4a179c6db9ced8d5b4c4",
+      "trace": "traces/en-US/595BDFB0-70B9-4481-A611-54E0F08BAA06/446D6DD6-4CEE-4A1C-B50B-E03AE0B992B2.vtrace",
+      "recordID": "FA735D20-893E-4B85-AEFF-EC23DA67257F",
+      "png": "png/screener/en-US/landscapeLeft/01-main.png",
+      "sha256": "a280811bd636aee12d8cc027550315097e7f94576adb4a179c6db9ced8d5b4c4"
+    },
+    {
+      "backend": "system",
+      "locale": "en-US",
+      "orientation": "landscapeLeft",
+      "screen": "01-main",
+      "source": "raw/system/en-US/landscapeLeft/01-main.png",
+      "pixels": [
+        2752,
+        2064
+      ],
+      "encodedPixels": [
+        2752,
+        2064
+      ],
+      "bitDepth": 8,
+      "scale": 2.0,
+      "rawSHA256": "4bc7d09b4efc25d4bdd82c3977031017a6336f33a4dc86af2d6b0cba42f7863e",
+      "trace": "traces/en-US/595BDFB0-70B9-4481-A611-54E0F08BAA06/446D6DD6-4CEE-4A1C-B50B-E03AE0B992B2.vtrace",
+      "recordID": "FA735D20-893E-4B85-AEFF-EC23DA67257F",
+      "png": "png/system/en-US/landscapeLeft/01-main.png",
+      "sha256": "31e81c0098d543296cbdb3bc88471b0cc42ca499321894229d3c736442aab5f4"
+    },
+    {
+      "backend": "screener",
+      "locale": "en-US",
+      "orientation": "landscapeLeft",
+      "screen": "02-atlas",
+      "source": "raw/screener/en-US/landscapeLeft/02-atlas.png",
+      "pixels": [
+        2752,
+        2064
+      ],
+      "encodedPixels": [
+        2752,
+        2064
+      ],
+      "bitDepth": 16,
+      "scale": 2.0,
+      "rawSHA256": "9ca52bbf2454570a6022f019676d228274fcb1340047751e0c5dbf165277779d",
+      "trace": "traces/en-US/595BDFB0-70B9-4481-A611-54E0F08BAA06/446D6DD6-4CEE-4A1C-B50B-E03AE0B992B2.vtrace",
+      "recordID": "4C927EA0-D889-4B4D-872D-489F508739F3",
+      "png": "png/screener/en-US/landscapeLeft/02-atlas.png",
+      "sha256": "9ca52bbf2454570a6022f019676d228274fcb1340047751e0c5dbf165277779d"
+    },
+    {
+      "backend": "system",
+      "locale": "en-US",
+      "orientation": "landscapeLeft",
+      "screen": "02-atlas",
+      "source": "raw/system/en-US/landscapeLeft/02-atlas.png",
+      "pixels": [
+        2752,
+        2064
+      ],
+      "encodedPixels": [
+        2752,
+        2064
+      ],
+      "bitDepth": 8,
+      "scale": 2.0,
+      "rawSHA256": "2b46e71405d2e4fcfb670678ee57e4d8385319117b094d1e87470a522c54243c",
+      "trace": "traces/en-US/595BDFB0-70B9-4481-A611-54E0F08BAA06/446D6DD6-4CEE-4A1C-B50B-E03AE0B992B2.vtrace",
+      "recordID": "4C927EA0-D889-4B4D-872D-489F508739F3",
+      "png": "png/system/en-US/landscapeLeft/02-atlas.png",
+      "sha256": "30ad10a25274931da6d13c99505ca3e2ac9dc021b012b057e4ec9de6ce159284"
+    }
+  ],
+  "systemBackend": "simctl io screenshot",
+  "traceHashes": {
+    "traces/en-US/63CD3E73-3A3C-4BFF-B83F-E9436AC2BB7C/A08B9BA7-896A-4842-80BC-4450B93E00C6.vtrace/timeline.jsonl": "8060bc3fdf2ce0c7e640a9f4fabd6e2d6ad2ffba52f4382cd0e8a835ed20de8a",
+    "traces/en-US/595BDFB0-70B9-4481-A611-54E0F08BAA06/446D6DD6-4CEE-4A1C-B50B-E03AE0B992B2.vtrace/timeline.jsonl": "fd6afba2ff528f5b0a289dacbc22cfdbb5c4386907d302159c88d8b6c65a5b28"
+  },
+  "preparedAt": "2026-10-11T14:37:57.417310+00:00"
+}

@@ -1,0 +1,19 @@
+{
+  "manualSeconds": 111.571,
+  "automaticSeconds": 78.744,
+  "savedSeconds": 32.827,
+  "timeReductionPercent": 29.42,
+  "speedRatio": 1.417,
+  "manualNestedToolCalls": 33,
+  "automaticNestedToolCalls": 2,
+  "manualFunctionsExecCalls": 14,
+  "automaticFunctionsExecCalls": 2,
+  "toolCallReductionPercent": 93.94,
+  "executableSHA256": "e5f9755102fc2a616437b4aef53f5ec5125a47d09229765963a3767ea58e1f30",
+  "states": 4,
+  "pngFilesPerRun": 8,
+  "successfulPairs": 1,
+  "tokensMeasured": false,
+  "automaticPreflightFailure": "Insufficient disk headroom at1GiB benchmark threshold; removed904MiB auxiliary GUIcache beforetimed successfulrun",
+  "configurationNote": "Temporary benchmark config runs screenshot test only withskipbuild and1GiBminimum; standardcapture.json3GiBunchanged"
+}
