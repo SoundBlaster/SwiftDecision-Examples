@@ -136,3 +136,18 @@ valid dependency direction; its `UIViewRepresentableContext` type is explicit to
 avoid resolving SwiftUI `Context` to the page preview type. Historical benchmark
 evidence applies to the earlier executable and architecture; no new app execution
 was performed for these changes.
+
+## Generated source paths repair (2026-10-13)
+
+The committed ordinary Xcode project was stale after the adapter moved into
+`CityChainApp/pages/city-chain/ui`: CI still requested the old `shared/screener`
+paths. Regenerating with `xcodegen generate --spec project.yml` refreshes source
+membership. CI now performs that generation before either app build, using the
+ordinary spec so screenshot-only dependencies remain excluded.
+
+Generation and `git diff --check` passed in a separate checkout of PR #67's
+published head. A local ordinary Simulator build stopped at the unchanged
+SpecificationCore 2.1.0 macro trust gate (revision
+`9b5fc40c16677e868856d0b24b70019cd5ea4687`); no local validation bypass was
+enabled. This is source/project repair evidence, not a new successful build or
+screenshot run. Fresh CI results belong to the pushed repair commit.
