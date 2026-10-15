@@ -5,7 +5,29 @@ import OracleGame
 import OracleHistory
 import NestedA11yIDs
 
+/// The launch-time flag never swaps a live renderer during an answer.
 struct OraclePage: View {
+  @State private var model: OraclePageModel
+  @State private var usesDuoPilot: Bool
+
+  init(model: OraclePageModel = OraclePageModel()) {
+    _model = State(initialValue: model)
+    let environment = ProcessInfo.processInfo.environment["ORACLE_DUO_LAYOUT_PILOT"]
+    _usesDuoPilot = State(initialValue:
+      environment.map { $0 == "1" || $0.lowercased() == "true" }
+        ?? UserDefaults.standard.bool(forKey: "oracleDuoLayoutPilot"))
+  }
+
+  var body: some View {
+    if usesDuoPilot {
+      OraclePilotPage(model: model)
+    } else {
+      OracleLegacyPage(model: model)
+    }
+  }
+}
+
+private struct OracleLegacyPage: View {
   @Environment(\.scenePhase) private var scenePhase
   @State private var model: OraclePageModel
   @State private var isShowingInfo = false
@@ -239,7 +261,7 @@ struct OraclePage: View {
 
 }
 
-private struct OracleHeader: View {
+struct OracleHeader: View {
   let onInfo: () -> Void
   @ScaledMetric(relativeTo: .body) private var sparkSize: CGFloat = 16
   @ScaledMetric(relativeTo: .body) private var settingsButtonSize: CGFloat = 44
@@ -300,7 +322,7 @@ private struct OracleSpark: Shape {
   }
 }
 
-private struct OracleInfoSheet: View {
+struct OracleInfoSheet: View {
   @Environment(\.dismiss) private var dismiss
   @State private var apiKey: String
   @State private var isConfigured: Bool
@@ -546,7 +568,7 @@ private struct OracleInfoSheet: View {
   }
 }
 
-private struct OracleHistoryRow: View {
+struct OracleHistoryRow: View {
   let entry: OracleHistoryEntry
 
   var body: some View {
