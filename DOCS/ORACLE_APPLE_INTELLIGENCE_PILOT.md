@@ -103,6 +103,15 @@ required by repository guidance; commands above show only portable arguments.
   passed. The Simulator reported the model available; unavailable-state UI and
   real physical iPhone inference still need checking.
 
+## Known Choice limitation
+
+The [order diagnostic](ORACLE_CHOICE_ORDER_DIAGNOSTIC.md) reproduced the user's
+first-option / 67:33 observation: all 12 normalized samples returned native weights
+[1, 0.5], including semantic controls where the second option should win. Strict
+mode returned 50:50 and abstained on four controls. The pilot's format integration
+works, but the current numeric prompt/schema needs further evaluation before these
+estimates can support meaningful choices. No automatic randomization was added.
+
 ## Device follow-up
 
 - Try all three providers, relaunch and verify selection.
