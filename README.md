@@ -53,8 +53,11 @@ let game = CityChainGame(decisions: DecisionEngine(backend: backend))
 OracleBallApp exposes the same opt-in path through `JevOracleBackend` while keeping
 the `OracleGameEngine` API unchanged:
 
-With the default `.automatic` mode, `OracleGameEngine` routes boolean questions
-through a Jev-backed intent classifier. The classifier selects Noul for yes/no
+With the default `.automatic` mode, validated explicit alternatives (such as
+“Hello or Kitty?”) select Choice through a SpecificationCore routing rule without
+an intent-classification request. Explicitly selected modes take priority;
+probability questions keep the classifier route. Other automatic questions use
+the selected backend's intent classifier. The classifier selects Noul for yes/no
 questions, Score for likelihood questions, and Choice only when the question
 contains explicit alternatives. Choice options are extracted from alternatives
 such as “tea or coffee” or “tea, coffee, or juice”, then validated through Core

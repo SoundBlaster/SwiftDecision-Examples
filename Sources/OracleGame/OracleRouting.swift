@@ -12,7 +12,7 @@ struct OracleChoicePlan: Sendable, Hashable {
 
 struct OracleRoutingContext: Sendable {
   let mode: OracleMode
-  let choicePlan: OracleChoicePlan
+  let hasValidChoicePlan: Bool
   let asksForProbability: Bool
 }
 
@@ -114,6 +114,7 @@ enum OracleChoicePlanner {
       "confidence",
       "odds",
       "on a scale",
+      "вероятност", "вероятн", "шанс", "процент", "уверенность", "по шкале",
     ]
     return cues.contains(where: normalized.lowercased().contains)
   }

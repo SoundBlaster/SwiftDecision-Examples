@@ -18,6 +18,22 @@ clearing a key never changes the selected provider. Switching providers cancels
 an in-flight request and invalidates its completion ID. Empty questions and shakes
 with empty input retain explicitly simulated random answers for all providers.
 
+## Explicit alternatives
+
+In Automatic mode, a valid extracted choice plan selects Choice locally through
+SpecificationCore (`Explicit alternatives select Choice`). For `Hello or Kitty?`,
+the backend receives one Choice request containing exactly `Hello` and `Kitty`;
+there is no question-type classification. Explicitly selected Noul/Choice/Score
+modes retain priority. Probability questions retain the existing classifier route,
+and invalid/missing alternatives do not qualify for this shortcut.
+
+The exact `Hello or Kitty?` regression was reproduced with an intentionally
+misclassifying backend, then verified against the real local Apple model on the
+Mac: accepted Choice in 2.26 s, with no classification stage.
+
+This rule is provider-independent. The choice planner remains heuristic; output
+policy can still abstain on an uncertain Choice distribution.
+
 ## Pilot contract
 
 SwiftDecision is pinned to immutable revision `886645e3c3ea97b08942c168f97b8ac2c1ecc8fa`

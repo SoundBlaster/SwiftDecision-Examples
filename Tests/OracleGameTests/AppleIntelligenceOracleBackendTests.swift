@@ -58,6 +58,29 @@ final class AppleIntelligenceOracleBackendTests: XCTestCase {
     } catch DecisionError.timedOut { }
   }
 
+  func testLiveLocalExplicitAlternatives() async throws {
+    guard ProcessInfo.processInfo.environment["ORACLE_APPLE_INTELLIGENCE_SMOKE"] == "1" else {
+      throw XCTSkip("Set ORACLE_APPLE_INTELLIGENCE_SMOKE=1 for local inference")
+    }
+    guard case .available = AppleIntelligenceOracleBackend.availability else {
+      throw XCTSkip("Apple Intelligence is unavailable on this host")
+    }
+    let engine = OracleGameEngine(backend: AppleIntelligenceOracleBackend(), fallbackEnabled: false)
+    let result = try await engine.answerWithTrace(for: OracleRequest(question: "Hello or Kitty?"))
+    XCTAssertFalse(result.pipeline.contains { $0.id == "Question type" })
+    XCTAssertEqual(result.pipeline.first { $0.id == "Request routing" }?.summary, "Choice")
+    switch result.outcome {
+    case let .accepted(answer):
+      XCTAssertEqual(answer.mode, .choice)
+      XCTAssertTrue(["Hello", "Kitty"].contains(answer.displayText))
+      print("Oracle explicit alternatives: accepted Choice without classification")
+    case .abstained:
+      print("Oracle explicit alternatives: Choice policy abstained without classification")
+    case .fallback:
+      XCTFail("Apple pilot must not use fallback")
+    }
+  }
+
   /// Explicit local inference only. Never uses Jev credentials or sends a network request.
   func testLiveLocalOraclePilot() async throws {
     guard ProcessInfo.processInfo.environment["ORACLE_APPLE_INTELLIGENCE_SMOKE"] == "1" else {
