@@ -17,7 +17,12 @@ let package = Package(
     .library(name: "OracleHistory", targets: ["OracleHistory"])
   ],
   dependencies: [
-    .package(url: "https://github.com/SoundBlaster/SwiftDecision.git", exact: "0.7.0"),
+    // Pilot: Foundation Models support is not released yet (SwiftDecision PR #22).
+    .package(
+      url: "https://github.com/SoundBlaster/SwiftDecision.git",
+      revision: "886645e3c3ea97b08942c168f97b8ac2c1ecc8fa",
+      traits: ["FoundationModels"]
+    ),
     .package(
       url: "https://github.com/SoundBlaster/SpecificationCore.git",
       exact: "2.1.0"

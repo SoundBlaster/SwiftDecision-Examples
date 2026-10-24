@@ -177,6 +177,9 @@ struct OraclePage: View {
       OracleInfoSheet(
         apiKey: model.configuredAPIKey,
         providerDescription: model.providerDescription,
+        provider: Binding(get: { model.provider }, set: model.selectProvider),
+        normalizesAppleOutput: Binding(
+          get: { model.normalizesAppleOutput }, set: model.setNormalizesAppleOutput),
         historyEntries: model.historyEntries,
         selectedDetent: $infoSheetDetent,
         onSave: model.saveAPIKey,
@@ -197,7 +200,10 @@ struct OraclePage: View {
       }
     }
     .onChange(of: scenePhase) { _, phase in
-      if phase == .active { model.refreshHistory() }
+      if phase == .active {
+        model.refreshHistory()
+        model.refreshProviderAvailability()
+      }
     }
   }
 
@@ -308,6 +314,8 @@ private struct OracleInfoSheet: View {
 
   private let savedAPIKey: String
   let providerDescription: String
+  @Binding var provider: OracleInferenceProvider
+  @Binding var normalizesAppleOutput: Bool
   let historyEntries: [OracleHistoryEntry]
   @Binding var selectedDetent: PresentationDetent
   let onSave: (String) -> Bool
@@ -318,6 +326,8 @@ private struct OracleInfoSheet: View {
   init(
     apiKey: String,
     providerDescription: String,
+    provider: Binding<OracleInferenceProvider>,
+    normalizesAppleOutput: Binding<Bool>,
     historyEntries: [OracleHistoryEntry],
     selectedDetent: Binding<PresentationDetent>,
     onSave: @escaping (String) -> Bool,
@@ -329,6 +339,8 @@ private struct OracleInfoSheet: View {
     _isConfigured = State(initialValue: !apiKey.isEmpty)
     savedAPIKey = apiKey
     self.providerDescription = providerDescription
+    self._provider = provider
+    self._normalizesAppleOutput = normalizesAppleOutput
     self.historyEntries = historyEntries
     self._selectedDetent = selectedDetent
     self.onSave = onSave
@@ -347,80 +359,82 @@ private struct OracleInfoSheet: View {
               .font(.title3.weight(.semibold))
               .nestedAccessibilityIdentifier("title")
             Spacer()
-            Image(systemName: "lock.shield")
-              .foregroundStyle(.secondary)
-              .accessibilityHidden(true)
+            Button("Done") { dismiss() }
+              .nestedAccessibilityIdentifier("done")
           }
 
-          Text("TypeSafe Jev")
-            .font(.headline)
-          Text(
-            "Add a TypeSafe.ai API key to ask Jev for structured Noul, Choice, and Score answers. The key is stored securely in this device's Keychain."
-          )
-          .font(.subheadline)
-          .foregroundStyle(.secondary)
-          .lineLimit(nil)
-          .fixedSize(horizontal: false, vertical: true)
-          .layoutPriority(1)
+          OracleInferenceSettings(
+            provider: $provider,
+            normalizesAppleOutput: $normalizesAppleOutput,
+            providerDescription: providerDescription)
 
-          Link(destination: URL(string: "https://typesafe.ai")!) {
-            Label("Learn more at TypeSafe.ai", systemImage: "arrow.up.right.square")
-              .font(.subheadline.weight(.medium))
-          }
-          .nestedAccessibilityIdentifier("learn-more")
-
-          HStack(spacing: 10) {
-            Image(systemName: "key.fill")
-              .foregroundStyle(.secondary)
-              .accessibilityHidden(true)
-            SecureField("TYPESAFE_API_KEY", text: $apiKey)
-              .textInputAutocapitalization(.never)
-              .autocorrectionDisabled()
-              .keyboardType(.asciiCapable)
-              .textFieldStyle(.plain)
-              .accessibilityLabel("TypeSafe API key")
-              .nestedAccessibilityIdentifier("api-key")
-          }
-          .padding(.horizontal, 16)
-          .frame(minHeight: 48)
-          .background(.white.opacity(0.08), in: Capsule())
-          .overlay {
-            Capsule()
-              .stroke(.white.opacity(0.18), lineWidth: 1)
-          }
-
-          Label(
-            isConfigured ? "Jev key configured" : "Offline fixture active",
-            systemImage: isConfigured ? "checkmark.circle.fill" : "circle.dashed")
-            .font(.caption)
-            .foregroundStyle(isConfigured ? .green : .secondary)
-
-          Text(providerDescription)
-            .font(.caption2)
+          if provider == .jev {
+            Text("TypeSafe Jev")
+              .font(.headline)
+            Text(
+              "Add a TypeSafe.ai API key to ask Jev for structured Noul, Choice, and Score answers. The key is stored securely in this device's Keychain."
+            )
+            .font(.subheadline)
             .foregroundStyle(.secondary)
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
+            .layoutPriority(1)
 
-          HStack {
-            Button("Clear key") {
-              apiKey = ""
-              if onSave("") {
-                isConfigured = false
-                dismiss()
-              }
+            Link(destination: URL(string: "https://typesafe.ai")!) {
+              Label("Learn more at TypeSafe.ai", systemImage: "arrow.up.right.square")
+                .font(.subheadline.weight(.medium))
             }
-            .buttonStyle(.bordered)
-            .nestedAccessibilityIdentifier("clear-key")
+            .nestedAccessibilityIdentifier("learn-more")
 
-            Spacer()
-
-            Button("Save") {
-              if onSave(apiKey) {
-                isConfigured = true
-                dismiss()
-              }
+            HStack(spacing: 10) {
+              Image(systemName: "key.fill")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+              SecureField("TYPESAFE_API_KEY", text: $apiKey)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .keyboardType(.asciiCapable)
+                .textFieldStyle(.plain)
+                .accessibilityLabel("TypeSafe API key")
+                .nestedAccessibilityIdentifier("api-key")
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(!canSaveAPIKey)
-            .nestedAccessibilityIdentifier("save-key")
+            .padding(.horizontal, 16)
+            .frame(minHeight: 48)
+            .background(.white.opacity(0.08), in: Capsule())
+            .overlay {
+              Capsule()
+                .stroke(.white.opacity(0.18), lineWidth: 1)
+            }
+
+            Label(
+              isConfigured ? "Jev key configured" : "Jev key not configured",
+              systemImage: isConfigured ? "checkmark.circle.fill" : "circle.dashed")
+              .font(.caption)
+              .foregroundStyle(isConfigured ? .green : .secondary)
+
+            HStack {
+              Button("Clear key") {
+                apiKey = ""
+                if onSave("") {
+                  isConfigured = false
+                  dismiss()
+                }
+              }
+              .buttonStyle(.bordered)
+              .nestedAccessibilityIdentifier("clear-key")
+
+              Spacer()
+
+              Button("Save") {
+                if onSave(apiKey) {
+                  isConfigured = true
+                  dismiss()
+                }
+              }
+              .buttonStyle(.borderedProminent)
+              .disabled(!canSaveAPIKey)
+              .nestedAccessibilityIdentifier("save-key")
+            }
           }
         }
         .padding(.vertical, 4)

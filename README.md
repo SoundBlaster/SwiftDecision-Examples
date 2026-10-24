@@ -5,8 +5,10 @@ Small applications that demonstrate model decisions composed with `Specification
 ## OracleBallApp
 
 OracleBallApp is an iOS 26 SwiftUI and RealityKit Magic 8 Ball rendering demo.
-It uses a deterministic local answer for the presentation flow and keeps the
-rendering boundary ready for a future SwiftDecision provider. The scene uses
+Settings select **Jev / Apple Intelligence / None**. Jev uses a Keychain credential,
+Apple Intelligence runs SwiftDecision guided generation on the device, and None
+keeps the existing offline answer engine. See the [local inference pilot](DOCS/ORACLE_APPLE_INTELLIGENCE_PILOT.md).
+The scene uses
 procedural geometry, a depth-layered open shell, a textured triangular answer
 plate, and a custom Metal absorption effect. See
 [`DOCS/ORACLE_RENDERING.md`](DOCS/ORACLE_RENDERING.md) for the scene ownership,
@@ -39,7 +41,7 @@ The engine package supports iOS 15+ and macOS 10.15+. A SwiftUI example app can 
 
 ## Optional TypeSafe Jev backend
 
-The package resolves [SwiftJev 0.5.0](https://github.com/SoundBlaster/SwiftJev/releases/tag/0.5.0), [SwiftDecision 0.7.0](https://github.com/SoundBlaster/SwiftDecision/releases/tag/0.7.0), and [SpecificationCore 2.1.0](https://github.com/SoundBlaster/SpecificationCore/releases/tag/2.1.0). The game remains offline by default; choose the hosted provider explicitly through `CityChainBackendFactory` when a caller has configured a key:
+The package resolves [SwiftJev 0.5.0](https://github.com/SoundBlaster/SwiftJev/releases/tag/0.5.0), [SwiftDecision pilot revision `886645e`](https://github.com/SoundBlaster/SwiftDecision/pull/22), and [SpecificationCore 2.1.0](https://github.com/SoundBlaster/SpecificationCore/releases/tag/2.1.0). The game remains offline by default; choose the hosted provider explicitly through `CityChainBackendFactory` when a caller has configured a key:
 
 ```swift
 let backend = try CityChainBackendFactory.makeJev(apiKey: apiKey)

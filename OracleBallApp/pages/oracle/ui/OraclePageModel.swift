@@ -8,7 +8,8 @@ import SwiftDecision
 @MainActor
 @Observable
 final class OraclePageModel {
-  private(set) var engine: OracleGameEngine
+  private(set) var engine: OracleGameEngine?
+  private let preferences: OracleInferencePreferences
   private let credentialsStore: OracleCredentialsStore
   private var historyStore: OracleHistoryStore
   private let usesSharedHistoryStore: Bool
@@ -29,25 +30,21 @@ final class OraclePageModel {
   var statusMessage: String?
   private var requestTask: Task<Void, Never>?
 
-  enum Provider: Equatable {
-    case offline
-    case jev(model: String)
-
-    var isJev: Bool {
-      if case .jev = self { return true }
-      return false
-    }
-  }
-
-  private(set) var provider: Provider
+  private(set) var provider: OracleInferenceProvider
+  private(set) var normalizesAppleOutput: Bool
+  private(set) var providerIssue: String?
 
   init(
     engine: OracleGameEngine? = nil,
     credentialsStore: OracleCredentialsStore = OracleCredentialsStore(),
     historyStore: OracleHistoryStore? = nil,
+    preferences: OracleInferencePreferences = OracleInferencePreferences(),
     haptics: (any OracleHapticFeedback)? = nil)
   {
+    self.preferences = preferences
     self.credentialsStore = credentialsStore
+    normalizesAppleOutput = preferences.normalizesAppleOutput
+    provider = preferences.provider(hasJevKey: credentialsStore.readAPIKey() != nil)
     usesSharedHistoryStore = historyStore == nil
     let resolvedHistoryStore = historyStore ?? Self.makeHistoryStore()
     self.historyStore = resolvedHistoryStore
@@ -55,17 +52,9 @@ final class OraclePageModel {
     historyEntries = resolvedHistoryStore.entries
     if let engine {
       self.engine = engine
-      provider = .offline
-      return
-    }
-    if let key = credentialsStore.readAPIKey(),
-       let backend = try? JevOracleBackend(apiKey: key)
-    {
-      self.engine = OracleGameEngine(backend: backend)
-      provider = .jev(model: backend.modelIdentifier)
+      provider = .none
     } else {
-      self.engine = OracleGameEngine()
-      provider = .offline
+      configureProvider()
     }
   }
 
@@ -74,11 +63,62 @@ final class OraclePageModel {
   }
 
   var providerDescription: String {
+    if let providerIssue { return providerIssue }
     switch provider {
-    case .offline:
-      String(localized: "Jev not configured · offline fixture")
-    case let .jev(model):
-      String(format: String(localized: "Jev configured · live %@"), locale: .current, model)
+    case .none: return String(localized: "None · offline answers")
+    case .jev: return String(localized: "Jev · online inference")
+    case .appleIntelligence: return String(localized: "Apple Intelligence · on-device inference")
+    }
+  }
+
+  func selectProvider(_ selection: OracleInferenceProvider) {
+    cancelSubmission()
+    provider = selection
+    preferences.select(selection)
+    configureProvider()
+    statusMessage = nil
+  }
+
+  func setNormalizesAppleOutput(_ enabled: Bool) {
+    cancelSubmission()
+    normalizesAppleOutput = enabled
+    preferences.normalizesAppleOutput = enabled
+    configureProvider()
+    statusMessage = nil
+  }
+
+  func refreshProviderAvailability() {
+    guard !isSubmitting, provider == .appleIntelligence else { return }
+    configureProvider()
+  }
+
+  private func cancelSubmission() {
+    requestTask?.cancel()
+    requestTask = nil
+    requestID += 1
+    terminalRequestID = requestID
+    isSubmitting = false
+  }
+
+  private func configureProvider() {
+    engine = nil
+    providerIssue = nil
+    switch provider {
+    case .none:
+      engine = OracleGameEngine()
+    case .jev:
+      guard let key = credentialsStore.readAPIKey(), !key.isEmpty,
+            let backend = try? JevOracleBackend(apiKey: key) else {
+        providerIssue = String(localized: "Add a Jev API key to use this provider.")
+        return
+      }
+      engine = OracleGameEngine(backend: backend)
+    case .appleIntelligence:
+      providerIssue = OracleAppleIntelligenceStatus.unavailableMessage
+      guard providerIssue == nil else { return }
+      engine = OracleGameEngine(
+        backend: AppleIntelligenceOracleBackend(normalizeOutput: normalizesAppleOutput),
+        fallbackEnabled: false)
     }
   }
 
@@ -88,24 +128,17 @@ final class OraclePageModel {
 
   @discardableResult
   func saveAPIKey(_ input: String) -> Bool {
-    requestTask?.cancel()
-    requestTask = nil
-    requestID += 1
-    terminalRequestID = requestID
-    isSubmitting = false
+    cancelSubmission()
     let key = input.trimmingCharacters(in: .whitespacesAndNewlines)
 
     do {
       if key.isEmpty {
         try credentialsStore.deleteAPIKey()
-        engine = OracleGameEngine()
-        provider = .offline
       } else {
-        let backend = try JevOracleBackend(apiKey: key)
+        _ = try JevOracleBackend(apiKey: key)
         try credentialsStore.saveAPIKey(key)
-        engine = OracleGameEngine(backend: backend)
-        provider = .jev(model: backend.modelIdentifier)
       }
+      configureProvider()
       statusMessage = nil
       return true
     } catch {
@@ -126,7 +159,14 @@ final class OraclePageModel {
     requestID += 1
     let requestID = requestID
     let request = OracleRequest(question: question, mode: mode)
-    let engine = engine
+    if !isRandomSimulation, provider == .appleIntelligence { configureProvider() }
+    guard let engine = isRandomSimulation ? OracleGameEngine() : engine else {
+      terminalRequestID = requestID
+      isSubmitting = false
+      statusMessage = providerIssue
+      return
+    }
+    let submittedProvider = provider
     isSubmitting = true
     statusMessage = nil
     if playSubmissionHaptic { haptics.play(.submit) }
@@ -153,7 +193,7 @@ final class OraclePageModel {
           self.terminalRequestID = 0
           self.statusMessage = isRandomSimulation
             ? String(localized: "Random answer")
-            : (self.provider.isJev && answer.source == .offlineFixture
+            : (submittedProvider == .jev && answer.source == .offlineFixture
               ? String(localized: "Jev unavailable · offline answer used")
               : nil)
           if answer.mode == .unsupported || answer.noulValue == false {
@@ -172,7 +212,9 @@ final class OraclePageModel {
       } catch {
         guard let self, self.requestID == requestID else { return }
         self.terminalRequestID = requestID
-        self.statusMessage = error.localizedDescription
+        self.statusMessage = submittedProvider == .appleIntelligence
+          ? OracleAppleIntelligenceStatus.failureMessage(for: error)
+          : error.localizedDescription
         self.isSubmitting = false
       }
     }

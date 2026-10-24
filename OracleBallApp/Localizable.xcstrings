@@ -1,6 +1,319 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Apple Intelligence took too long. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Apple Intelligence took too long. Try again." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Apple Intelligence не успела ответить. Повторите запрос." } }
+      }
+    },
+    "Inference provider": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inference provider"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Провайдер инференса"
+          }
+        }
+      }
+    },
+    "Jev": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev"
+          }
+        }
+      }
+    },
+    "Apple Intelligence": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence"
+          }
+        }
+      }
+    },
+    "None · offline answers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None · offline answers"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None · автономные ответы"
+          }
+        }
+      }
+    },
+    "Jev · online inference": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev · online inference"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev · облачный инференс"
+          }
+        }
+      }
+    },
+    "Apple Intelligence · on-device inference": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence · on-device inference"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence · инференс на устройстве"
+          }
+        }
+      }
+    },
+    "Add a Jev API key to use this provider.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a Jev API key to use this provider."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавьте API key Jev для этого провайдера."
+          }
+        }
+      }
+    },
+    "Apple Intelligence is not supported on this device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence is not supported on this device."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это устройство не поддерживает Apple Intelligence."
+          }
+        }
+      }
+    },
+    "Enable Apple Intelligence in system settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Apple Intelligence in system settings."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включите Apple Intelligence в системных настройках."
+          }
+        }
+      }
+    },
+    "The Apple Intelligence model is still downloading or preparing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Apple Intelligence model is still downloading or preparing."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Модель Apple Intelligence ещё загружается или подготавливается."
+          }
+        }
+      }
+    },
+    "Apple Intelligence is currently unavailable.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence is currently unavailable."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence сейчас недоступна."
+          }
+        }
+      }
+    },
+    "Apple Intelligence could not return a valid decision. Try again or choose another provider.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence could not return a valid decision. Try again or choose another provider."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence не вернула решение в нужном формате. Повторите запрос или выберите другого провайдера."
+          }
+        }
+      }
+    },
+    "Local pilot · requests stay on this device. Estimates are not calibrated probabilities. Unavailable or invalid output is reported without switching providers.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local pilot · requests stay on this device. Estimates are not calibrated probabilities. Unavailable or invalid output is reported without switching providers."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Локальный пилот · запросы остаются на устройстве. Оценки модели не являются калиброванными вероятностями. Недоступность модели и ошибки output показываются без смены провайдера."
+          }
+        }
+      }
+    },
+    "Normalize Apple output": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normalize Apple output"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нормировать Apple output"
+          }
+        }
+      }
+    },
+    "On: normalize relative weights. Off: require probabilities that already sum to 1.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On: normalize relative weights. Off: require probabilities that already sum to 1."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включено: нормировать относительные веса. Выключено: требовать вероятности с суммой 1."
+          }
+        }
+      }
+    },
+    "No AI requests. Oracle uses its offline answer engine; an empty question still gives a random answer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No AI requests. Oracle uses its offline answer engine; an empty question still gives a random answer."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Без запросов к AI. Oracle использует автономные ответы; пустой вопрос даёт случайный ответ."
+          }
+        }
+      }
+    },
+    "Jev key not configured": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev key not configured"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ключ Jev не настроен"
+          }
+        }
+      }
+    },
+    "Done": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готово"
+          }
+        }
+      }
+    },
     "·": {
       "extractionState": "manual",
       "localizations": {
