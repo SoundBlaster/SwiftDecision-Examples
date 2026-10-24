@@ -202,8 +202,20 @@ final class OraclePageModel {
             self.haptics.play(.positiveResult)
           }
         case let .abstained(reason):
-          self.terminalRequestID = requestID
-          self.statusMessage = reason
+          if submittedProvider == .appleIntelligence {
+            self.answer = .uncertain(
+              mode: request.mode, source: .model(identifier: "apple.foundation-models.on-device"))
+            self.historyStore.append(
+              question: request.question.trimmingCharacters(in: .whitespacesAndNewlines),
+              answer: self.answer, pipeline: tracedOutcome.pipeline)
+            self.historyEntries = self.historyStore.entries
+            self.answerRequestID = requestID
+            self.terminalRequestID = 0
+            self.statusMessage = String(localized: "No stable decision. Add a criterion or more context.")
+          } else {
+            self.terminalRequestID = requestID
+            self.statusMessage = reason
+          }
         }
         self.isSubmitting = false
       } catch is CancellationError {

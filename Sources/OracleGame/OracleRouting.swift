@@ -3,10 +3,17 @@ import Foundation
 struct OracleChoicePlan: Sendable, Hashable {
   let options: [String]
   let extractionDescription: String
+  /// Criterion before an explicit colon-delimited alternatives list, when present.
+  let selectionInstructions: String?
 
-  init(options: [String], extractionDescription: String = "No alternatives extracted") {
+  init(
+    options: [String],
+    extractionDescription: String = "No alternatives extracted",
+    selectionInstructions: String? = nil
+  ) {
     self.options = options
     self.extractionDescription = extractionDescription
+    self.selectionInstructions = selectionInstructions
   }
 }
 
@@ -52,7 +59,10 @@ enum OracleChoicePlanner {
     }
 
     var body = normalized
+    var selectionInstructions: String?
     if let colon = body.lastIndex(of: ":") {
+      let criterion = String(body[..<colon]).trimmingCharacters(in: .whitespacesAndNewlines)
+      selectionInstructions = criterion.isEmpty ? nil : criterion
       body = String(body[body.index(after: colon)...])
     } else if matchingText.hasPrefix("which "), let comma = body.firstIndex(of: ",") {
       body = String(body[body.index(after: comma)...])
@@ -77,7 +87,10 @@ enum OracleChoicePlanner {
     guard (2 ... 5).contains(unique.count) else {
       return OracleChoicePlan(options: [])
     }
-    return OracleChoicePlan(options: unique, extractionDescription: extractionDescription)
+    return OracleChoicePlan(
+      options: unique,
+      extractionDescription: extractionDescription,
+      selectionInstructions: selectionInstructions)
   }
 
   private static func ageAlternatives(

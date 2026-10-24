@@ -36,7 +36,7 @@ policy can still abstain on an uncertain Choice distribution.
 
 ## Pilot contract
 
-SwiftDecision is pinned to immutable revision `886645e3c3ea97b08942c168f97b8ac2c1ecc8fa`
+SwiftDecision is pinned to immutable revision `f962479c6251e9da224ef159181ae43a1f4cacbd`
 from [PR #22](https://github.com/SoundBlaster/SwiftDecision/pull/22), enabling its
 non-default `FoundationModels` SwiftPM trait. Other packages retain their versions.
 Replace the pin with a release after the adapter is merged and released.
@@ -103,14 +103,65 @@ required by repository guidance; commands above show only portable arguments.
   passed. The Simulator reported the model available; unavailable-state UI and
   real physical iPhone inference still need checking.
 
-## Known Choice limitation
+## Revised local decision strategy
 
-The [order diagnostic](ORACLE_CHOICE_ORDER_DIAGNOSTIC.md) reproduced the user's
-first-option / 67:33 observation: all 12 normalized samples returned native weights
-[1, 0.5], including semantic controls where the second option should win. Strict
-mode returned 50:50 and abstained on four controls. The pilot's format integration
-works, but the current numeric prompt/schema needs further evaluation before these
-estimates can support meaningful choices. No automatic randomization was added.
+The pilot now explicitly selects SwiftDecision `.optionAssessment`:
+
+- Choice/Score use one numeric field per option and a second generation with every
+  option shifted to another position. Estimates are restored to the original order.
+- Noul generates a supported/contradicted/unknown verdict plus a native scalar
+  estimate, then repeats with a shifted categorical guide order.
+- Score explicitly reports whether the context contains enough evidence.
+- Disagreement, tied preference or missing evidence becomes a uniform distribution;
+  the unchanged default policy abstains. Invalid fields remain errors.
+
+The [original diagnostic](ORACLE_CHOICE_ORDER_DIAGNOSTIC.md) remains a baseline for
+`.directDistribution`; its repeated 67/33 pattern is not a claim about the revised
+strategy. The [SwiftDecision assessment report](https://github.com/SoundBlaster/SwiftDecision/blob/codex/foundation-models-backend/Documentation/Reports/FoundationModelsAssessment-2026-10-25.md) compares the two on 20 cases: the revised
+strategy accepted 8 correct answers among 9 determinate tasks, skipped one Score,
+and abstained on all 11 undecidable cases (including all eight user OR forms).
+No wrong answer was accepted in that small run. Median observed latency was about
+1.05 seconds instead of 0.63 seconds. These are not calibrated probabilities or a
+production accuracy guarantee.
+
+Apple abstentions now reveal “Not enough information” instead of leaving the old
+answer visible. They are retained in question history with the full pipeline,
+without an invented Boolean or confidence value. The stored mode is the requested
+mode when no answer type was resolved. Other providers retain their current flow.
+
+Automatic routing can require four native generations; the existing 15-second
+shared budget covers the whole operation. A two-pass consistency check can still
+agree on a wrong answer, and a single cyclic shift is not exhaustive order testing.
+
+## Application-shaped prompt regression
+
+The first revised adapter integration still abstained on `Choose the star: Hello or Sun`.
+A bounded raw-assessment diagnostic showed `[1, 0]` in both alternative orders when
+Oracle repeated the complete alternatives-bearing question as both task and context.
+The consistency check caught this positional result, but lost answer coverage.
+
+The existing colon-aware planner now also retains the criterion before the colon.
+Choice passes that criterion as the task, alternatives separately, and an explicit
+no-additional-observations context. Other question forms keep their original input;
+no semantic criterion is invented for bare OR. This is application prompt assembly,
+not an option-label heuristic in SwiftDecision, and applies consistently to providers.
+
+After that change, real local inference through `OracleGameEngine` selected `Sun`
+and `Goodbye` correctly in both original/reversed alternative orders (four cases).
+`Hello or Kitty?` abstained with no classifier stage. Those two opt-in tests passed
+in 6.69 seconds total on the Mac. The four-mode smoke completed without fallback:
+Noul accepted, Choice/Score/Automatic conservatively abstained. Local inference is
+still deliberately excluded from normal CI.
+
+Final offline suite passed: 44 XCTest and 65 Swift Testing tests, with seven
+opt-in local-model tests skipped. The final Oracle iOS Simulator build passed
+on Xcode 27.1, with build outputs and caches on TB5.
+Simulator UI verification confirmed that a bare-OR abstention replaces the previous
+answer with `Not enough information`, persists in history, and opens a full 50/50
+pipeline. No overlap/cropping was observed. A second check on the final build confirmed
+`Sun` and `Goodbye` in the interface on the first submission of each criterion
+question, with Apple + normalization ON. Physical iPhone inference with the revised
+strategy remains unverified.
 
 ## Device follow-up
 

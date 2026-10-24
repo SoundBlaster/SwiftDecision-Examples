@@ -20,7 +20,7 @@ let package = Package(
     // Pilot: Foundation Models support is not released yet (SwiftDecision PR #22).
     .package(
       url: "https://github.com/SoundBlaster/SwiftDecision.git",
-      revision: "886645e3c3ea97b08942c168f97b8ac2c1ecc8fa",
+      revision: "f962479c6251e9da224ef159181ae43a1f4cacbd",
       traits: ["FoundationModels"]
     ),
     .package(

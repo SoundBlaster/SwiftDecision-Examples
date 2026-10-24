@@ -9,7 +9,7 @@ import SwiftDecision
 final class AppleIntelligenceOracleBackendTests: XCTestCase {
   func testAllDecisionTypesUseTheLocalAdapterAndPreserveMetadata() async throws {
     let client = OracleGuidedFixture()
-    let backend = AppleIntelligenceOracleBackend(client: client)
+    let backend = AppleIntelligenceOracleBackend(client: client, strategy: .directDistribution)
     XCTAssertFalse(backend.supportsTransientFailureFallback)
     XCTAssertEqual(backend.maximumResponseTime, 15)
     for (kind, count) in [(DecisionKind.noul, 2), (.choice, 3), (.score, 4)] {
@@ -28,7 +28,7 @@ final class AppleIntelligenceOracleBackendTests: XCTestCase {
   }
 
   func testStrictOutputDoesNotSilentlyNormalize() async throws {
-    let backend = AppleIntelligenceOracleBackend(client: OracleStrictFixture(), normalizeOutput: false)
+    let backend = AppleIntelligenceOracleBackend(client: OracleStrictFixture(), normalizeOutput: false, strategy: .directDistribution)
     do {
       _ = try await backend.predict(for: DecisionPrompt(
         id: "strict-fixture", kind: .noul, instructions: "Is this valid?", context: "Fixture",
@@ -38,7 +38,7 @@ final class AppleIntelligenceOracleBackendTests: XCTestCase {
   }
 
   func testAutomaticOraclePipelineUsesAppleMetadata() async throws {
-    let backend = AppleIntelligenceOracleBackend(client: OracleGuidedFixture())
+    let backend = AppleIntelligenceOracleBackend(client: OracleGuidedFixture(), strategy: .directDistribution)
     let result = try await OracleGameEngine(backend: backend, fallbackEnabled: false)
       .answerWithTrace(for: OracleRequest(question: "Will this work?"))
     guard case let .accepted(answer) = result.outcome else {
@@ -50,7 +50,7 @@ final class AppleIntelligenceOracleBackendTests: XCTestCase {
   }
 
   func testAppleTimeoutDoesNotBecomeAnOfflineAnswer() async throws {
-    let backend = AppleIntelligenceOracleBackend(client: OracleSlowFixture(), timeout: 0.02)
+    let backend = AppleIntelligenceOracleBackend(client: OracleSlowFixture(), timeout: 0.02, strategy: .directDistribution)
     do {
       _ = try await OracleGameEngine(backend: backend, fallbackEnabled: false)
         .answer(for: OracleRequest(question: "Will this work?", mode: .noul))
@@ -71,14 +71,50 @@ final class AppleIntelligenceOracleBackendTests: XCTestCase {
     XCTAssertEqual(result.pipeline.first { $0.id == "Request routing" }?.summary, "Choice")
     switch result.outcome {
     case let .accepted(answer):
-      XCTAssertEqual(answer.mode, .choice)
-      XCTAssertTrue(["Hello", "Kitty"].contains(answer.displayText))
-      print("Oracle explicit alternatives: accepted Choice without classification")
+      XCTFail("Bare alternatives must not manufacture a preference: \(answer.mode)")
     case .abstained:
       print("Oracle explicit alternatives: Choice policy abstained without classification")
     case .fallback:
       XCTFail("Apple pilot must not use fallback")
     }
+  }
+
+  func testLiveLocalCriterionChoices() async throws {
+    guard ProcessInfo.processInfo.environment["ORACLE_APPLE_INTELLIGENCE_SMOKE"] == "1" else {
+      throw XCTSkip("Set ORACLE_APPLE_INTELLIGENCE_SMOKE=1 for local inference")
+    }
+    guard case .available = AppleIntelligenceOracleBackend.availability else { throw XCTSkip("Local model unavailable") }
+    let engine = OracleGameEngine(backend: AppleIntelligenceOracleBackend(), fallbackEnabled: false)
+    for (question, expected) in [
+      ("Choose the star: Hello or Sun", "Sun"),
+      ("Choose the star: Sun or Hello", "Sun"),
+      ("Choose a farewell: Hello or Goodbye", "Goodbye"),
+      ("Choose a farewell: Goodbye or Hello", "Goodbye")
+    ] {
+      let result = try await engine.answerWithTrace(for: OracleRequest(question: question))
+      guard case let .accepted(answer) = result.outcome else {
+        for stage in result.pipeline {
+          print("Oracle criterion diagnostic: \(stage.id) \(stage.summary ?? "") \(stage.details ?? [])")
+        }
+        return XCTFail("Expected a meaningful criterion-based choice: \(question)")
+      }
+      XCTAssertEqual(answer.mode, .choice)
+      XCTAssertEqual(answer.displayText, expected)
+      XCTAssertFalse(result.pipeline.contains { $0.id == "Question type" })
+      print("Oracle criterion choice: \(expected)")
+    }
+  }
+
+  func testInjectedAppleDefaultsToOptionAssessment() async throws {
+    let client = OracleAssessmentFixture()
+    let engine = OracleGameEngine(backend: AppleIntelligenceOracleBackend(client: client), fallbackEnabled: false)
+    let outcome = try await engine.answer(for: OracleRequest(question: "Tea or Coffee?", mode: .choice))
+    guard case let .accepted(answer) = outcome else { return XCTFail("Expected a Choice answer") }
+    XCTAssertEqual(answer.displayText, "Coffee")
+    let requests = await client.requests
+    XCTAssertEqual(requests.count, 2)
+    XCTAssertTrue(requests[0].prompt.contains("0: Tea\n1: Coffee"))
+    XCTAssertTrue(requests[1].prompt.contains("0: Coffee\n1: Tea"))
   }
 
   /// Explicit local inference only. Never uses Jev credentials or sends a network request.
@@ -138,6 +174,16 @@ private struct OracleSlowFixture: FoundationModelsDecisionClient {
   func generate(_ request: FoundationModelsDecisionRequest) async throws -> GeneratedContent {
     try await Task.sleep(for: .milliseconds(200))
     return GeneratedContent(properties: ["weights": [0.0, 1.0]])
+  }
+}
+@available(macOS 26.0, iOS 26.0, *)
+private actor OracleAssessmentFixture: FoundationModelsDecisionClient {
+  private(set) var requests: [FoundationModelsDecisionRequest] = []
+  func generate(_ request: FoundationModelsDecisionRequest) async throws -> GeneratedContent {
+    requests.append(request)
+    return requests.count == 1
+      ? GeneratedContent(properties: ["option_0": 0.1, "option_1": 0.9])
+      : GeneratedContent(properties: ["option_0": 0.9, "option_1": 0.1])
   }
 }
 #endif

@@ -13,7 +13,7 @@ final class OracleChoiceOrderDiagnosticTests: XCTestCase {
     let recorder = ChoiceDiagnosticRecorder()
     let backend = AppleIntelligenceOracleBackend(
       client: ChoiceDiagnosticClient(recorder: recorder, outputProperty: "probabilities"),
-      normalizeOutput: false, timeout: 5)
+      normalizeOutput: false, timeout: 5, strategy: .directDistribution)
     let engine = DecisionEngine(backend: backend, configuration: .init(timeout: 5))
     for sample in semanticSamples {
       await recorder.reset()
@@ -61,6 +61,21 @@ final class OracleChoiceOrderDiagnosticTests: XCTestCase {
     }
   }
 
+  /// Bounded application-shaped inputs; fixed synthetic text only.
+  func testLiveOracleCriterionAssessmentDiagnostic() async throws {
+    try requireLocalDiagnostic()
+    for transform in [false, true] {
+      for sample in semanticSamples.prefix(2) {
+        let backend = AppleIntelligenceOracleBackend(
+          client: AssessmentDiagnosticClient(simplifyTask: transform), timeout: 6)
+        let result = try await DecisionEngine(backend: backend, configuration: .init(timeout: 6)).choice(
+          instructions: sample.question, context: sample.question,
+          options: sample.options.map { ChoiceOption(label: $0, description: $0) })
+        print("ORACLE_ASSESSMENT_RESULT simplified=\(transform), question=\(sample.question), probabilities=\(result.probabilities), selected=\(result.value ?? "abstained")")
+      }
+    }
+  }
+
   private var semanticSamples: [(question: String, options: [String])] {
     [
       ("Choose the star: Hello or Sun", ["Hello", "Sun"]),
@@ -96,7 +111,7 @@ final class OracleChoiceOrderDiagnosticTests: XCTestCase {
     ]
     let recorder = ChoiceDiagnosticRecorder()
     let apple = AppleIntelligenceOracleBackend(
-      client: ChoiceDiagnosticClient(recorder: recorder), timeout: 5)
+      client: ChoiceDiagnosticClient(recorder: recorder), timeout: 5, strategy: .directDistribution)
     let engine = OracleGameEngine(
       backend: ChoiceDiagnosticBackend(apple: apple, recorder: recorder), fallbackEnabled: false)
     let started = ContinuousClock.now
@@ -162,5 +177,27 @@ private actor ChoiceDiagnosticRecorder {
   func record(raw: [Double]) { self.raw = raw }
   func record(normalized: [Double]) { self.normalized = normalized }
   func values() -> (raw: [Double], normalized: [Double]) { (raw, normalized) }
+}
+@available(macOS 26.0, iOS 26.0, *)
+private struct AssessmentDiagnosticClient: FoundationModelsDecisionClient {
+  let simplifyTask: Bool
+  func generate(_ request: FoundationModelsDecisionRequest) async throws -> GeneratedContent {
+    var input = request.prompt
+    if simplifyTask {
+      var lines = input.components(separatedBy: "\n")
+      if let colon = lines[0].dropFirst("Task: ".count).firstIndex(of: ":") {
+        lines[0] = String(lines[0][..<colon])
+      }
+      lines[1] = "Context: No additional observations."
+      input = lines.joined(separator: "\n")
+    }
+    let session = LanguageModelSession(model: .default, instructions: request.instructions)
+    let response = try await session.respond(to: input, schema: request.schema,
+      options: GenerationOptions(samplingMode: .greedy))
+    let a = try response.content.value(Double.self, forProperty: "option_0")
+    let b = try response.content.value(Double.self, forProperty: "option_1")
+    print("ORACLE_ASSESSMENT_RAW simplified=\(simplifyTask), input=\(input), values=[\(a),\(b)]")
+    return response.content
+  }
 }
 #endif

@@ -1,6 +1,23 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "No stable decision. Add a criterion or more context.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stable decision. Add a criterion or more context."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось сделать уверенный выбор. Добавьте критерий или контекст."
+          }
+        }
+      }
+    },
     "Apple Intelligence took too long. Try again.": {
       "extractionState": "manual",
       "localizations": {

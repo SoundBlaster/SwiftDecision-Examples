@@ -107,6 +107,11 @@ public struct OracleAnswer: Hashable, Sendable {
     self.confidence = confidence
     self.source = source
   }
+
+  /// Presentation for a genuine abstention; it does not fabricate a Boolean or confidence value.
+  public static func uncertain(mode: OracleMode, source: OracleAnswerSource) -> Self {
+    Self(mode: mode, displayText: oracleLocalized("Not enough\ninformation"), source: source)
+  }
 }
 
 public enum OracleOutcome: Hashable, Sendable {
@@ -934,9 +939,12 @@ public final class OracleGameEngine: @unchecked Sendable {
       let choiceFallback = fallbackEnabled
         ? (options.contains("later") ? "later" : options.first)
         : nil
+      // The colon already separates a task from its alternatives in the planner.
+      // Do not repeat that alternatives list as evidence for its own selection.
+      let criterion = selection.choicePlan.selectionInstructions
       let result = try await decisionEngine.choice(
-        instructions: question,
-        context: question,
+        instructions: criterion ?? question,
+        context: criterion == nil ? question : "No additional observations.",
         options: options.map { option in
           ChoiceOption(label: option, description: option)
         },

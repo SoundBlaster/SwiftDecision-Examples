@@ -44,6 +44,16 @@ final class OracleInferencePreferencesTests: XCTestCase {
     XCTAssertFalse(reloaded.normalizesAppleOutput)
   }
 
+  func testAbstentionPresentationHasNoInventedConfidenceOrBoolean() {
+    let source = OracleAnswerSource.model(identifier: "apple.foundation-models.on-device")
+    let answer = OracleAnswer.uncertain(mode: .automatic, source: source)
+    XCTAssertFalse(answer.displayText.isEmpty)
+    XCTAssertNil(answer.confidence)
+    XCTAssertNil(answer.noulValue)
+    XCTAssertEqual(answer.source, source)
+    XCTAssertEqual(answer.mode, .automatic)
+  }
+
   private func withPreferences(_ body: (OracleInferencePreferences) -> Void) {
     let suite = "OracleInferencePreferencesTests.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suite)!

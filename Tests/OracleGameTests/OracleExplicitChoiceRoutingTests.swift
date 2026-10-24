@@ -38,6 +38,29 @@ struct OracleExplicitChoiceRoutingTests {
     #expect(result.pipeline.first { $0.id == "Request routing" }?.summary == "Choice")
   }
 
+  @Test(arguments: [
+    ("Choose the star: Hello or Sun", "Choose the star", "No additional observations.", ["Hello", "Sun"]),
+    ("Выбери животное: квадрат или собака", "Выбери животное", "No additional observations.", ["квадрат", "собака"]),
+    ("Hello or Kitty?", "Hello or Kitty?", "Hello or Kitty?", ["Hello", "Kitty"]),
+    (": Tea or Coffee?", ": Tea or Coffee?", ": Tea or Coffee?", ["Tea", "Coffee"])
+  ])
+  func criterionAndAlternativesRemainSeparate(
+    question: String, instructions: String, context: String, options: [String]
+  ) async throws {
+    let recorder = ChoiceRoutingPrompts()
+    let backend = ClosureDecisionBackend { prompt in
+      await recorder.record(prompt)
+      return DecisionPrediction(probabilities: [0, 1], modelIdentifier: "fixture")
+    }
+    _ = try await OracleGameEngine(backend: backend, fallbackEnabled: false)
+      .answer(for: OracleRequest(question: question))
+    let prompts = await recorder.prompts
+    #expect(prompts.count == 1)
+    #expect(prompts.first?.instructions == instructions)
+    #expect(prompts.first?.context == context)
+    #expect(prompts.first?.options.map(\.description) == options)
+  }
+
   @Test
   func explicitNoulModeOverridesExtractedAlternatives() async throws {
     let recorder = ChoiceRoutingPrompts()

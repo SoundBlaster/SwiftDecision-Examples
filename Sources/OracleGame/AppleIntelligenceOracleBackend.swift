@@ -13,7 +13,8 @@ public struct AppleIntelligenceOracleBackend: OracleBackendMetadata {
   public let maximumResponseTime: TimeInterval?
 
   public init(normalizeOutput: Bool = true, timeout: TimeInterval = 15) {
-    backend = FoundationModelsDecisionBackend(normalization: normalizeOutput ? .sumToOne : .none)
+    backend = FoundationModelsDecisionBackend(
+      normalization: normalizeOutput ? .sumToOne : .none, strategy: .optionAssessment)
     maximumResponseTime = timeout
   }
 
@@ -21,10 +22,11 @@ public struct AppleIntelligenceOracleBackend: OracleBackendMetadata {
   public init(
     client: any FoundationModelsDecisionClient,
     normalizeOutput: Bool = true,
-    timeout: TimeInterval = 15
+    timeout: TimeInterval = 15,
+    strategy: FoundationModelsDecisionBackend.Strategy = .optionAssessment
   ) {
     backend = FoundationModelsDecisionBackend(
-      client: client, normalization: normalizeOutput ? .sumToOne : .none)
+      client: client, normalization: normalizeOutput ? .sumToOne : .none, strategy: strategy)
     maximumResponseTime = timeout
   }
 
