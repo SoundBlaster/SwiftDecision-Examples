@@ -14,6 +14,11 @@ struct OracleWordingDiagnosticTests {
     let samples = WordingSample.matrix
     #expect(samples.count == 48)
     #expect(WordingSample.controls.count == 6)
+    #expect(WordingSample.legacyMatrix.count == 48)
+    #expect(WordingSample.legacyControls.count == 6)
+    #expect(WordingSample.matrix.allSatisfy { $0.question.unicodeScalars.allSatisfy { $0.value < 128 } })
+    #expect(WordingSample.controls.allSatisfy { $0.question.unicodeScalars.allSatisfy { $0.value < 128 } })
+    #expect(WordingSample.ablationMatrix.count == 48)
     #expect(Set(samples.map(\.id)).count == 48)
     for group in Dictionary(grouping: samples, by: { "\($0.pair)-\($0.wording)" }).values {
       #expect(group.filter { $0.reversed }.count == group.filter { !$0.reversed }.count)
@@ -29,18 +34,29 @@ struct OracleWordingDiagnosticTests {
       throw WordingDiagnosticError.unavailable
     }
     let batch = Int(ProcessInfo.processInfo.environment["ORACLE_WORDING_BATCH"] ?? "0") ?? -1
-    guard (0..<9).contains(batch) else { throw WordingDiagnosticError.invalidBatch }
+    let environment = ProcessInfo.processInfo.environment
+    let isAblation = environment["ORACLE_WORDING_PHASE"] == "ablation"
+    let legacy = environment["ORACLE_WORDING_LANGUAGE"] == "legacyRussian"
+    guard !isAblation || !legacy else { throw WordingDiagnosticError.invalidBatch }
+    let matrix: [(WordingSample, WordingInstructionProfile)]
+    if isAblation {
+      matrix = WordingSample.ablationMatrix
+    } else {
+      matrix = ((legacy ? WordingSample.legacyMatrix : WordingSample.matrix)
+        + (legacy ? WordingSample.legacyControls : WordingSample.controls)).map { ($0, .unchanged) }
+    }
+    guard batch >= 0, batch * 6 < matrix.count else { throw WordingDiagnosticError.invalidBatch }
     let started = ContinuousClock.now
-    let samples = batch == 8 ? WordingSample.controls : Array(WordingSample.matrix[(batch * 6)..<(batch * 6 + 6)])
-    for sample in samples {
+    for (sample, profile) in matrix[(batch * 6)..<min(batch * 6 + 6, matrix.count)] {
       guard started.duration(to: .now) < .seconds(40) else { throw WordingDiagnosticError.batchBudget }
       let recorder = WordingRecorder()
       let backend = WordingBackend(
-        apple: AppleIntelligenceOracleBackend(client: WordingClient(recorder: recorder), timeout: 6),
+        apple: AppleIntelligenceOracleBackend(client: WordingClient(recorder: recorder, profile: profile), timeout: 6),
         recorder: recorder)
       let caseStart = ContinuousClock.now
       var row: [String: Any] = [
-        "id": sample.id, "pair": sample.pair, "wording": sample.wording,
+        "id": "\(profile.rawValue)__\(sample.id)", "pair": sample.pair, "wording": sample.wording,
+        "instruction_profile": profile.rawValue, "language": legacy ? "legacyRussian" : "english",
         "repeat": sample.iteration, "reversed": sample.reversed,
         "question": sample.question, "expected_options": sample.options
       ]
@@ -69,7 +85,10 @@ struct OracleWordingDiagnosticTests {
       row["task"] = snapshot.task
       row["context"] = snapshot.context
       row["probabilities"] = snapshot.probabilities
-      row["passes"] = snapshot.passes.map { ["input": $0.input, "weights": $0.weights] as [String: Any] }
+      row["passes"] = snapshot.passes.map {
+        ["input": $0.input, "weights": $0.weights,
+         "session_instructions": $0.instructions, "field_descriptions": $0.descriptions] as [String: Any]
+      }
       let duration = caseStart.duration(to: .now).components
       row["seconds"] = Double(duration.seconds) + Double(duration.attoseconds) / 1e18
       let data = try JSONSerialization.data(withJSONObject: row, options: [.sortedKeys])
@@ -88,7 +107,47 @@ private struct WordingSample {
   let question: String
   let options: [String]
 
+  static var matrix: [Self] {
+    let prefixes = [
+      "bare": "", "any": "Choose any option: ",
+      "first": "Choose the first thing that comes to mind: ",
+      "preference": "Which do you prefer: ",
+      "must": "You must choose exactly one option, even without a reason: ",
+      "criterion": "Choose the cool color: "
+    ]
+    return legacyMatrix.map { sample in
+      let words = sample.pair == "colors" ? ["red", "blue"] : ["Hello", "Kitty"]
+      let options = sample.reversed ? Array(words.reversed()) : words
+      return Self(id: "en-" + sample.id, pair: sample.pair, wording: sample.wording,
+        iteration: sample.iteration, reversed: sample.reversed,
+        question: prefixes[sample.wording]! + options.joined(separator: " or ") + "?", options: options)
+    }
+  }
+
   static var controls: [Self] {
+    var result: [Self] = []
+    for (pair, prefix, words) in [
+      ("facts-en", "Blue is a cool color and red is a warm color. Choose the cool color: ", ["red", "blue"]),
+      ("sun", "Choose the star: ", ["Hello", "Sun"]),
+      ("farewell", "Choose a farewell: ", ["Hello", "Goodbye"])
+    ] {
+      for reversed in [false, true] {
+        let options = reversed ? Array(words.reversed()) : words
+        result.append(Self(id: "en-control-\(pair)-\(reversed)", pair: pair, wording: "control",
+          iteration: 0, reversed: reversed,
+          question: prefix + options.joined(separator: " or ") + "?", options: options))
+      }
+    }
+    return result
+  }
+
+  static var ablationMatrix: [(Self, WordingInstructionProfile)] {
+    let samples = matrix.filter { ["any", "first"].contains($0.wording) && $0.iteration < 2 }
+    return [WordingInstructionProfile.systemRemoved, .schemaRemoved, .bothRemoved]
+      .flatMap { profile in samples.map { ($0, profile) } }
+  }
+
+  static var legacyControls: [Self] {
     var result: [Self] = []
     for (pair, prefix, words, separator) in [
       ("facts-ru", "Синий — холодный цвет, красный — тёплый. Выбери холодный цвет: ", ["красный", "синий"], " или "),
@@ -105,7 +164,7 @@ private struct WordingSample {
     return result
   }
 
-  static var matrix: [Self] {
+  static var legacyMatrix: [Self] {
     let prefixes = [
       ("bare", ""),
       ("any", "Выбери любой вариант: "),
@@ -136,11 +195,17 @@ private struct WordingSample {
   }
 }
 
+private enum WordingInstructionProfile: String, Sendable {
+  case unchanged, systemRemoved, schemaRemoved, bothRemoved
+}
+
 #if canImport(FoundationModels)
 private enum WordingDiagnosticError: Error { case unavailable, invalidBatch, batchBudget, unexpectedRoute }
 
 private actor WordingRecorder {
-  struct Pass: Sendable { let input: String; let weights: [Double] }
+  struct Pass: Sendable {
+    let input: String; let weights: [Double]; let instructions: String; let descriptions: [String]
+  }
   struct Snapshot: Sendable {
     var task = ""
     var context = ""
@@ -155,21 +220,48 @@ private actor WordingRecorder {
     value.options = prompt.options.map(\.description)
   }
   func prediction(_ values: [Double]) { value.probabilities = values }
-  func pass(input: String, weights: [Double]) { value.passes.append(Pass(input: input, weights: weights)) }
+  func pass(input: String, weights: [Double], instructions: String, descriptions: [String]) {
+    value.passes.append(Pass(input: input, weights: weights, instructions: instructions, descriptions: descriptions))
+  }
   func snapshot() -> Snapshot { value }
 }
 
 @available(macOS 26.0, iOS 26.0, *)
 private struct WordingClient: FoundationModelsDecisionClient {
   let recorder: WordingRecorder
+  let profile: WordingInstructionProfile
   func generate(_ request: FoundationModelsDecisionRequest) async throws -> GeneratedContent {
     try Task.checkCancellation()
-    let session = LanguageModelSession(model: .default, instructions: request.instructions)
+    var instructions = request.instructions
+    if profile == .systemRemoved || profile == .bothRemoved {
+      instructions = instructions.replacingOccurrences(
+        of: "If no selection criterion is provided or the information is insufficient, indicate uncertainty.",
+        with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    let alternatives = request.prompt.components(separatedBy: "Alternatives:\n").last!
+      .components(separatedBy: "\n").map { String($0.dropFirst(3)) }
+    guard alternatives.count == 2 else { throw WordingDiagnosticError.unexpectedRoute }
+    let removeSchemaClause = profile == .schemaRemoved || profile == .bothRemoved
+    let descriptions = alternatives.map {
+      "Relative support for \($0) satisfying the task. 0 means contradicted; 1 means fully supported."
+        + (removeSchemaClause ? "" : " Use equal positive support when no criterion is given.")
+    }
+    let schema: GenerationSchema
+    if removeSchemaClause {
+      schema = try GenerationSchema(root: DynamicGenerationSchema(name: "DecisionEvaluation",
+        properties: descriptions.enumerated().map { index, description in
+          .init(name: "option_\(index)", description: description,
+            schema: DynamicGenerationSchema(type: Double.self, guides: [.range(0...1)]))
+        }), dependencies: [])
+    } else {
+      schema = request.schema
+    }
+    let session = LanguageModelSession(model: .default, instructions: instructions)
     let response = try await session.respond(
-      to: request.prompt, schema: request.schema, options: GenerationOptions(samplingMode: .greedy))
+      to: request.prompt, schema: schema, options: GenerationOptions(samplingMode: .greedy))
     try Task.checkCancellation()
     let weights = try (0..<2).map { try response.content.value(Double.self, forProperty: "option_\($0)") }
-    await recorder.pass(input: request.prompt, weights: weights)
+    await recorder.pass(input: request.prompt, weights: weights, instructions: instructions, descriptions: descriptions)
     return response.content
   }
 }

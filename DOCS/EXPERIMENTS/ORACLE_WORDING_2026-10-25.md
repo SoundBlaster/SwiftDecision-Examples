@@ -1,5 +1,8 @@
 # Oracle wording experiment — 2026-10-25
 
+Historical exploratory run. New instruction experiments use English only; see the
+[English follow-up and instruction ablation](ORACLE_ENGLISH_INSTRUCTIONS_2026-10-25.md).
+
 ## Question and scope
 
 Can wording alone make the current Apple Intelligence Oracle choose an arbitrary
@@ -114,7 +117,7 @@ The opt-in test is `OracleWordingDiagnosticTests.measureSixApplicationQuestions`
 Normal tests run only the offline matrix check; live inference is disabled by default.
 
 ```sh
-ORACLE_WORDING_DIAGNOSTIC=1 ORACLE_WORDING_BATCH=0 \
+ORACLE_WORDING_DIAGNOSTIC=1 ORACLE_WORDING_LANGUAGE=legacyRussian ORACLE_WORDING_BATCH=0 \
 swift test --filter OracleWordingDiagnosticTests
 ```
 

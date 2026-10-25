@@ -108,6 +108,8 @@ required by repository guidance; commands above show only portable arguments.
 The subsequent [wording experiment](EXPERIMENTS/ORACLE_WORDING_2026-10-25.md)
 measures bare OR, arbitrary-choice requests and semantic controls without changing
 this strategy. It records the remaining zero-support failure as well as abstentions.
+New experiments use English only: [instruction ablation](EXPERIMENTS/ORACLE_ENGLISH_INSTRUCTIONS_2026-10-25.md)
+and [brief note before categorical selection](EXPERIMENTS/ORACLE_ESSAY_2026-10-25.md).
 
 The pilot now explicitly selects SwiftDecision `.optionAssessment`:
 
