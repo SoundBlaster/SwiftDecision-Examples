@@ -110,6 +110,9 @@ measures bare OR, arbitrary-choice requests and semantic controls without changi
 this strategy. It records the remaining zero-support failure as well as abstentions.
 New experiments use English only: [instruction ablation](EXPERIMENTS/ORACLE_ENGLISH_INSTRUCTIONS_2026-10-25.md)
 and [brief note before categorical selection](EXPERIMENTS/ORACLE_ESSAY_2026-10-25.md).
+The [matched-instruction follow-up](EXPERIMENTS/ORACLE_MATCHED_ESSAY_2026-10-25.md)
+records modest position-bias reduction and worse missing-fact handling with note fields;
+these remain diagnostics and do not change the production adapter.
 
 The pilot now explicitly selects SwiftDecision `.optionAssessment`:
 

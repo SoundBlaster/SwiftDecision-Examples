@@ -113,10 +113,10 @@ private struct EssaySample {
 
 #if canImport(FoundationModels)
 private enum EssayError: Error { case unavailable, invalidBatch, budget, timeout }
-private struct EssaySelection: Sendable { let id: String; let note: String? }
+struct EssaySelection: Sendable { let id: String; let note: String? }
 
 @available(macOS 26.0, iOS 26.0, *)
-private func essaySelection(
+func essaySelection(
   input: String, instructions: String, schema: GenerationSchema, includesNote: Bool
 ) async throws -> EssaySelection {
   try await withThrowingTaskGroup(of: EssaySelection.self) { group in

@@ -1,5 +1,9 @@
 # Brief note before selection — 2026-10-25
 
+The later [matched-instruction experiment](ORACLE_MATCHED_ESSAY_2026-10-25.md)
+controls instruction wording and adds an ID-before-note control, repeated cases and
+additional missing-fact regressions. It also records failure to generate essay-length text.
+
 ## Hypothesis
 
 Would generating a short user-facing comparison before selecting an alternative
