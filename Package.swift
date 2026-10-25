@@ -14,10 +14,17 @@ let package = Package(
     .library(name: "CityChainGame", targets: ["CityChainGame"]),
     .library(name: "OraclePresentation", targets: ["OraclePresentation"]),
     .library(name: "OracleGame", targets: ["OracleGame"]),
-    .library(name: "OracleHistory", targets: ["OracleHistory"])
+    .library(name: "OracleHistory", targets: ["OracleHistory"]),
+    .library(name: "OracleGLiNER", targets: ["OracleGLiNER"]),
   ],
+  traits: [.trait(name: "GLiNER", description: "Enable the experimental local GLiNER provider.")],
   dependencies: [
-    .package(url: "https://github.com/SoundBlaster/SwiftDecision.git", exact: "0.7.0"),
+    // Pilot dependency: SwiftDecision PR #23, pinned until its first release.
+    .package(
+      url: "https://github.com/SoundBlaster/SwiftDecision.git",
+      revision: "42aca99d86cf988d4760dbb9b0ebea2708ef9d1b",
+      traits: [.trait(name: "GLiNER", condition: .when(traits: ["GLiNER"]))]
+    ),
     .package(
       url: "https://github.com/SoundBlaster/SpecificationCore.git",
       exact: "2.1.0"
@@ -51,6 +58,17 @@ let package = Package(
       resources: [.process("PrivacyInfo.xcprivacy")]
     ),
     .testTarget(name: "OracleHistoryTests", dependencies: ["OracleHistory"]),
+    .target(
+      name: "OracleGLiNER",
+      dependencies: [
+        "OracleGame",
+        .product(name: "SwiftDecision", package: "SwiftDecision"),
+        .product(name: "SwiftDecisionGLiNER", package: "SwiftDecision", condition: .when(platforms: [.iOS, .macOS], traits: ["GLiNER"])),
+      ],
+      swiftSettings: [.define("ORACLE_GLINER", .when(platforms: [.iOS, .macOS], traits: ["GLiNER"]))]
+    ),
+    .testTarget(name: "OracleGLiNERTests", dependencies: [
+      "OracleGLiNER", "OracleGame", .product(name: "SwiftDecision", package: "SwiftDecision")]),
     .target(
       name: "CityChainGame",
       dependencies: [

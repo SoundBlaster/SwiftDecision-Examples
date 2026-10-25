@@ -1075,64 +1075,154 @@
     "Provider fallback": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Provider fallback" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Офлайн-ответ" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider fallback"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Офлайн-ответ"
+          }
+        }
       }
     },
     "Fallback provider": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Fallback provider" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Резервный источник" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fallback provider"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Резервный источник"
+          }
+        }
       }
     },
     "Failure": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Failure" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Причина сбоя" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failure"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Причина сбоя"
+          }
+        }
       }
     },
     "Inference timed out": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Inference timed out" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Истекло время ожидания" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inference timed out"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Истекло время ожидания"
+          }
+        }
       }
     },
     "Network unavailable": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Network unavailable" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Сеть недоступна" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network unavailable"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сеть недоступна"
+          }
+        }
       }
     },
     "Provider rate limited": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Provider rate limited" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Ограничение частоты запросов" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider rate limited"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ограничение частоты запросов"
+          }
+        }
       }
     },
     "Provider temporarily unavailable": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Provider temporarily unavailable" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Провайдер временно недоступен" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider temporarily unavailable"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Провайдер временно недоступен"
+          }
+        }
       }
     },
     "Provider cooldown active": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Provider cooldown active" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Активна пауза перед повтором" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider cooldown active"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активна пауза перед повтором"
+          }
+        }
       }
     },
     "Non-transient provider error": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Non-transient provider error" } },
-        "ru": { "stringUnit": { "state": "translated", "value": "Постоянная ошибка провайдера" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non-transient provider error"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Постоянная ошибка провайдера"
+          }
+        }
       }
     },
     "Learn more at TypeSafe.ai": {
@@ -2916,6 +3006,380 @@
           "stringUnit": {
             "state": "translated",
             "value": "Допустимость вопроса"
+          }
+        }
+      }
+    },
+    "Inference": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Инференс"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inference"
+          }
+        }
+      }
+    },
+    "Enable GLiNER pilot": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Включить пилот GLiNER"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable GLiNER pilot"
+          }
+        }
+      }
+    },
+    "None · offline simulation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нет · офлайн-симуляция"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None · offline simulation"
+          }
+        }
+      }
+    },
+    "Jev · online inference": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev · онлайн-инференс"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev · online inference"
+          }
+        }
+      }
+    },
+    "GLiNER small · on-device inference": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GLiNER small · на устройстве"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GLiNER small · on-device inference"
+          }
+        }
+      }
+    },
+    "Experimental English model. Questions stay on this device. Estimates are not calibrated probabilities.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Экспериментальная англоязычная модель. Вопросы остаются на устройстве. Оценки не являются калиброванными вероятностями."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimental English model. Questions stay on this device. Estimates are not calibrated probabilities."
+          }
+        }
+      }
+    },
+    "Local model installed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Локальная модель установлена"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local model installed"
+          }
+        }
+      }
+    },
+    "Local model not installed": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Локальная модель не установлена"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local model not installed"
+          }
+        }
+      }
+    },
+    "Preparing local model…": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подготовка локальной модели…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing local model…"
+          }
+        }
+      }
+    },
+    "Import model folder": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импортировать папку модели"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import model folder"
+          }
+        }
+      }
+    },
+    "Choose the GLiNER small INT8 export folder in Files. About 87 MB is stored separately from the app and can be removed below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите в «Файлах» папку экспорта GLiNER small INT8. Около 87 МБ хранятся отдельно от приложения. Модель можно удалить ниже."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the GLiNER small INT8 export folder in Files. About 87 MB is stored separately from the app and can be removed below."
+          }
+        }
+      }
+    },
+    "Remove local model": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить локальную модель"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove local model"
+          }
+        }
+      }
+    },
+    "Load a local model to use GLiNER.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Для GLiNER нужна локальная модель."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load a local model to use GLiNER."
+          }
+        }
+      }
+    },
+    "Add a Jev API key to use this provider.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавьте API-ключ Jev, чтобы использовать этот провайдер."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a Jev API key to use this provider."
+          }
+        }
+      }
+    },
+    "Loading local model…": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузка локальной модели…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading local model…"
+          }
+        }
+      }
+    },
+    "GLiNER is unavailable. Import a compatible model or choose another provider.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GLiNER недоступен. Импортируйте совместимую модель или выберите другой провайдер."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GLiNER is unavailable. Import a compatible model or choose another provider."
+          }
+        }
+      }
+    },
+    "Could not import the model. Choose the complete GLiNER small INT8 export folder.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось импортировать модель. Выберите полную папку экспорта GLiNER small INT8."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not import the model. Choose the complete GLiNER small INT8 export folder."
+          }
+        }
+      }
+    },
+    "Could not remove the local model.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось удалить локальную модель."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not remove the local model."
+          }
+        }
+      }
+    },
+    "Could not access the selected model folder.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось открыть выбранную папку модели."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not access the selected model folder."
+          }
+        }
+      }
+    },
+    "Jev key not configured": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ключ Jev не настроен"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev key not configured"
+          }
+        }
+      }
+    },
+    "Not enough\ninformation": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Недостаточно\nинформации"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not enough\ninformation"
+          }
+        }
+      }
+    },
+    "GLiNER could not answer. Try a shorter English question without parentheses or choose another provider.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GLiNER could not answer. Try a shorter English question without parentheses or choose another provider."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GLiNER не смог ответить. Попробуйте более короткий вопрос на английском без скобок или выберите другой провайдер."
           }
         }
       }

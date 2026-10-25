@@ -5,8 +5,8 @@ Small applications that demonstrate model decisions composed with `Specification
 ## OracleBallApp
 
 OracleBallApp is an iOS 26 SwiftUI and RealityKit Magic 8 Ball rendering demo.
-It uses a deterministic local answer for the presentation flow and keeps the
-rendering boundary ready for a future SwiftDecision provider. The scene uses
+It supports offline answer simulation and optional inference providers while
+keeping the rendering boundary independent from model execution. The scene uses
 procedural geometry, a depth-layered open shell, a textured triangular answer
 plate, and a custom Metal absorption effect. See
 [`DOCS/ORACLE_RENDERING.md`](DOCS/ORACLE_RENDERING.md) for the scene ownership,
@@ -18,6 +18,11 @@ Open `CityChainApp.xcodeproj`, select the **OracleBallApp** scheme, and run on
 an iOS 26+ simulator or device. Use the arrow to replay; the engine infers
 whether the question needs a Noul, Choice, or Score answer. No API key is needed
 for the offline fixture.
+
+An opt-in GLiNER small pilot adds explicit **Jev / GLiNER small / None** provider
+selection and imports separately provisioned model files from Files. It does not
+bundle weights or automatically send local requests to a hosted provider. See
+[the pilot setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
 
 ## City Chain
 
@@ -39,7 +44,7 @@ The engine package supports iOS 15+ and macOS 10.15+. A SwiftUI example app can 
 
 ## Optional TypeSafe Jev backend
 
-The package resolves [SwiftJev 0.5.0](https://github.com/SoundBlaster/SwiftJev/releases/tag/0.5.0), [SwiftDecision 0.7.0](https://github.com/SoundBlaster/SwiftDecision/releases/tag/0.7.0), and [SpecificationCore 2.1.0](https://github.com/SoundBlaster/SpecificationCore/releases/tag/2.1.0). The game remains offline by default; choose the hosted provider explicitly through `CityChainBackendFactory` when a caller has configured a key:
+The pilot pins SwiftDecision to the implementation revision in [PR #23](https://github.com/SoundBlaster/SwiftDecision/pull/23), alongside [SwiftJev 0.5.0](https://github.com/SoundBlaster/SwiftJev/releases/tag/0.5.0) and [SpecificationCore 2.1.0](https://github.com/SoundBlaster/SpecificationCore/releases/tag/2.1.0). This is not a SwiftDecision release update. The game remains offline by default; choose the hosted provider explicitly through `CityChainBackendFactory` when a caller has configured a key:
 
 ```swift
 let backend = try CityChainBackendFactory.makeJev(apiKey: apiKey)

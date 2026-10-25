@@ -1,0 +1,183 @@
+import Foundation
+import OracleGame
+import OracleGLiNER
+import SwiftDecision
+import Testing
+
+private func fixtureBackend() -> OracleGLiNERBackend {
+  OracleGLiNERBackend(backend: ClosureDecisionBackend { _ in
+    DecisionPrediction(probabilities: [0.05, 0.95], modelIdentifier: "local-fixture")
+  })
+}
+
+struct OracleGLiNERTests {
+  @Test func preferencesRequireExplicitPilotOptIn() {
+    let name = "OracleGLiNERTests.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: name)!
+    defer { defaults.removePersistentDomain(forName: name) }
+    let preferences = OracleInferencePreferences(defaults: defaults)
+    #expect(!preferences.isPilotEnabled)
+    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true) == .jev)
+    preferences.select(.none)
+    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true) == .none)
+    preferences.select(.gliner)
+    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true) == .none)
+    preferences.isPilotEnabled = true
+    preferences.select(.gliner)
+    #expect(preferences.provider(hasJevKey: false, supportsGLiNER: true) == .gliner)
+    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: false) == .none)
+    defaults.set("appleIntelligence", forKey: "com.soundblaster.oracleball.inference-provider")
+    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true) == .none)
+  }
+
+  @Test func localFailureDoesNotUseOfflineOrNetworkFallback() async throws {
+    let backend = OracleGLiNERBackend(backend: ClosureDecisionBackend { _ in throw URLError(.timedOut) })
+    #expect(!backend.supportsTransientFailureFallback)
+    let engine = OracleGameEngine(backend: backend, fallbackEnabled: false)
+    await #expect(throws: (any Error).self) {
+      try await engine.answer(for: OracleRequest(question: "Will this work?", mode: .noul))
+    }
+  }
+
+  @Test func explicitAlternativesUseOneChoiceRequestWithSeparateCriterion() async throws {
+    let recorder = Recorder()
+    let backend = OracleGLiNERBackend(backend: ClosureDecisionBackend { prompt in
+      await recorder.append(prompt)
+      return DecisionPrediction(probabilities: [0.05, 0.95], modelIdentifier: "fixture")
+    })
+    let engine = OracleGameEngine(backend: backend, fallbackEnabled: false)
+    let traced = try await engine.answerWithTrace(for: OracleRequest(question: "Choose the star: Hello or Sun?"))
+    guard case let .accepted(answer) = traced.outcome else {
+      Issue.record("expected a typed Choice result")
+      return
+    }
+    #expect(answer.mode == .choice)
+    #expect(answer.displayText == "Sun")
+    #expect(answer.source == .model(identifier: "fastino/gliner2.5-small-v1"))
+    let prompts = await recorder.prompts
+    #expect(prompts.count == 1)
+    #expect(prompts.first?.instructions == "Choose the star")
+    #expect(prompts.first?.context == "No additional observations.")
+    #expect(prompts.first?.options.map(\.description) == ["Hello", "Sun"])
+    #expect(!traced.pipeline.contains { $0.title == "Question type" })
+  }
+
+  @Test func bareOrQuestionAlsoBypassesIntentClassification() async throws {
+    let recorder = Recorder()
+    let backend = OracleGLiNERBackend(backend: ClosureDecisionBackend { prompt in
+      await recorder.append(prompt)
+      return DecisionPrediction(probabilities: [0.5, 0.5], modelIdentifier: "fixture")
+    })
+    let engine = OracleGameEngine(backend: backend, fallbackEnabled: false)
+    let result = try await engine.answer(for: OracleRequest(question: "Hello or Kitty?"))
+    guard case .abstained = result else { Issue.record("expected abstention"); return }
+    #expect(await recorder.prompts.count == 1)
+  }
+
+  private actor Recorder {
+    var prompts: [DecisionPrompt] = []
+    func append(_ prompt: DecisionPrompt) { prompts.append(prompt) }
+  }
+}
+
+struct OracleGLiNERModelStoreTests {
+  private func root() throws -> URL {
+    let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    return directory
+  }
+
+  private func checkpoint(in root: URL, name: String) throws -> URL {
+    let source = root.appendingPathComponent(name)
+    try FileManager.default.createDirectory(at: source.appendingPathComponent("GLiNERSmall.mlpackage"), withIntermediateDirectories: true)
+    for file in ["gliner.json", "tokenizer.json", "tokenizer_config.json", "GLiNERSmall.mlpackage/weights.bin", "unrelated.txt"] {
+      try Data(name.utf8).write(to: source.appendingPathComponent(file))
+    }
+    return source
+  }
+
+  @Test func validatesBeforeInstallingCopiesOnlyRequiredFilesAndRemovesOwnedModel() async throws {
+    let root = try root()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let source = try checkpoint(in: root, name: "source")
+    let installed = root.appendingPathComponent("application-support/active")
+    let store = OracleGLiNERModelStore(directory: installed, loader: { _ in fixtureBackend() })
+    #expect(await !store.isInstalled)
+    await #expect(throws: OracleGLiNERModelError.missingModel) { try await store.loadBackend() }
+    try await store.importCheckpoint(from: source)
+    #expect(await store.isInstalled)
+    #expect(!FileManager.default.fileExists(atPath: installed.appendingPathComponent("unrelated.txt").path))
+    try await store.removeModel()
+    #expect(await !store.isInstalled)
+    #expect(FileManager.default.fileExists(atPath: source.path))
+  }
+
+  @Test func failedValidationKeepsPreviousInstallation() async throws {
+    let root = try root()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let previous = try checkpoint(in: root, name: "previous")
+    let replacement = try checkpoint(in: root, name: "replacement")
+    let installed = root.appendingPathComponent("active")
+    let store = OracleGLiNERModelStore(directory: installed, loader: { directory in
+      if try String(contentsOf: directory.appendingPathComponent("gliner.json"), encoding: .utf8) == "replacement" {
+        throw OracleGLiNERModelError.invalidFolder
+      }
+      return fixtureBackend()
+    })
+    try await store.importCheckpoint(from: previous)
+    await #expect(throws: OracleGLiNERModelError.invalidFolder) { try await store.importCheckpoint(from: replacement) }
+    #expect(try String(contentsOf: installed.appendingPathComponent("gliner.json"), encoding: .utf8) == "previous")
+    #expect(try FileManager.default.contentsOfDirectory(atPath: root.path).allSatisfy { !$0.hasPrefix(".import-") })
+  }
+
+  @Test func rejectsSymlinkBeforeInvokingRuntime() async throws {
+    let root = try root()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let source = try checkpoint(in: root, name: "source")
+    let link = source.appendingPathComponent("tokenizer.json")
+    try FileManager.default.removeItem(at: link)
+    try FileManager.default.createSymbolicLink(at: link, withDestinationURL: source.appendingPathComponent("unrelated.txt"))
+    let store = OracleGLiNERModelStore(directory: root.appendingPathComponent("active"), loader: { _ in
+      Issue.record("runtime must not receive a symlinked checkpoint")
+      return fixtureBackend()
+    })
+    await #expect(throws: OracleGLiNERModelError.invalidFolder) { try await store.importCheckpoint(from: source) }
+    #expect(await !store.isInstalled)
+  }
+
+  @Test func cancellationDoesNotActivateCandidate() async throws {
+    let root = try root()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let source = try checkpoint(in: root, name: "source")
+    let store = OracleGLiNERModelStore(directory: root.appendingPathComponent("active"), loader: { _ in fixtureBackend() })
+    let task = Task {
+      withUnsafeCurrentTask { $0?.cancel() }
+      try await store.importCheckpoint(from: source)
+    }
+    await #expect(throws: CancellationError.self) { try await task.value }
+    #expect(await !store.isInstalled)
+  }
+}
+
+struct OracleGLiNERLiveTests {
+  @Test(.enabled(if: ProcessInfo.processInfo.environment["ORACLE_GLINER_CHECKPOINT"] != nil,
+                 "Opt-in local model test; no inference or model download in ordinary CI."))
+  func nativeModelAnswersThroughTheOraclePipeline() async throws {
+    let directory = URL(fileURLWithPath: try #require(ProcessInfo.processInfo.environment["ORACLE_GLINER_CHECKPOINT"]))
+    let installation = FileManager.default.temporaryDirectory.appendingPathComponent("OracleGLiNERLive-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: installation) }
+    let store = OracleGLiNERModelStore(directory: installation)
+    try await store.importCheckpoint(from: directory)
+    #expect(await store.isInstalled)
+    let backend = try await store.loadBackend()
+    let engine = OracleGameEngine(backend: backend, fallbackEnabled: false)
+    let traced = try await engine.answerWithTrace(for: OracleRequest(question: "Choose the star: Hello or Sun?"))
+    guard case let .accepted(answer) = traced.outcome else { Issue.record("expected Sun"); return }
+    #expect(answer.displayText == "Sun")
+    #expect(answer.mode == .choice)
+    #expect(!traced.pipeline.contains { $0.title == "Question type" })
+    #expect(traced.pipeline.contains { !$0.specificationEvents.isEmpty })
+    try await store.removeModel()
+    #expect(await !store.isInstalled)
+  }
+}

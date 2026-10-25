@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import OracleGame
 import OracleHistory
+import OracleGLiNER
 import SpecificationCore
 import SwiftDecision
 
@@ -13,6 +14,16 @@ final class OraclePageModel {
   private var historyStore: OracleHistoryStore
   private let usesSharedHistoryStore: Bool
   private let haptics: any OracleHapticFeedback
+  private let preferences: OracleInferencePreferences
+  private let modelStore: OracleGLiNERModelStore
+  private let usesInjectedEngine: Bool
+  private var configurationTask: Task<Void, Never>?
+  private var configurationID = 0
+  private(set) var isGLiNERPilotEnabled: Bool
+  private(set) var isModelInstalled = false
+  private(set) var isPreparingModel = false
+  private(set) var modelIssue: String?
+  private(set) var providerIssue: String?
 
   var question = ""
   private(set) var historyEntries: [OracleHistoryEntry]
@@ -29,43 +40,45 @@ final class OraclePageModel {
   var statusMessage: String?
   private var requestTask: Task<Void, Never>?
 
-  enum Provider: Equatable {
-    case offline
-    case jev(model: String)
-
-    var isJev: Bool {
-      if case .jev = self { return true }
-      return false
-    }
-  }
-
-  private(set) var provider: Provider
+  private(set) var provider: OracleInferenceProvider
+  var supportsGLiNER: Bool { OracleGLiNERBackend.isSupportedBuild }
 
   init(
     engine: OracleGameEngine? = nil,
     credentialsStore: OracleCredentialsStore = OracleCredentialsStore(),
     historyStore: OracleHistoryStore? = nil,
-    haptics: (any OracleHapticFeedback)? = nil)
+    haptics: (any OracleHapticFeedback)? = nil,
+    preferences: OracleInferencePreferences = OracleInferencePreferences(),
+    modelStore: OracleGLiNERModelStore? = nil)
   {
     self.credentialsStore = credentialsStore
     usesSharedHistoryStore = historyStore == nil
     let resolvedHistoryStore = historyStore ?? Self.makeHistoryStore()
     self.historyStore = resolvedHistoryStore
     self.haptics = haptics ?? OracleHaptics()
+    self.preferences = preferences
+    self.modelStore = modelStore ?? OracleGLiNERModelStore(directory:
+      FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("OracleGLiNER/active", isDirectory: true))
+    usesInjectedEngine = engine != nil
+    isGLiNERPilotEnabled = preferences.isPilotEnabled
+    let selectedProvider = preferences.provider(hasJevKey: credentialsStore.readAPIKey() != nil,
+                                               supportsGLiNER: OracleGLiNERBackend.isSupportedBuild)
+    provider = selectedProvider
     historyEntries = resolvedHistoryStore.entries
     if let engine {
       self.engine = engine
-      provider = .offline
+      provider = .none
       return
     }
-    if let key = credentialsStore.readAPIKey(),
+    if selectedProvider == .jev, let key = credentialsStore.readAPIKey(),
        let backend = try? JevOracleBackend(apiKey: key)
     {
       self.engine = OracleGameEngine(backend: backend)
-      provider = .jev(model: backend.modelIdentifier)
     } else {
       self.engine = OracleGameEngine()
-      provider = .offline
+      if provider == .gliner { providerIssue = String(localized: "Load a local model to use GLiNER.") }
+      else if provider == .jev { providerIssue = String(localized: "Add a Jev API key to use this provider.") }
     }
   }
 
@@ -74,11 +87,14 @@ final class OraclePageModel {
   }
 
   var providerDescription: String {
+    if let providerIssue { return providerIssue }
     switch provider {
-    case .offline:
-      String(localized: "Jev not configured · offline fixture")
-    case let .jev(model):
-      String(format: String(localized: "Jev configured · live %@"), locale: .current, model)
+    case .none:
+      return String(localized: "None · offline simulation")
+    case .jev:
+      return String(localized: "Jev · online inference")
+    case .gliner:
+      return String(localized: "GLiNER small · on-device inference")
     }
   }
 
@@ -88,30 +104,133 @@ final class OraclePageModel {
 
   @discardableResult
   func saveAPIKey(_ input: String) -> Bool {
-    requestTask?.cancel()
-    requestTask = nil
-    requestID += 1
-    terminalRequestID = requestID
-    isSubmitting = false
     let key = input.trimmingCharacters(in: .whitespacesAndNewlines)
 
     do {
       if key.isEmpty {
         try credentialsStore.deleteAPIKey()
-        engine = OracleGameEngine()
-        provider = .offline
       } else {
-        let backend = try JevOracleBackend(apiKey: key)
+        _ = try JevOracleBackend(apiKey: key)
         try credentialsStore.saveAPIKey(key)
-        engine = OracleGameEngine(backend: backend)
-        provider = .jev(model: backend.modelIdentifier)
       }
+      if provider == .jev { selectProvider(.jev) }
       statusMessage = nil
       return true
     } catch {
       statusMessage = error.localizedDescription
       return false
     }
+  }
+
+  func prepareProvider() async {
+    guard !usesInjectedEngine else { return }
+    isModelInstalled = await modelStore.isInstalled
+    guard provider == .gliner else { return }
+    selectProvider(.gliner)
+    await configurationTask?.value
+  }
+
+  func selectProvider(_ selection: OracleInferenceProvider) {
+    guard !isPreparingModel else { return }
+    guard selection != .gliner || (supportsGLiNER && isGLiNERPilotEnabled) else { return }
+    cancelPendingSubmission()
+    configurationTask?.cancel()
+    configurationID += 1
+    let token = configurationID
+    provider = selection
+    preferences.select(selection)
+    providerIssue = nil
+    // A previous provider's answer must not appear to come from the new one.
+    answer = OracleAnswer(mode: mode, displayText: "", source: .offlineFixture)
+    answerRequestID = requestID
+    terminalRequestID = 0
+    engine = OracleGameEngine()
+    switch selection {
+    case .none: break
+    case .jev:
+      guard let key = credentialsStore.readAPIKey(), let backend = try? JevOracleBackend(apiKey: key) else {
+        providerIssue = String(localized: "Add a Jev API key to use this provider.")
+        return
+      }
+      engine = OracleGameEngine(backend: backend)
+    case .gliner:
+      providerIssue = String(localized: "Loading local model…")
+      isPreparingModel = true
+      configurationTask = Task { [weak self] in
+        guard let self else { return }
+        defer { if self.configurationID == token { self.isPreparingModel = false } }
+        do {
+          let backend = try await self.modelStore.loadBackend()
+          try Task.checkCancellation()
+          guard self.configurationID == token, self.provider == .gliner else { return }
+          self.engine = OracleGameEngine(backend: backend, fallbackEnabled: false)
+          self.providerIssue = nil
+          self.modelIssue = nil
+        } catch is CancellationError {
+          return
+        } catch {
+          guard self.configurationID == token else { return }
+          self.providerIssue = String(localized: "GLiNER is unavailable. Import a compatible model or choose another provider.")
+          self.modelIssue = self.providerIssue
+        }
+      }
+    }
+  }
+
+  func setGLiNERPilotEnabled(_ enabled: Bool) {
+    guard !isPreparingModel else { return }
+    isGLiNERPilotEnabled = enabled && supportsGLiNER
+    preferences.isPilotEnabled = isGLiNERPilotEnabled
+    if !isGLiNERPilotEnabled, provider == .gliner { selectProvider(.none) }
+  }
+
+  func importGLiNERModel(from directory: URL) {
+    guard !isPreparingModel else { return }
+    cancelPendingSubmission()
+    isPreparingModel = true
+    modelIssue = nil
+    configurationTask = Task { [weak self] in
+      guard let self else { return }
+      do {
+        try await self.modelStore.importCheckpoint(from: directory)
+        self.isModelInstalled = await self.modelStore.isInstalled
+        self.isPreparingModel = false
+        self.selectProvider(.gliner)
+      } catch {
+        self.isPreparingModel = false
+        self.modelIssue = String(localized: "Could not import the model. Choose the complete GLiNER small INT8 export folder.")
+      }
+    }
+  }
+
+  func removeGLiNERModel() {
+    guard !isPreparingModel else { return }
+    if provider == .gliner { selectProvider(.none) }
+    isPreparingModel = true
+    configurationTask = Task { [weak self] in
+      guard let self else { return }
+      defer { self.isPreparingModel = false }
+      do {
+        try await self.modelStore.removeModel()
+        self.isModelInstalled = false
+        self.modelIssue = nil
+      } catch {
+        self.modelIssue = String(localized: "Could not remove the local model.")
+      }
+    }
+  }
+
+  func reportModelImportFailure() {
+    modelIssue = String(localized: "Could not access the selected model folder.")
+  }
+
+  private func cancelPendingSubmission() {
+    requestTask?.cancel()
+    requestTask = nil
+    requestID += 1
+    terminalRequestID = requestID
+    isSubmitting = false
+    statusMessage = nil
   }
 
   func submit() {
@@ -122,6 +241,10 @@ final class OraclePageModel {
     isRandomSimulation: Bool,
     playSubmissionHaptic: Bool = true
   ) {
+    guard isRandomSimulation || (!isPreparingModel && providerIssue == nil) else {
+      statusMessage = providerIssue ?? String(localized: "Loading local model…")
+      return
+    }
     requestTask?.cancel()
     requestID += 1
     let requestID = requestID
@@ -162,7 +285,15 @@ final class OraclePageModel {
             self.haptics.play(.positiveResult)
           }
         case let .abstained(reason):
-          self.terminalRequestID = requestID
+          if self.provider == .gliner {
+            self.answer = OracleAnswer(mode: request.mode, displayText: String(localized: "Not enough\ninformation"),
+                                       source: .model(identifier: "fastino/gliner2.5-small-v1"))
+            self.historyStore.append(question: request.question.trimmingCharacters(in: .whitespacesAndNewlines),
+                                     answer: self.answer, pipeline: tracedOutcome.pipeline)
+            self.historyEntries = self.historyStore.entries
+            self.answerRequestID = requestID
+          }
+          self.terminalRequestID = self.provider == .gliner ? 0 : requestID
           self.statusMessage = reason
         }
         self.isSubmitting = false
@@ -172,7 +303,9 @@ final class OraclePageModel {
       } catch {
         guard let self, self.requestID == requestID else { return }
         self.terminalRequestID = requestID
-        self.statusMessage = error.localizedDescription
+        self.statusMessage = self.provider == .gliner
+          ? String(localized: "GLiNER could not answer. Try a shorter English question without parentheses or choose another provider.")
+          : error.localizedDescription
         self.isSubmitting = false
       }
     }

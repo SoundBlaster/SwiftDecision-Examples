@@ -36,3 +36,5 @@ jobs:
           CODE_SIGNING_ALLOWED=NO
       - name: Test the game engine
         run: swift test
+      - name: Test the optional local inference adapter without model downloads
+        run: swift test --traits GLiNER --triple arm64-apple-macosx14.0
