@@ -19,6 +19,11 @@ an iOS 26+ simulator or device. Use the arrow to replay; the engine infers
 whether the question needs a Noul, Choice, or Score answer. No API key is needed
 for the offline fixture.
 
+Use the share button in History or an entry's Decision pipeline to export saved
+questions and traces as JSON or readable text. See
+[`DOCS/ORACLE_HISTORY_EXPORT.md`](DOCS/ORACLE_HISTORY_EXPORT.md) for the format,
+precision and backward-compatibility contract.
+
 An opt-in GLiNER small pilot adds explicit **Jev / GLiNER small / None** provider
 selection and imports separately provisioned model files from Files. It does not
 bundle weights or automatically send local requests to a hosted provider. See

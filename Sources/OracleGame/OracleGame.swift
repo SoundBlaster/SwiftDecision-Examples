@@ -126,6 +126,8 @@ public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
   /// Unified, ordered events from SwiftDecision's invocation-scoped timeline when available.
   /// Optional so history entries written by earlier app versions remain decodable.
   public let orderedTrace: [OraclePipelineTimelineEvent]?
+  /// Full-precision scores aligned to their options, absent in older history entries.
+  public let distribution: OracleDecisionDistribution?
 
   public init(
     id: String,
@@ -134,7 +136,8 @@ public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
     details: [OraclePipelineDetail]? = nil,
     decisionEvents: [OracleDecisionTraceStep] = [],
     specificationEvents: [OracleSpecificationTraceStep] = [],
-    orderedTrace: [OraclePipelineTimelineEvent]? = nil
+    orderedTrace: [OraclePipelineTimelineEvent]? = nil,
+    distribution: OracleDecisionDistribution? = nil
   ) {
     self.id = id
     self.title = title
@@ -143,6 +146,20 @@ public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
     self.decisionEvents = decisionEvents
     self.specificationEvents = specificationEvents
     self.orderedTrace = orderedTrace
+    self.distribution = distribution
+  }
+}
+
+/// Numeric decision evidence retained without display rounding.
+public struct OracleDecisionDistribution: Codable, Hashable, Sendable {
+  public let options: [String]
+  public let probabilities: [Double]
+  public let confidence: Double
+
+  public init(options: [String], probabilities: [Double], confidence: Double) {
+    self.options = options
+    self.probabilities = probabilities
+    self.confidence = confidence
   }
 }
 
@@ -645,6 +662,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       displayText: selectedValue.map(OracleAnswerPhrases.random(for:)) ?? oracleLocalized("Unknown"),
       noulValue: selectedValue,
       result: result,
+      options: ["False", "True"],
       details: [
         traceDetail("selected-option", "Selected option", selectedLabel),
         traceDetail("probabilities", "Probabilities", probabilities),
@@ -744,6 +762,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       pipeline.append(decisionStage(
         "Question type",
         result: intent,
+        options: ["Noul", "Choice", "Score", "Unsupported"],
         summary: intent.value.map { "\($0.traceLabel) · \(percentage(intent.confidence))" },
         details: intentDiagnostics(for: intent)))
       guard let operation = intent.value else {
@@ -923,6 +942,7 @@ public final class OracleGameEngine: @unchecked Sendable {
         displayText: result.value.map(OracleAnswerPhrases.random(for:)),
         noulValue: result.value,
         result: result,
+        options: ["No", "Yes"],
         details: distributionDetails(
           options: ["No", "Yes"],
           selected: result.value.map { $0 ? "Yes" : "No" },
@@ -957,6 +977,7 @@ public final class OracleGameEngine: @unchecked Sendable {
           }
         },
         result: result,
+        options: options,
         details: distributionDetails(
           options: options,
           selected: result.value,
@@ -982,6 +1003,7 @@ public final class OracleGameEngine: @unchecked Sendable {
         mode: .score,
         displayText: text,
         result: result,
+        options: scoreLevels,
         details: distributionDetails(
           options: scoreLevels,
           selected: result.value.map { scoreLevels[$0.level] },
@@ -997,10 +1019,11 @@ public final class OracleGameEngine: @unchecked Sendable {
     displayText: String?,
     noulValue: Bool? = nil,
     result: DecisionResult<Value>,
+    options: [String] = [],
     details: [OraclePipelineDetail] = [],
     sourceOverride: OracleAnswerSource? = nil
   ) async throws -> OracleEvaluation {
-    let decisionTraceStage = decisionStage("Answer decision", result: result, details: details)
+    let decisionTraceStage = decisionStage("Answer decision", result: result, options: options, details: details)
     switch result.outcome {
     case let .abstained(reason):
       return OracleEvaluation(
@@ -1141,6 +1164,7 @@ public final class OracleGameEngine: @unchecked Sendable {
   private func decisionStage<Value: Sendable>(
     _ title: String,
     result: DecisionResult<Value>,
+    options: [String] = [],
     summary: String? = nil,
     details: [OraclePipelineDetail]? = nil
   ) -> OraclePipelineStage {
@@ -1157,7 +1181,9 @@ public final class OracleGameEngine: @unchecked Sendable {
           detail: event.detail ?? event.stage.pipelineExplanation)
       },
       specificationEvents: OraclePipelineTraceRecorder.decisionDetails(from: result.specificationTrace),
-      orderedTrace: OraclePipelineTraceRecorder.orderedDecisionTrace(from: result.orderedTrace))
+      orderedTrace: OraclePipelineTraceRecorder.orderedDecisionTrace(from: result.orderedTrace),
+      distribution: options.isEmpty ? nil : OracleDecisionDistribution(
+        options: options, probabilities: result.probabilities, confidence: result.confidence))
   }
 
   private func intentDiagnostics(

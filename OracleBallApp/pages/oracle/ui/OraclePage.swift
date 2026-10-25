@@ -527,6 +527,11 @@ private struct OracleInfoSheet: View {
 
       Spacer()
 
+      OracleHistoryExportMenu(entries: historyEntries)
+        .labelStyle(.iconOnly)
+        .frame(width: 40, height: 36)
+        .buttonStyle(.plain)
+
       Button {
         isConfirmingHistoryClear = true
       } label: {
