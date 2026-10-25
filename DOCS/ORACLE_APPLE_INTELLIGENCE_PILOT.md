@@ -1,5 +1,10 @@
 # Oracle: Apple Intelligence pilot
 
+**Deferred — 2026-10-25.** Oracle PR #68 and SwiftDecision adapter PR #22 are closed
+without merging; both branches are preserved. See the [archive index](EXPERIMENTS/APPLE_INTELLIGENCE_ARCHIVE.md)
+for all reports, raw artifacts, immutable references and resumption criteria.
+The instructions below describe the saved experimental implementation.
+
 ## Running
 
 Open `CityChainApp.xcodeproj`, choose **OracleBallApp**, and run on iOS 26+.
