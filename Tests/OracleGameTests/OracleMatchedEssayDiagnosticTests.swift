@@ -95,7 +95,7 @@ struct OracleMatchedEssayDiagnosticTests {
   #endif
 }
 
-private struct MatchedEssaySample {
+struct MatchedEssaySample {
   let id: String
   let kind: String
   let reversed: Bool

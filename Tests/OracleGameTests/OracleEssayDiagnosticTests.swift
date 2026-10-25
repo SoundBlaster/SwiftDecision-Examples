@@ -117,13 +117,13 @@ struct EssaySelection: Sendable { let id: String; let note: String? }
 
 @available(macOS 26.0, iOS 26.0, *)
 func essaySelection(
-  input: String, instructions: String, schema: GenerationSchema, includesNote: Bool
+  input: String, instructions: String, schema: GenerationSchema, includesNote: Bool, maximumResponseTokens: Int = 256
 ) async throws -> EssaySelection {
   try await withThrowingTaskGroup(of: EssaySelection.self) { group in
     group.addTask {
       let session = LanguageModelSession(model: .default, instructions: instructions)
       let result = try await session.respond(to: input, schema: schema,
-        options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: 256))
+        options: GenerationOptions(samplingMode: .greedy, maximumResponseTokens: maximumResponseTokens))
       return try EssaySelection(id: result.content.value(String.self, forProperty: "selectedOptionID"),
         note: includesNote ? result.content.value(String.self, forProperty: "briefNote") : nil)
     }

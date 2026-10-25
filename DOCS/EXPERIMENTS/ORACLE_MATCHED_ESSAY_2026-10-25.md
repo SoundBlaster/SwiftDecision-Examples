@@ -1,5 +1,8 @@
 # Matched instructions: ID versus note order — 2026-10-25
 
+The [required 30–60-word follow-up](ORACLE_LONG_ESSAY_2026-10-25.md) generated longer
+comparisons and treats short text as protocol failure. It found no selection benefit.
+
 ## Question
 
 Does generating text before a selected ID help independently of the extra

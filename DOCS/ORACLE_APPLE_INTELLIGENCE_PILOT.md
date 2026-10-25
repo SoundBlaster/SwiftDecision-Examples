@@ -113,6 +113,8 @@ and [brief note before categorical selection](EXPERIMENTS/ORACLE_ESSAY_2026-10-2
 The [matched-instruction follow-up](EXPERIMENTS/ORACLE_MATCHED_ESSAY_2026-10-25.md)
 records modest position-bias reduction and worse missing-fact handling with note fields;
 these remain diagnostics and do not change the production adapter.
+The [required-length essay study](EXPERIMENTS/ORACLE_LONG_ESSAY_2026-10-25.md)
+retained position bias and unsupported answers despite longer text and higher latency.
 
 The pilot now explicitly selects SwiftDecision `.optionAssessment`:
 
