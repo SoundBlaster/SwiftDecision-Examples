@@ -37,6 +37,13 @@ Imported artifacts must retain Fastino's Apache-2.0 attribution when distributed
 
 - GLiNER errors stay visible. There is no implicit Jev or offline-answer fallback.
   Empty-question shake/widget random simulations remain explicitly simulated.
+- Only the local GLiNER pilot opts into `choiceOrdering: .canonical`. Its Choice
+  schema is sorted by normalized option text and internal IDs are assigned after
+  sorting; returned scores still follow the original user-visible order. The
+  library default, Jev, Luna Decisio, Noul and Score remain unchanged. This is
+  schema stabilization, not a quality or probability-calibration improvement;
+  instructions and context, including any alternatives they contain, are not
+  rewritten.
 - `DecisionEngine` retains SpecificationCore validation, acceptance, tracing and
   abstention. A local abstention replaces the old visible answer with
   **Not enough information** and stores the diagnostic pipeline without an
@@ -78,6 +85,8 @@ and verifies the model-backed Sun answer and SpecificationCore pipeline.
 
 Local validation on 2026-10-25: default and GLiNER-enabled package suites passed;
 the real import/activation/Oracle pipeline/removal test passed on the M4 Pro Mac,
-and the signed iPhone app built with Xcode 27.1. Physical Air installation,
-latency and memory measurements require the Air to be connected; build success
-does not establish device runtime or visual correctness.
+and the signed iPhone app built with Xcode 27.1. The initial pilot was installed
+and launched on the physical Air. The updated canonical-order version passed
+the real-model Oracle pipeline and signed iPhone build but has not yet been
+installed on the Air. Device latency, peak memory and UI verification remain
+separate from these build and Mac runtime checks.

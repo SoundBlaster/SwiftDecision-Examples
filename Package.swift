@@ -22,7 +22,7 @@ let package = Package(
     // Pilot dependency: SwiftDecision PR #23, pinned until its first release.
     .package(
       url: "https://github.com/SoundBlaster/SwiftDecision.git",
-      revision: "42aca99d86cf988d4760dbb9b0ebea2708ef9d1b",
+      revision: "d655ab6d750bac2d69c3af1e27b0a7bb8b5c136c",
       traits: [.trait(name: "GLiNER", condition: .when(traits: ["GLiNER"]))]
     ),
     .package(

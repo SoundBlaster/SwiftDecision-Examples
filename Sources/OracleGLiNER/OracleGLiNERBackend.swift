@@ -30,7 +30,8 @@ public struct OracleGLiNERBackend: OracleBackendMetadata {
   public static func load(checkpointAt directory: URL) async throws -> Self {
     #if ORACLE_GLINER
     guard #available(macOS 14, iOS 17, *) else { throw OracleGLiNERModelError.unsupportedBuild }
-    return try await Self(backend: GLiNERCoreMLBackend.load(checkpointAt: directory))
+    return try await Self(backend: GLiNERCoreMLBackend.load(checkpointAt: directory,
+                                                         choiceOrdering: .canonical))
     #else
     throw OracleGLiNERModelError.unsupportedBuild
     #endif
