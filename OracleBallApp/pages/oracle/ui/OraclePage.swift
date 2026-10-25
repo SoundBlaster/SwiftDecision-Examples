@@ -397,6 +397,8 @@ private struct OracleInfoSheet: View {
             systemImage: isConfigured ? "checkmark.circle.fill" : "circle.dashed")
             .font(.caption)
             .foregroundStyle(isConfigured ? .green : .secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
           HStack {
             Button("Clear key") {
