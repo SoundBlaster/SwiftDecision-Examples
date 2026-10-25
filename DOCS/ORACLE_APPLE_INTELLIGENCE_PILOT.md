@@ -105,6 +105,10 @@ required by repository guidance; commands above show only portable arguments.
 
 ## Revised local decision strategy
 
+The subsequent [wording experiment](EXPERIMENTS/ORACLE_WORDING_2026-10-25.md)
+measures bare OR, arbitrary-choice requests and semantic controls without changing
+this strategy. It records the remaining zero-support failure as well as abstentions.
+
 The pilot now explicitly selects SwiftDecision `.optionAssessment`:
 
 - Choice/Score use one numeric field per option and a second generation with every
