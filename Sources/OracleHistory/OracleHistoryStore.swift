@@ -10,7 +10,7 @@ public struct OracleHistoryEntry: Codable, Hashable, Identifiable, Sendable {
   public let confidence: Double?
   public let source: String
   public let createdAt: Date
-  /// The content-free SwiftDecision and SpecificationCore stages for this answer.
+  /// The saved SwiftDecision and SpecificationCore stages for this answer.
   public let pipeline: [OraclePipelineStage]?
 
   public init(

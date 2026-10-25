@@ -102,6 +102,12 @@ struct OraclePipelineDetailView: View {
     .listStyle(.insetGrouped)
     .navigationBarTitle("Decision pipeline", displayMode: .inline)
     .navigationBarHidden(false)
+    .toolbar {
+      ToolbarItem(placement: .topBarTrailing) {
+        OracleHistoryExportMenu(entries: [entry], isSingleQuestion: true)
+          .labelStyle(.iconOnly)
+      }
+    }
     .a11yRoot("oracle.pipeline")
   }
 
