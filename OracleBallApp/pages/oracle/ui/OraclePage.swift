@@ -173,10 +173,11 @@ struct OraclePage: View {
     }
     .a11yRoot("oracle")
     .preferredColorScheme(.dark)
+    .task { await model.prepareProvider() }
     .sheet(isPresented: $isShowingInfo, onDismiss: focusQuestionAfterInfoDismissal) {
       OracleInfoSheet(
         apiKey: model.configuredAPIKey,
-        providerDescription: model.providerDescription,
+        inferenceModel: model,
         historyEntries: model.historyEntries,
         selectedDetent: $infoSheetDetent,
         onSave: model.saveAPIKey,
@@ -307,7 +308,7 @@ private struct OracleInfoSheet: View {
   @State private var isConfirmingHistoryClear = false
 
   private let savedAPIKey: String
-  let providerDescription: String
+  let inferenceModel: OraclePageModel
   let historyEntries: [OracleHistoryEntry]
   @Binding var selectedDetent: PresentationDetent
   let onSave: (String) -> Bool
@@ -317,7 +318,7 @@ private struct OracleInfoSheet: View {
 
   init(
     apiKey: String,
-    providerDescription: String,
+    inferenceModel: OraclePageModel,
     historyEntries: [OracleHistoryEntry],
     selectedDetent: Binding<PresentationDetent>,
     onSave: @escaping (String) -> Bool,
@@ -328,7 +329,7 @@ private struct OracleInfoSheet: View {
     _apiKey = State(initialValue: apiKey)
     _isConfigured = State(initialValue: !apiKey.isEmpty)
     savedAPIKey = apiKey
-    self.providerDescription = providerDescription
+    self.inferenceModel = inferenceModel
     self.historyEntries = historyEntries
     self._selectedDetent = selectedDetent
     self.onSave = onSave
@@ -340,6 +341,7 @@ private struct OracleInfoSheet: View {
   var body: some View {
     NavigationStack {
     List {
+      OracleInferenceSettings(model: inferenceModel)
       Section {
         VStack(alignment: .leading, spacing: selectedDetent == .large ? 16 : 8) {
           HStack {
@@ -390,14 +392,10 @@ private struct OracleInfoSheet: View {
           }
 
           Label(
-            isConfigured ? "Jev key configured" : "Offline fixture active",
+            isConfigured ? "Jev key configured" : "Jev key not configured",
             systemImage: isConfigured ? "checkmark.circle.fill" : "circle.dashed")
             .font(.caption)
             .foregroundStyle(isConfigured ? .green : .secondary)
-
-          Text(providerDescription)
-            .font(.caption2)
-            .foregroundStyle(.secondary)
 
           HStack {
             Button("Clear key") {

@@ -449,6 +449,11 @@ private struct OracleRequestPolicy {
       .addPredicate({ $0.mode == .choice }, result: OracleOperationSelection(.choice))
       .addPredicate({ $0.mode == .score }, result: OracleOperationSelection(.score))
       .addPredicate({ $0.mode == .unsupported }, result: OracleOperationSelection(.unsupported))
+      .add(
+        AnyAsyncSpecification<OracleRoutingContext> {
+          $0.mode == .automatic && $0.hasValidChoicePlan && !$0.asksForProbability
+        }.tracedAsync("Explicit alternatives select Choice"),
+        result: OracleOperationSelection(.choice))
       .addPredicate({ $0.mode == .automatic }, result: OracleOperationSelection(.automatic))
       .fallback(OracleOperationSelection(.automatic))
       .build()
@@ -709,6 +714,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     let routingContext = OracleRoutingContext(
       mode: request.mode,
       choicePlan: choicePlan,
+      hasValidChoicePlan: isChoicePlanValid,
       asksForProbability: OracleChoicePlanner.asksForProbability(question))
     let routingRecorder = SpecificationTraceRecorder()
     guard var selection = try await SpecificationTraceRuntime.decideAsync(
@@ -930,8 +936,8 @@ public final class OracleGameEngine: @unchecked Sendable {
         ? (options.contains("later") ? "later" : options.first)
         : nil
       let result = try await decisionEngine.choice(
-        instructions: question,
-        context: question,
+        instructions: selection.choicePlan.selectionInstructions ?? question,
+        context: selection.choicePlan.selectionInstructions == nil ? question : "No additional observations.",
         options: options.map { option in
           ChoiceOption(label: option, description: option)
         },
