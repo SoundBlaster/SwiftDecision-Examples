@@ -481,6 +481,7 @@ private struct OracleRoutedProviderFailure: Error {
   let underlyingError: any Error
   let mode: OracleMode
   let pipeline: [OraclePipelineStage]
+  let stageTitle: String
 }
 
 private struct OracleEvaluation: Sendable {
@@ -537,6 +538,7 @@ private extension DecisionTraceEvent.Stage {
 /// The engine owns immutable policies and a sendable DecisionEngine. The unchecked
 /// conformance is intentional: specifications are immutable after initialization.
 public final class OracleGameEngine: @unchecked Sendable {
+  private let backend: any DecisionBackend
   private let decisionEngine: DecisionEngine
   private let configuration: DecisionEngine.Configuration
   private let maximumResponseTime: TimeInterval?
@@ -554,6 +556,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     backendIdentifier: String? = nil,
     fallbackEnabled: Bool = true
   ) {
+    self.backend = backend
     decisionEngine = DecisionEngine(backend: backend, configuration: configuration)
     self.configuration = configuration
     self.fallbackEnabled = fallbackEnabled
@@ -672,7 +675,12 @@ public final class OracleGameEngine: @unchecked Sendable {
     return try await resolve(evaluation, appendingTo: [generationStage])
   }
 
-  public func answerWithTrace(for request: OracleRequest) async throws -> OracleTracedOutcome {
+  /// Set `capturingFailures` to receive `OracleTracedFailure` with available diagnostics.
+  /// The default preserves the original thrown-error contract. Cancellation is never wrapped.
+  public func answerWithTrace(
+    for request: OracleRequest,
+    capturingFailures: Bool = false
+  ) async throws -> OracleTracedOutcome {
     if supportsTransientFailureFallback, await providerCircuitBreaker.isCoolingDown {
       let cooldownContext = OracleProviderFallbackContext(
         providerSupportsFallback: true,
@@ -682,9 +690,14 @@ public final class OracleGameEngine: @unchecked Sendable {
       }
     }
 
+    let failureRecorder = OracleFailureTraceRecorder()
+    let requestEngine = capturingFailures
+      ? DecisionEngine(backend: backend, configuration: configuration,
+                       decisionTraceHandler: { failureRecorder.record($0) })
+      : decisionEngine
     do {
       let budget = try maximumResponseTime.map { try DecisionBudget(timeout: $0) }
-      let result = try await answerWithConfiguredBackend(for: request, budget: budget)
+      let result = try await answerWithConfiguredBackend(for: request, budget: budget, decisionEngine: requestEngine)
       if supportsTransientFailureFallback {
         await providerCircuitBreaker.recordSuccess()
       }
@@ -696,7 +709,16 @@ public final class OracleGameEngine: @unchecked Sendable {
       let context = OracleProviderFallbackContext(
         providerSupportsFallback: supportsTransientFailureFallback,
         failure: failure)
-      guard OracleProviderFallbackSpec().isSatisfiedBy(context) else { throw underlyingError }
+      guard OracleProviderFallbackSpec().isSatisfiedBy(context) else {
+        guard capturingFailures, failure != .cancelled else { throw underlyingError }
+        let failureStage = OraclePipelineTraceRecorder.failureStage(
+          title: routedFailure?.stageTitle ?? "Request failure",
+          snapshot: failureRecorder.latest(),
+          provider: backendIdentifier, kind: failure.code,
+          errorType: String(reflecting: type(of: underlyingError)))
+        throw OracleTracedFailure(kind: failure.code, mode: routedFailure?.mode ?? request.mode,
+          provider: backendIdentifier, pipeline: (routedFailure?.pipeline ?? []) + [failureStage])
+      }
       await providerCircuitBreaker.recordTransientFailure()
       return try await offlineFallback(
         for: routedFailure.map { OracleRequest(question: request.question, mode: $0.mode) } ?? request,
@@ -707,7 +729,8 @@ public final class OracleGameEngine: @unchecked Sendable {
 
   private func answerWithConfiguredBackend(
     for request: OracleRequest,
-    budget: DecisionBudget?
+    budget: DecisionBudget?,
+    decisionEngine: DecisionEngine
   ) async throws -> OracleTracedOutcome {
     var pipeline: [OraclePipelineStage] = []
     let eligibilityRecorder = SpecificationTraceRecorder()
@@ -758,7 +781,13 @@ public final class OracleGameEngine: @unchecked Sendable {
     } else if selection.operation == .automatic {
       let classifier = OracleIntentClassifier(
         engine: decisionEngine, fallbackEnabled: fallbackEnabled)
-      let intent = try await classifier.classify(question, budget: budget)
+      let intent: DecisionResult<OracleOperation>
+      do {
+        intent = try await classifier.classify(question, budget: budget)
+      } catch {
+        throw OracleRoutedProviderFailure(underlyingError: error, mode: .automatic,
+          pipeline: pipeline, stageTitle: "Question type")
+      }
       pipeline.append(decisionStage(
         "Question type",
         result: intent,
@@ -789,10 +818,10 @@ public final class OracleGameEngine: @unchecked Sendable {
 
     let evaluation: OracleEvaluation
     do {
-      evaluation = try await evaluate(request, selection: selection, budget: budget)
+      evaluation = try await evaluate(request, selection: selection, budget: budget, decisionEngine: decisionEngine)
     } catch {
       throw OracleRoutedProviderFailure(
-        underlyingError: error, mode: selection.operation.mode, pipeline: pipeline)
+        underlyingError: error, mode: selection.operation.mode, pipeline: pipeline, stageTitle: "Answer decision")
     }
     return try await resolve(evaluation, appendingTo: pipeline)
   }
@@ -925,7 +954,8 @@ public final class OracleGameEngine: @unchecked Sendable {
   private func evaluate(
     _ request: OracleRequest,
     selection: OracleOperationSelection,
-    budget: DecisionBudget? = nil
+    budget: DecisionBudget? = nil,
+    decisionEngine: DecisionEngine
   ) async throws -> OracleEvaluation {
     let question = request.question.trimmingCharacters(in: .whitespacesAndNewlines)
     switch selection.operation {

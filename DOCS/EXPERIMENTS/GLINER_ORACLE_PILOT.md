@@ -35,8 +35,18 @@ Imported artifacts must retain Fastino's Apache-2.0 attribution when distributed
 
 ## Request behavior
 
+- Loading includes one dummy local prediction to prepare Core ML before the
+  provider becomes ready. The submit button shows preparation and stays disabled
+  until this completes; typing remains available. Warm-up is not a question and
+  is not written to history. No paid or network call is involved. The existing
+  eight-second budget still applies to real questions after preparation.
 - GLiNER errors stay visible. There is no implicit Jev or offline-answer fallback.
   Empty-question shake/widget random simulations remain explicitly simulated.
+- A real inference failure is stored with its question, provider, safe failure
+  category and available decision trace. The ball shows **Could not answer** for
+  that request rather than restoring an empty plate after a clear. Failed
+  history entries have no answer or confidence and can be exported for diagnosis.
+  Cancellation/supersession keeps the existing request-ID guard.
 - Only the local GLiNER pilot opts into `choiceOrdering: .canonical`. Its Choice
   schema is sorted by normalized option text and internal IDs are assigned after
   sorting; returned scores still follow the original user-visible order. The

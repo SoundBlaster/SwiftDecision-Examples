@@ -52,6 +52,11 @@ public struct OracleHistoryExport: Encodable, Sendable {
                 "Provider: \(entry.source)"]
       field("Question", entry.question)
       field("Answer", entry.answer)
+      if let failure = entry.failure {
+        lines.append("Outcome: failed")
+        field("Failure kind", failure.kind)
+        field("Failure message", failure.message)
+      }
       if let confidence = entry.confidence { lines.append("Confidence: \(confidence)") }
       guard let pipeline = entry.pipeline, !pipeline.isEmpty else {
         lines.append("No saved pipeline.")

@@ -29,6 +29,12 @@ SpecificationCore events, IDs, parent IDs, durations, and the saved ordered
 timeline. Integer elapsed/duration values remain nanoseconds. Order is preserved
 within each stage; timelines from separate calls are not flattened together.
 
+New failed requests are saved too. Their optional `failure` object contains a
+safe `kind` and display `message`; `answer` is empty and confidence is absent.
+Their pipeline contains completed stages and the available failed decision
+events, without fabricated output scores. An explicitly cancelled or superseded
+request is not recorded as a provider failure. Legacy entries omit `failure`.
+
 Newly answered decisions also retain a `distribution` per decision stage:
 
 ```json

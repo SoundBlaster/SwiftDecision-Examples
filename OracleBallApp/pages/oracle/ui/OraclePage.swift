@@ -76,6 +76,7 @@ struct OraclePage: View {
           text: $model.question,
           isFocused: $isQuestionFocused,
           isSubmitting: model.isSubmitting,
+          isPreparingModel: model.isPreparingModel,
           onSubmit: model.submit)
           .onGeometryChange(for: CGRect.self) { geometry in
             geometry.frame(in: .named("oraclePage"))
@@ -559,9 +560,9 @@ private struct OracleHistoryRow: View {
         .foregroundStyle(.primary)
         .fixedSize(horizontal: false, vertical: true)
 
-      Text(entry.answer)
+      Text(entry.failure?.message ?? entry.answer)
         .font(.subheadline)
-        .foregroundStyle(Color.oracleLavender)
+        .foregroundStyle(entry.failure == nil ? Color.oracleLavender : .orange)
         .fixedSize(horizontal: false, vertical: true)
 
       HStack(spacing: 8) {

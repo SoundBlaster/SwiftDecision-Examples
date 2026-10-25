@@ -260,7 +260,7 @@ final class OraclePageModel {
         if isRandomSimulation {
           tracedOutcome = try await engine.randomAnswerWithTrace()
         } else {
-          tracedOutcome = try await engine.answerWithTrace(for: request)
+          tracedOutcome = try await engine.answerWithTrace(for: request, capturingFailures: true)
         }
         guard let self else { return }
         guard self.requestID == requestID else { return }
@@ -299,16 +299,35 @@ final class OraclePageModel {
         self.isSubmitting = false
       } catch is CancellationError {
         guard let self, self.requestID == requestID else { return }
+        if !Task.isCancelled {
+          self.recordFailure(OracleTracedFailure(kind: "cancelled", mode: request.mode,
+            provider: self.provider.rawValue, pipeline: []), request: request, requestID: requestID)
+        }
         self.isSubmitting = false
       } catch {
         guard let self, self.requestID == requestID else { return }
-        self.terminalRequestID = requestID
-        self.statusMessage = self.provider == .gliner
-          ? String(localized: "GLiNER could not answer. Try a shorter English question without parentheses or choose another provider.")
-          : error.localizedDescription
+        let failure = (error as? OracleTracedFailure) ?? OracleTracedFailure(
+          kind: "requestError", mode: request.mode, provider: self.provider.rawValue, pipeline: [])
+        self.recordFailure(failure, request: request, requestID: requestID)
         self.isSubmitting = false
       }
     }
+  }
+
+  private func recordFailure(_ failure: OracleTracedFailure, request: OracleRequest, requestID: Int) {
+    let message = failure.kind == "timeout"
+      ? String(localized: "The model timed out. Please try again.")
+      : String(localized: "The model could not answer. Please try again.")
+    // Render a status for this request, rather than restoring a previous, possibly empty plate.
+    answer = OracleAnswer(mode: failure.mode, displayText: String(localized: "Could not\nanswer"),
+                          source: .model(identifier: failure.provider))
+    historyStore.appendFailure(question: request.question.trimmingCharacters(in: .whitespacesAndNewlines),
+                               failure: failure, message: message)
+    historyEntries = historyStore.entries
+    answerRequestID = requestID
+    terminalRequestID = 0
+    statusMessage = message
+    haptics.play(.negativeResult)
   }
 
   func handleShake() {
