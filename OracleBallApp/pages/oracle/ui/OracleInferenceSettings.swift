@@ -11,7 +11,7 @@ struct OracleInferenceSettings: View {
     Section("Inference") {
       Picker("Provider", selection: Binding(get: { model.provider }, set: model.selectProvider)) {
         Text("Jev").tag(OracleInferenceProvider.jev)
-        if model.supportsGLiNER && model.isGLiNERPilotEnabled {
+        if model.supportsGLiNER {
           Text("GLiNER small").tag(OracleInferenceProvider.gliner)
         }
         Text("None").tag(OracleInferenceProvider.none)
@@ -25,12 +25,6 @@ struct OracleInferenceSettings: View {
         .accessibilityIdentifier("oracle.settings.provider-status")
 
       if model.supportsGLiNER {
-        Toggle("Enable GLiNER pilot", isOn: Binding(
-          get: { model.isGLiNERPilotEnabled }, set: model.setGLiNERPilotEnabled))
-          .disabled(model.isPreparingModel)
-          .accessibilityIdentifier("oracle.settings.gliner-pilot")
-
-        if model.isGLiNERPilotEnabled {
           Text("Experimental English model. Questions stay on this device. Estimates are not calibrated probabilities.")
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -67,15 +61,30 @@ struct OracleInferenceSettings: View {
           Text(model.isModelInstalled ? "Local model installed" : "Local model not installed")
             .font(.subheadline)
             .accessibilityIdentifier("oracle.settings.gliner-model-status")
-          if model.isPreparingModel {
+          if model.isDownloadingModel {
+            ProgressView(value: model.modelDownloadProgress) {
+              Text("Downloading local model…")
+            }
+            Button("Cancel download", action: model.cancelHostedModelInstallation)
+          } else if model.isPreparingModel {
             ProgressView("Preparing local model…")
           }
+          if !model.isModelInstalled {
+            Button("Install local model", action: model.installHostedGLiNERModel)
+              .disabled(model.isPreparingModel)
+              .accessibilityIdentifier("oracle.settings.gliner-install")
+            Text("Download about 70 MB from Apple. About 87 MB is stored separately from the app. Inference stays on this device.")
+              .font(.caption)
+              .foregroundStyle(.secondary)
+          }
+          DisclosureGroup("Developer import") {
           Button("Import model folder") { isSelectingFolder = true }
             .disabled(model.isPreparingModel)
             .accessibilityIdentifier("oracle.settings.gliner-import")
           Text("Choose the GLiNER small INT8 export folder in Files. About 87 MB is stored separately from the app and can be removed below.")
             .font(.caption)
             .foregroundStyle(.secondary)
+          }
           if model.isModelInstalled {
             Button("Remove local model", role: .destructive, action: model.removeGLiNERModel)
               .disabled(model.isPreparingModel)
@@ -86,7 +95,6 @@ struct OracleInferenceSettings: View {
               .font(.caption)
               .foregroundStyle(.orange)
           }
-        }
       }
     }
     .fileImporter(isPresented: $isSelectingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in

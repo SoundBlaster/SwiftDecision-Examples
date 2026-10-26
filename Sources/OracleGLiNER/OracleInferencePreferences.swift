@@ -18,6 +18,7 @@ public struct OracleInferencePreferences {
 
   public init(defaults: UserDefaults = .standard) { self.defaults = defaults }
 
+  /// Legacy preference retained for older development installations; no longer gates GLiNER.
   public var isPilotEnabled: Bool {
     get { defaults.bool(forKey: pilotKey) }
     nonmutating set { defaults.set(newValue, forKey: pilotKey) }
@@ -44,7 +45,7 @@ public struct OracleInferencePreferences {
     } else {
       selection = hasJevKey ? .jev : .none
     }
-    let resolved = selection == .gliner && (!isPilotEnabled || !supportsGLiNER) ? .none : selection
+    let resolved = selection == .gliner && !supportsGLiNER ? .none : selection
     select(resolved)
     return resolved
   }

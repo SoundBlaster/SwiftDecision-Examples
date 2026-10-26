@@ -18,8 +18,10 @@ final class OraclePageModel {
   private let modelStore: OracleGLiNERModelStore
   private let usesInjectedEngine: Bool
   private var configurationTask: Task<Void, Never>?
+  private let modelDownloadSource: any OracleGLiNERDownloadSource
+  private(set) var isDownloadingModel = false
+  private(set) var modelDownloadProgress: Double?
   private var configurationID = 0
-  private(set) var isGLiNERPilotEnabled: Bool
   private(set) var isModelInstalled = false
   private(set) var isPreparingModel = false
   private(set) var modelIssue: String?
@@ -51,8 +53,10 @@ final class OraclePageModel {
     historyStore: OracleHistoryStore? = nil,
     haptics: (any OracleHapticFeedback)? = nil,
     preferences: OracleInferencePreferences = OracleInferencePreferences(),
-    modelStore: OracleGLiNERModelStore? = nil)
+    modelStore: OracleGLiNERModelStore? = nil,
+    modelDownloadSource: (any OracleGLiNERDownloadSource)? = nil)
   {
+    self.modelDownloadSource = modelDownloadSource ?? OracleHostedModelDownloader()
     self.credentialsStore = credentialsStore
     usesSharedHistoryStore = historyStore == nil
     let resolvedHistoryStore = historyStore ?? Self.makeHistoryStore()
@@ -64,7 +68,6 @@ final class OraclePageModel {
       FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("OracleGLiNER/active", isDirectory: true))
     usesInjectedEngine = engine != nil
-    isGLiNERPilotEnabled = preferences.isPilotEnabled
     let selectedProvider = preferences.provider(hasJevKey: credentialsStore.readAPIKey() != nil,
                                                supportsGLiNER: OracleGLiNERBackend.isSupportedBuild)
     provider = selectedProvider
@@ -135,7 +138,7 @@ final class OraclePageModel {
 
   func selectProvider(_ selection: OracleInferenceProvider) {
     guard !isPreparingModel else { return }
-    guard selection != .gliner || (supportsGLiNER && isGLiNERPilotEnabled) else { return }
+    guard selection != .gliner || supportsGLiNER else { return }
     cancelPendingSubmission()
     configurationTask?.cancel()
     configurationID += 1
@@ -196,11 +199,41 @@ final class OraclePageModel {
       policies: DecisionPolicies(noul: policy, choice: policy, score: policy)), fallbackEnabled: false)
   }
 
-  func setGLiNERPilotEnabled(_ enabled: Bool) {
+  func installHostedGLiNERModel() {
     guard !isPreparingModel else { return }
-    isGLiNERPilotEnabled = enabled && supportsGLiNER
-    preferences.isPilotEnabled = isGLiNERPilotEnabled
-    if !isGLiNERPilotEnabled, provider == .gliner { selectProvider(.none) }
+    cancelPendingSubmission()
+    isPreparingModel = true
+    isDownloadingModel = true
+    modelDownloadProgress = nil
+    modelIssue = nil
+    configurationTask = Task { [weak self] in
+      guard let self else { return }
+      do {
+        let installer = OracleGLiNERInstaller(source: self.modelDownloadSource, store: self.modelStore)
+        try await installer.install { [weak self] update in
+          switch update {
+          case let .downloading(value): self?.modelDownloadProgress = value
+          case .validating: self?.isDownloadingModel = false
+          }
+        }
+        self.isModelInstalled = await self.modelStore.isInstalled
+        self.isPreparingModel = false
+        self.selectProvider(.gliner)
+      } catch {
+        self.isDownloadingModel = false
+        self.isPreparingModel = false
+        self.isModelInstalled = await self.modelStore.isInstalled
+        if !(error is CancellationError) && !Task.isCancelled {
+          self.modelIssue = String(localized: "Could not install the Apple-hosted model. Please try again.")
+        }
+      }
+    }
+  }
+
+  func cancelHostedModelInstallation() {
+    guard isDownloadingModel else { return }
+    modelDownloadSource.cancel()
+    configurationTask?.cancel()
   }
 
   func importGLiNERModel(from directory: URL) {

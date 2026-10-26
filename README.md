@@ -26,10 +26,7 @@ questions and traces as JSON or readable text. See
 [`DOCS/ORACLE_HISTORY_EXPORT.md`](DOCS/ORACLE_HISTORY_EXPORT.md) for the format,
 precision and backward-compatibility contract.
 
-An opt-in GLiNER small pilot adds explicit **Jev / GLiNER small / None** provider
-selection and imports separately provisioned model files from Files. It does not
-bundle weights or automatically send local requests to a hosted provider. See
-[the pilot setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
+GLiNER adds explicit **Jev / GLiNER small / None** provider selection. Oracle requests its separately provisioned model through Apple-Hosted Background Assets after an explicit install action; developer folder import remains available. No weights are bundled and local inference never falls back to a cloud provider. See [delivery setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
 
 ## City Chain
 

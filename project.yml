@@ -76,6 +76,8 @@ targets:
     dependencies:
       - target: OracleWidgetsExtension
         embed: true
+      - target: OracleModelDownloader
+        embed: true
       - package: SwiftDecisionExamples
         product: OraclePresentation
       - package: SwiftDecisionExamples
@@ -95,6 +97,9 @@ targets:
       path: OracleBallApp/Info.plist
       properties:
         CFBundleDisplayName: Oracle
+        BAAppGroupID: group.com.soundblaster.oracleball
+        BAHasManagedAssetPacks: true
+        BAUsesAppleHosting: true
         NSMotionUsageDescription: Phone motion brings the oracle scene to life.
         UILaunchStoryboardName: LaunchScreen
         "UISupportedInterfaceOrientations~iphone":
@@ -168,6 +173,35 @@ targets:
         DEVELOPMENT_TEAM: P8T2366K8X
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball.widgets
+        SKIP_INSTALL: YES
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+  OracleModelDownloader:
+    type: extensionkit-extension
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: OracleModelDownloader
+        excludes: [Info.plist]
+    entitlements:
+      path: OracleModelDownloader/OracleModelDownloader.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.soundblaster.oracleball
+    info:
+      path: OracleModelDownloader/Info.plist
+      properties:
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        EXAppExtensionAttributes:
+          EXExtensionPointIdentifier: com.apple.background-asset-downloader-extension
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: YES
+        CODE_SIGN_ENTITLEMENTS: OracleModelDownloader/OracleModelDownloader.entitlements
+        DEVELOPMENT_TEAM: P8T2366K8X
+        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball.model-downloader
         SKIP_INSTALL: YES
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"

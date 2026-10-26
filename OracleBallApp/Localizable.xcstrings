@@ -3619,6 +3619,102 @@
           }
         }
       }
+    },
+    "Install local model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Install local model"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Установить локальную модель"
+          }
+        }
+      }
+    },
+    "Downloading local model…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading local model…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузка локальной модели…"
+          }
+        }
+      }
+    },
+    "Cancel download": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel download"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отменить загрузку"
+          }
+        }
+      }
+    },
+    "Developer import": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Developer import"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импорт для разработчиков"
+          }
+        }
+      }
+    },
+    "Download about 70 MB from Apple. About 87 MB is stored separately from the app. Inference stays on this device.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download about 70 MB from Apple. About 87 MB is stored separately from the app. Inference stays on this device."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузка около 70 МБ с серверов Apple. Модель занимает около 87 МБ отдельно от приложения. Обработка вопросов остаётся на устройстве."
+          }
+        }
+      }
+    },
+    "Could not install the Apple-hosted model. Please try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not install the Apple-hosted model. Please try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось установить модель с серверов Apple. Попробуйте ещё раз."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

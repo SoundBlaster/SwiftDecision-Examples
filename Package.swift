@@ -65,6 +65,7 @@ let package = Package(
         .product(name: "SwiftDecision", package: "SwiftDecision"),
         .product(name: "SwiftDecisionGLiNER", package: "SwiftDecision", condition: .when(platforms: [.iOS, .macOS], traits: ["GLiNER"])),
       ],
+      resources: [.process("Resources")],
       swiftSettings: [.define("ORACLE_GLINER", .when(platforms: [.iOS, .macOS], traits: ["GLiNER"]))]
     ),
     .testTarget(name: "OracleGLiNERTests", dependencies: [

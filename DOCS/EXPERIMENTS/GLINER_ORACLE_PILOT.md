@@ -5,33 +5,58 @@ remains on its closed PR branches. The dependency is the pinned implementation
 from [SwiftDecision PR #23](https://github.com/SoundBlaster/SwiftDecision/pull/23).
 It is not a released package update.
 
-## Enable and install
+## Delivery and install
 
-1. Build `OracleBallApp` in Xcode 27.1. The local package reference enables the
-   `GLiNER` SwiftPM trait, forwarded to SwiftDecision. The optional `OracleGLiNER`
-   product is linked only by OracleBallApp, not the widgets or CityChain.
-2. In Oracle settings, enable **Enable GLiNER pilot**. The persistent feature flag
-   `com.soundblaster.oracleball.gliner-pilot` defaults to false.
-3. Use **Import model folder** and select the complete GLiNER small INT8 export
-   produced by `Scripts/gliner/prepare.py` in the SwiftDecision repository. The
-   checkpoint revision and conversion procedure are documented in PR #23.
-4. Importing validates and compiles the checkpoint before activation. On success,
-   the selected provider becomes **GLiNER small**. The provider preference is
-   independent from a saved Jev key. Saving a key does not switch away from GLiNER.
-5. **Remove local model** releases the current game engine, selects None when
-   needed, and removes only this app's installed checkpoint.
+Oracle uses **Apple-Hosted Background Assets**, with the on-demand pack ID
+`com.soundblaster.oracleball.gliner-small-v1`. GLiNER is a free provider; a legacy
+pilot preference no longer hides it. Nothing downloads on startup.
 
-The app imports `gliner.json`, `tokenizer.json`, `tokenizer_config.json` and
-`GLiNERSmall.mlpackage`. They live under the app's private
-`Library/Application Support/OracleGLiNER/active` directory, excluded from backup.
-About 87 MB is stored separately from the app bundle. The model and Python
-export/runtime dependencies are never bundled as app resources. No model host,
-automatic download, or shared credential is introduced by this pilot.
+1. Build `OracleBallApp` in Xcode 27.1. Its local package enables the GLiNER trait.
+2. In settings, tap **Install local model**. The app requests the Apple-hosted
+   asset pack and shows progress/cancellation, then copies its content to staging.
+3. Every runtime/license file is checked against the app's checked-in SHA-256
+   inventory. Core ML validation and warm-up run before atomic activation.
+4. The local provider becomes ready only after preparation. The app drops the
+   downloaded Apple cache after activation; the owned model remains in private
+   application support, excluded from backup. Core ML compilation and staging can
+   temporarily require additional storage beyond the roughly 87 MB runtime.
+5. **Remove local model** selects None when needed and removes this app's copy.
 
-Import rejects symlinks, missing files and checkpoints over a 256 MiB storage
-budget. Files are copied to staging and validated through the native backend.
-Failed validation or cancellation leaves the previous installation intact.
-Imported artifacts must retain Fastino's Apache-2.0 attribution when distributed.
+**Developer import** remains available for caller-provisioned compatible exports;
+it preserves known license/provenance files when present. It does not silently
+use GitHub as a fallback for a failed Apple download. The GitHub ZIP is an
+independent distribution for library users.
+
+## Build and publish the Apple asset pack
+
+The portable model is published separately from Swift package releases:
+[Core ML INT8 distribution](https://github.com/SoundBlaster/SwiftDecision/releases/tag/gliner2.5-small-coreml-int8-v1).
+The ZIP includes all runtime files, Apache-2.0/MIT licenses and conversion notes.
+Do not commit its weights into this repository or SwiftPM resources.
+
+Use `Scripts/gliner/distribute.py` from SwiftDecision to create the licensed,
+checksummed content and `AppleManifest.json`. From the output directory:
+
+```sh
+xcrun ba-package AppleManifest.json -o OracleGLiNER.aar
+```
+
+The generated manifest is on-demand, iOS only, and includes `GLiNERSmall/` under a
+unique namespace. No unsupported Apple-hosted userInfo/language restriction is
+added. Upload the `.aar` to Oracle's App Store Connect record, test through
+TestFlight, then submit the pack for distribution with the app. An absent pack
+is a visible installation error, never an inference fixture labeled as GLiNER.
+
+Project configuration comes from `project.yml`: app `BAAppGroupID`,
+`BAHasManagedAssetPacks`, `BAUsesAppleHosting`, and the embedded
+`OracleModelDownloader` ExtensionKit extension using `StoreDownloaderExtension`.
+App and extension share `group.com.soundblaster.oracleball`. The new extension
+requires an explicit bundle ID and a matching provisioning profile with that
+App Group; the app's existing development profile cannot stand in for it.
+
+For local download testing, follow Apple's [mock-server workflow](https://developer.apple.com/documentation/backgroundassets/testing-asset-packs-locally).
+A successful unsigned build or `.aar` packaging does not prove delivery from
+Apple servers or physical-device installation.
 
 ## Request behavior
 
@@ -100,3 +125,12 @@ and launched on the physical Air. The updated canonical-order version passed
 the real-model Oracle pipeline and signed iPhone build but has not yet been
 installed on the Air. Device latency, peak memory and UI verification remain
 separate from these build and Mac runtime checks.
+
+## Delivery validation, 2026-10-26
+
+- Portable ZIP: 69,920,984 bytes; archive CRC and all ten manifest file hashes verified.
+- Three deterministic packaging regressions passed (inventory/reproducibility, wrong model, symlink rejection).
+- The pinned distribution imported through OracleGLiNERModelStore, compiled/loaded with Core ML, and answered a real Choice request through OracleGameEngine on Mac.
+- Full package suites passed with optional traits disabled and with GLiNER enabled. Installer tests also cover failed/cancelled delivery, activation and cache cleanup ordering, and failed validation.
+- The app/downloader extension code built for iPhone with signing disabled. Physical installation is not verified: the new extension needs an App Group provisioning profile, and authenticated Xcode provisioning failed with the currently stored API credential.
+- No Oracle app record is visible in the selected ASC profile; the `.aar` has not been uploaded or delivered by Apple. TestFlight download/cancel/retry and Air UI remain required.
