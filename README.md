@@ -4,7 +4,7 @@ Small applications that demonstrate model decisions composed with `Specification
 
 ## OracleBallApp
 
-See the [Oracle product roadmap](DOCS/ORACLE_PRODUCT_ROADMAP.md) for naming, the free GLiNER core, and one-time customization purchases with a trial.
+Oracle is a free reference app for SwiftDecision and SwiftJev, with domain policies built on SpecificationCore. See the [product roadmap](DOCS/ORACLE_PRODUCT_ROADMAP.md) and [v1 release readiness](DOCS/ORACLE_V1_RELEASE_READINESS.md) for the first free release; optional paid customization is deferred.
 
 OracleBallApp is an iOS 26 SwiftUI and RealityKit Magic 8 Ball rendering demo.
 It supports offline answer simulation and optional inference providers while
