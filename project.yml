@@ -92,12 +92,12 @@ targets:
       path: OracleBallApp/OracleBallApp.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.soundblaster.oracleball
+          - group.ru.egormerkushev.oracle
     info:
       path: OracleBallApp/Info.plist
       properties:
         CFBundleDisplayName: "Endless Answers"
-        BAAppGroupID: group.com.soundblaster.oracleball
+        BAAppGroupID: group.ru.egormerkushev.oracle
         BAHasManagedAssetPacks: true
         BAUsesAppleHosting: true
         NSMotionUsageDescription: Phone motion brings the oracle scene to life.
@@ -160,7 +160,7 @@ targets:
       path: OracleWidgetsExtension.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.soundblaster.oracleball
+          - group.ru.egormerkushev.oracle
     info:
       path: OracleWidgets/Info.plist
       properties:
@@ -188,7 +188,7 @@ targets:
       path: OracleModelDownloader/OracleModelDownloader.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.soundblaster.oracleball
+          - group.ru.egormerkushev.oracle
     info:
       path: OracleModelDownloader/Info.plist
       properties:

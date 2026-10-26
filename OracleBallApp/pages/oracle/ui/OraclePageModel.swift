@@ -406,7 +406,7 @@ final class OraclePageModel {
 
   private static func makeHistoryStore() -> OracleHistoryStore {
     let storageKey = "com.soundblaster.oracleball.question-history"
-    guard let sharedDefaults = UserDefaults(suiteName: "group.com.soundblaster.oracleball") else {
+    guard let sharedDefaults = UserDefaults(suiteName: "group.ru.egormerkushev.oracle") else {
       return OracleHistoryStore()
     }
 

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>BAAppGroupID</key>
-	<string>group.com.soundblaster.oracleball</string>
+	<string>group.ru.egormerkushev.oracle</string>
 	<key>BAHasManagedAssetPacks</key>
 	<true/>
 	<key>BAUsesAppleHosting</key>

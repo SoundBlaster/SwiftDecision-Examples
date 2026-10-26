@@ -52,7 +52,7 @@
 
 ### R5. Имя и запись App Store Connect — запись создана, метаданные ещё нужны
 
-**Обновление:** пользователь создал **Endless Answers: 8 Ball**, App ID `6827254640`, Bundle ID `ru.egormerkushev.oracle`; API подтвердил запись и team `P8T2366K8X`. В проекте обновлены Bundle ID app/widgets/downloader/UI tests и Home Screen name Endless Answers. Version/build пока 1.0/1. Для расширений зарегистрированы `ru.egormerkushev.oracle.widgets` и `ru.egormerkushev.oracle.model-downloader`. Включена capability App Groups, но назначение существующей группы всем новым App IDs и новые profiles ещё необходимы. Support/privacy pages и App Store screenshots пока не подготовлены.
+**Обновление:** пользователь создал **Endless Answers: 8 Ball**, App ID `6827254640`, Bundle ID `ru.egormerkushev.oracle`; API подтвердил запись и team `P8T2366K8X`. В проекте обновлены Bundle ID app/widgets/downloader/UI tests и Home Screen name Endless Answers. Version/build пока 1.0/1. Для расширений зарегистрированы `ru.egormerkushev.oracle.widgets` и `ru.egormerkushev.oracle.model-downloader`. Включена capability App Groups, но назначение группы `group.ru.egormerkushev.oracle` всем новым App IDs и новые profiles ещё необходимы. Support/privacy pages и App Store screenshots пока не подготовлены.
 
 **План:** сохранить подтверждённую запись и Bundle ID; завершить App Group provisioning. Подготовить EN/RU name/subtitle/description/keywords, support/privacy URL, contact/review notes, скриншоты реального бесплатного приложения. Установить цену 0, availability, category, age-rating, content rights, App Privacy и корректный export-compliance ответ. Декларации заполнять по фактам, не ставить автоматически «no encryption».
 

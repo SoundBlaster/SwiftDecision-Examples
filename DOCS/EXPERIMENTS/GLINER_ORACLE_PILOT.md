@@ -50,7 +50,7 @@ is a visible installation error, never an inference fixture labeled as GLiNER.
 Project configuration comes from `project.yml`: app `BAAppGroupID`,
 `BAHasManagedAssetPacks`, `BAUsesAppleHosting`, and the embedded
 `OracleModelDownloader` ExtensionKit extension using `StoreDownloaderExtension`.
-App and extension share `group.com.soundblaster.oracleball`. The new extension
+App and extension share `group.ru.egormerkushev.oracle`. The new extension
 requires an explicit bundle ID and a matching provisioning profile with that
 App Group; the app's existing development profile cannot stand in for it.
 
@@ -144,9 +144,10 @@ suffixes. The Home Screen display name is Endless Answers. A different bundle
 ID installs alongside the earlier development app; private model/Keychain data
 is not automatically transferred between their containers.
 
-The existing shared App Group `group.com.soundblaster.oracleball` and internal
-preference/history keys are retained for compatibility; every new explicit App
-ID must be associated with that group before generating provisioning profiles.
+The shared App Group is `group.ru.egormerkushev.oracle`, as selected by the
+owner. Every new explicit App ID must be associated with it before generating
+provisioning profiles. Internal preference/history keys remain unchanged, but
+changing the group does not migrate data from the former development App Group.
 The asset pack identifier is `gliner-small-v1`: Apple rejects dots in asset pack
 IDs, even though the local packaging tool accepts them. This restriction is
 covered by the distribution packaging regression test.
