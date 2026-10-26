@@ -4,6 +4,8 @@ Small applications that demonstrate model decisions composed with `Specification
 
 ## OracleBallApp
 
+See the [Oracle product roadmap](DOCS/ORACLE_PRODUCT_ROADMAP.md) for naming, the free GLiNER core, and one-time customization purchases with a trial.
+
 OracleBallApp is an iOS 26 SwiftUI and RealityKit Magic 8 Ball rendering demo.
 It supports offline answer simulation and optional inference providers while
 keeping the rendering boundary independent from model execution. The scene uses
