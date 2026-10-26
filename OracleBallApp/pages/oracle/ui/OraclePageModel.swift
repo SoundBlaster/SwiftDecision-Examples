@@ -293,7 +293,11 @@ final class OraclePageModel {
     isRandomSimulation: Bool,
     playSubmissionHaptic: Bool = true
   ) {
-    guard isRandomSimulation || (!isPreparingModel && providerIssue == nil) else {
+    let usesMissingModelSimulation = OracleMissingModelFallbackSpec().isSatisfiedBy(.init(
+      localModelSelected: provider == .gliner,
+      modelInstalled: isModelInstalled,
+      preparingModel: isPreparingModel))
+    guard isRandomSimulation || usesMissingModelSimulation || (!isPreparingModel && providerIssue == nil) else {
       statusMessage = providerIssue ?? String(localized: "Loading local model…")
       return
     }
@@ -309,7 +313,7 @@ final class OraclePageModel {
     requestTask = Task { [weak self, engine] in
       do {
         let tracedOutcome: OracleTracedOutcome
-        if isRandomSimulation {
+        if isRandomSimulation || usesMissingModelSimulation {
           tracedOutcome = try await engine.randomAnswerWithTrace()
         } else {
           tracedOutcome = try await engine.answerWithTrace(for: request, capturingFailures: true)
@@ -326,7 +330,9 @@ final class OraclePageModel {
           self.historyEntries = self.historyStore.entries
           self.answerRequestID = requestID
           self.terminalRequestID = 0
-          self.statusMessage = isRandomSimulation
+          self.statusMessage = usesMissingModelSimulation
+            ? String(localized: "Random answer · without AI")
+            : isRandomSimulation
             ? String(localized: "Random answer")
             : (self.provider.isJev && answer.source == .offlineFixture
               ? String(localized: "Jev unavailable · offline answer used")

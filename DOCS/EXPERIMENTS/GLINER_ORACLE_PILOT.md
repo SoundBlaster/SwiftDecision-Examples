@@ -166,3 +166,27 @@ Internal has automatic all-build access. Explicitly adding the internal group
 through the build's betaGroups relationship is rejected by Apple; it is not
 needed for this group. Receipt of the invitation and real Apple-hosted model
 delivery remain device checks. No external beta/App Store review was submitted.
+
+## Missing-model fallback and haptics, build 1.0 (3)
+
+When GLiNER is selected but not installed, submission now uses the existing
+random Boolean simulation and shows “Random answer · without AI”. This is the
+classic ball behavior, not semantic selection between extracted alternatives.
+The original question is retained in history with simulated provenance and its
+simulation trace. The GLiNER preference is preserved. A loading model remains
+busy, and failures of an installed model retain their existing error handling.
+
+OracleMissingModelFallbackSpec covers this policy, with tests for the complete
+selection/installation/loading state matrix and simulated-answer provenance.
+The tests passed without a downloaded model or provider credentials.
+
+Drag feedback now begins on the first movement and repeats at 180 ms while
+movement continues, with stronger transient intensity. The haptic engine is
+created lazily in haptics-only mode; failed creation/playback can retry on the
+next interaction, stopped/reset callbacks discard stale players, and playback
+errors are logged by domain/code. UIKit impact feedback is used if Core Haptics
+throws. Native compilation and actual tactile behavior are separate checks;
+the latter still requires an iPhone.
+
+Apple lifecycle reference:
+https://developer.apple.com/documentation/corehaptics/preparing-your-app-to-play-haptics

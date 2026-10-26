@@ -1,6 +1,23 @@
 {
   "sourceLanguage": "en",
   "strings": {
+  "Random answer · without AI": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Random answer · without AI"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Случайный ответ · без AI"
+        }
+      }
+    }
+  },
     "·": {
       "extractionState": "manual",
       "localizations": {

@@ -98,7 +98,7 @@ targets:
       properties:
         CFBundleDisplayName: "Endless Answers"
         ITSAppUsesNonExemptEncryption: false
-        CFBundleVersion: "2"
+        CFBundleVersion: "3"
         BAAppGroupID: group.ru.egormerkushev.oracle
         BAHasManagedAssetPacks: true
         BAUsesAppleHosting: true
@@ -167,7 +167,7 @@ targets:
       path: OracleWidgets/Info.plist
       properties:
         CFBundleDisplayName: Endless Answers Widgets
-        CFBundleVersion: "2"
+        CFBundleVersion: "3"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -198,7 +198,7 @@ targets:
       properties:
         CFBundleDisplayName: Endless Answers Model Downloader
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "2"
+        CFBundleVersion: "3"
         EXAppExtensionAttributes:
           EXExtensionPointIdentifier: com.apple.background-asset-downloader-extension
     settings:
