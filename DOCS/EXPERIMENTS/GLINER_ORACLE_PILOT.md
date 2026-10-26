@@ -8,7 +8,7 @@ It is not a released package update.
 ## Delivery and install
 
 Oracle uses **Apple-Hosted Background Assets**, with the on-demand pack ID
-`com.soundblaster.oracleball.gliner-small-v1`. GLiNER is a free provider; a legacy
+`gliner-small-v1`. GLiNER is a free provider; a legacy
 pilot preference no longer hides it. Nothing downloads on startup.
 
 1. Build `OracleBallApp` in Xcode 27.1. Its local package enables the GLiNER trait.
@@ -133,4 +133,20 @@ separate from these build and Mac runtime checks.
 - The pinned distribution imported through OracleGLiNERModelStore, compiled/loaded with Core ML, and answered a real Choice request through OracleGameEngine on Mac.
 - Full package suites passed with optional traits disabled and with GLiNER enabled. Installer tests also cover failed/cancelled delivery, activation and cache cleanup ordering, and failed validation.
 - The app/downloader extension code built for iPhone with signing disabled. Physical installation is not verified: the new extension needs an App Group provisioning profile, and authenticated Xcode provisioning failed with the currently stored API credential.
-- No Oracle app record is visible in the selected ASC profile; the `.aar` has not been uploaded or delivered by Apple. TestFlight download/cancel/retry and Air UI remain required.
+- The owner-created ASC app was verified (Apple ID `6827254640`). Apple accepted the manifest for asset pack `gliner-small-v1`, version 1. Archive upload was started; Apple processing and actual TestFlight download/cancel/retry and Air UI remain separate verification steps.
+
+## App Store identity
+
+The app record created by the owner is **Endless Answers: 8 Ball**, Apple ID
+`6827254640`, bundle ID `ru.egormerkushev.oracle`, team `P8T2366K8X`.
+The widgets and model downloader use the `.widgets` and `.model-downloader`
+suffixes. The Home Screen display name is Endless Answers. A different bundle
+ID installs alongside the earlier development app; private model/Keychain data
+is not automatically transferred between their containers.
+
+The existing shared App Group `group.com.soundblaster.oracleball` and internal
+preference/history keys are retained for compatibility; every new explicit App
+ID must be associated with that group before generating provisioning profiles.
+The asset pack identifier is `gliner-small-v1`: Apple rejects dots in asset pack
+IDs, even though the local packaging tool accepts them. This restriction is
+covered by the distribution packaging regression test.

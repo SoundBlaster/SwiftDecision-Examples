@@ -22,7 +22,7 @@
 
 **Обновление реализации:** приложение содержит Apple-hosted on-demand installer, downloader extension, progress/cancellation и checked-in SHA-256 inventory. Legacy pilot flag больше не скрывает provider. Тот же runtime упакован в отдельный licensed GitHub ZIP и Apple `.aar`; веса не входят в app bundle. Ручной import остаётся Developer import.
 
-**Оставшиеся условия:** новый extension должен получить профиль с App Group; доступный ASC credential был отклонён Xcode provisioning authentication. Видимой записи Oracle в ASC пока нет. `.aar` ещё не загружен и реальная доставка через TestFlight/Apple не подтверждена. Нельзя считать R1 закрытым по одному успешному build/packaging. Детали: [delivery guide](EXPERIMENTS/GLINER_ORACLE_PILOT.md).
+**Оставшиеся условия:** новый extension должен получить профиль с App Group; доступный ASC credential был отклонён Xcode provisioning authentication. Запись приложения уже подтверждена: App ID `6827254640`. Созданы asset pack `gliner-small-v1` и version 1; статус загрузки записывается в delivery guide. Реальная доставка через TestFlight/Apple пока не подтверждена. Нельзя считать R1 закрытым по одному успешному build/packaging. Детали: [delivery guide](EXPERIMENTS/GLINER_ORACLE_PILOT.md).
 
 **Готово, когда:** чистая установка → явная загрузка → подготовка → реальный локальный запрос без Mac/Python/ключа; отмена, offline, недостаток места и неверный hash не ломают предыдущую модель; удаление освобождает только модель, история остаётся. До установки classic доступен. Public UI не требует скрытого launch argument или pilot-тумблера для заявленной основной функции.
 
@@ -50,11 +50,11 @@
 
 **Готово, когда:** получаемый пользователем артефакт и приложение содержат необходимые notices, раздел лицензий доступен, команда разработки может воспроизвести совместимый export.
 
-### R5. Имя и запись App Store Connect — пока отсутствует проверяемая цель
+### R5. Имя и запись App Store Connect — запись создана, метаданные ещё нужны
 
-**Факт:** `Info.plist` / `project.yml` ещё показывают Oracle, версию 1.0 и build 1. По доступному профилю asc «Agent Session Monitor» запрос `apps list --bundle-id com.soundblaster.oracleball` вернул пустой список. Это доказывает отсутствие видимой записи для этого bundle ID в выбранном профиле, а не отсутствие приложения во всех командах Apple. Поэтому `asc validate` по реальному APP_ID не выполнялся. В tracked repository не найдены release metadata package, support/privacy pages или набор App Store screenshots; существующая demo-картинка в DOCS не подтверждает готовый комплект.
+**Обновление:** пользователь создал **Endless Answers: 8 Ball**, App ID `6827254640`, Bundle ID `ru.egormerkushev.oracle`; API подтвердил запись и team `P8T2366K8X`. В проекте обновлены Bundle ID app/widgets/downloader/UI tests и Home Screen name Endless Answers. Version/build пока 1.0/1. Для расширений зарегистрированы `ru.egormerkushev.oracle.widgets` и `ru.egormerkushev.oracle.model-downloader`. Включена capability App Groups, но назначение существующей группы всем новым App IDs и новые profiles ещё необходимы. Support/privacy pages и App Store screenshots пока не подготовлены.
 
-**План:** выбрать имя (актуальный кандидат Endless Answers: 8 Ball); проверить доступность. Найти/создать запись в правильной ASC team, не менять bundle ID без необходимости. Подготовить EN/RU name/subtitle/description/keywords, support/privacy URL, contact/review notes, скриншоты реального бесплатного приложения. Установить цену 0, availability, category, age-rating, content rights, App Privacy и корректный export-compliance ответ. Декларации заполнять по фактам, не ставить автоматически «no encryption».
+**План:** сохранить подтверждённую запись и Bundle ID; завершить App Group provisioning. Подготовить EN/RU name/subtitle/description/keywords, support/privacy URL, contact/review notes, скриншоты реального бесплатного приложения. Установить цену 0, availability, category, age-rating, content rights, App Privacy и корректный export-compliance ответ. Декларации заполнять по фактам, не ставить автоматически «no encryption».
 
 **Готово, когда:** есть однозначный APP_ID/version и заполненные обязательные поля. `asc validate --app APP_ID --version 1.0 --platform IOS` и review doctor не показывают blockers; отдельно подтверждены App Privacy и availability. IAP/subscription не требуются для v1.
 

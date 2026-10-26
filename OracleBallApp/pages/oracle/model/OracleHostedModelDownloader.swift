@@ -6,7 +6,7 @@ import System
 /// Apple hosting only. No GitHub or network-provider fallback is implicit.
 @MainActor
 final class OracleHostedModelDownloader: OracleGLiNERDownloadSource {
-  static let assetPackID = "com.soundblaster.oracleball.gliner-small-v1"
+  static let assetPackID = "gliner-small-v1"
   private var currentProgress: Progress?
   private var cancelled = false
 

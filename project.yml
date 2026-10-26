@@ -96,7 +96,7 @@ targets:
     info:
       path: OracleBallApp/Info.plist
       properties:
-        CFBundleDisplayName: Oracle
+        CFBundleDisplayName: "Endless Answers"
         BAAppGroupID: group.com.soundblaster.oracleball
         BAHasManagedAssetPacks: true
         BAUsesAppleHosting: true
@@ -110,7 +110,7 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         CFBundleURLTypes:
-          - CFBundleURLName: com.soundblaster.oracleball
+          - CFBundleURLName: ru.egormerkushev.oracle
             CFBundleURLSchemes:
               - oracleball
     settings:
@@ -120,7 +120,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: OracleBallApp/OracleBallApp.entitlements
         DEVELOPMENT_TEAM: P8T2366K8X
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
     scheme:
@@ -139,7 +139,7 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle.uitests
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
 
@@ -172,7 +172,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: OracleWidgetsExtension.entitlements
         DEVELOPMENT_TEAM: P8T2366K8X
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle.widgets
         SKIP_INSTALL: YES
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
@@ -201,7 +201,7 @@ targets:
         APPLICATION_EXTENSION_API_ONLY: YES
         CODE_SIGN_ENTITLEMENTS: OracleModelDownloader/OracleModelDownloader.entitlements
         DEVELOPMENT_TEAM: P8T2366K8X
-        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball.model-downloader
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle.model-downloader
         SKIP_INSTALL: YES
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
