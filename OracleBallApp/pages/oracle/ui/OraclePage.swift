@@ -481,6 +481,7 @@ private struct OracleInfoSheet: View {
       }
     }
     .listStyle(.insetGrouped)
+    .padding(.top, 16)
     .listSectionSpacing(.compact)
     .scrollContentBackground(.hidden)
     .background(Color.clear)
