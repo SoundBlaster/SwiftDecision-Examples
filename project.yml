@@ -97,6 +97,7 @@ targets:
       path: OracleBallApp/Info.plist
       properties:
         CFBundleDisplayName: "Endless Answers"
+        ITSAppUsesNonExemptEncryption: false
         CFBundleVersion: "2"
         BAAppGroupID: group.ru.egormerkushev.oracle
         BAHasManagedAssetPacks: true

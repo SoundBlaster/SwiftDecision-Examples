@@ -151,3 +151,18 @@ changing the group does not migrate data from the former development App Group.
 The asset pack identifier is `gliner-small-v1`: Apple rejects dots in asset pack
 IDs, even though the local packaging tool accepts them. This restriction is
 covered by the distribution packaging regression test.
+
+## Internal TestFlight, 2026-10-27
+
+Build 1.0 (2), ID `4369d33a-3d30-4a3d-97e4-ad06b542c44b`, passed Apple
+processing. Export compliance was completed with usesNonExemptEncryption=false:
+networking uses Apple's URLSession/HTTPS, credentials use Keychain, and the
+model inventory uses CryptoKit SHA-256; no proprietary encryption was found in
+the app or linked decision-provider sources. The same declaration is now in
+Info.plist and project.yml for future builds.
+
+The build's internal state is IN_BETA_TESTING and the internal tester is INVITED.
+Internal has automatic all-build access. Explicitly adding the internal group
+through the build's betaGroups relationship is rejected by Apple; it is not
+needed for this group. Receipt of the invitation and real Apple-hosted model
+delivery remain device checks. No external beta/App Store review was submitted.
