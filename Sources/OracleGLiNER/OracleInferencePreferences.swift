@@ -23,6 +23,19 @@ public struct OracleInferencePreferences {
     nonmutating set { defaults.set(newValue, forKey: pilotKey) }
   }
 
+  /// GLiNER-only normalized entropy confidence threshold; existing policy defaults to 5%.
+  public var glinerMinimumConfidence: Double {
+    get {
+      guard let value = defaults.object(forKey: "com.soundblaster.oracleball.gliner-confidence") as? Double,
+            value.isFinite, (0 ... 1).contains(value) else { return 0.05 }
+      return value
+    }
+    nonmutating set {
+      guard newValue.isFinite, (0 ... 1).contains(newValue) else { return }
+      defaults.set(newValue, forKey: "com.soundblaster.oracleball.gliner-confidence")
+    }
+  }
+
   /// Migrates existing Jev/offline installations; archived or disabled providers stay offline.
   public func provider(hasJevKey: Bool, supportsGLiNER: Bool) -> OracleInferenceProvider {
     let selection: OracleInferenceProvider

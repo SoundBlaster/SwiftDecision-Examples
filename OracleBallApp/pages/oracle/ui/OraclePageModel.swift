@@ -24,6 +24,8 @@ final class OraclePageModel {
   private(set) var isPreparingModel = false
   private(set) var modelIssue: String?
   private(set) var providerIssue: String?
+  private(set) var glinerMinimumConfidence: Double
+  private var loadedGLiNERBackend: OracleGLiNERBackend?
 
   var question = ""
   private(set) var historyEntries: [OracleHistoryEntry]
@@ -57,6 +59,7 @@ final class OraclePageModel {
     self.historyStore = resolvedHistoryStore
     self.haptics = haptics ?? OracleHaptics()
     self.preferences = preferences
+    glinerMinimumConfidence = preferences.glinerMinimumConfidence
     self.modelStore = modelStore ?? OracleGLiNERModelStore(directory:
       FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("OracleGLiNER/active", isDirectory: true))
@@ -144,6 +147,7 @@ final class OraclePageModel {
     answer = OracleAnswer(mode: mode, displayText: "", source: .offlineFixture)
     answerRequestID = requestID
     terminalRequestID = 0
+    loadedGLiNERBackend = nil
     engine = OracleGameEngine()
     switch selection {
     case .none: break
@@ -163,7 +167,8 @@ final class OraclePageModel {
           let backend = try await self.modelStore.loadBackend()
           try Task.checkCancellation()
           guard self.configurationID == token, self.provider == .gliner else { return }
-          self.engine = OracleGameEngine(backend: backend, fallbackEnabled: false)
+          self.loadedGLiNERBackend = backend
+          self.updateGLiNERPolicy()
           self.providerIssue = nil
           self.modelIssue = nil
         } catch is CancellationError {
@@ -175,6 +180,20 @@ final class OraclePageModel {
         }
       }
     }
+  }
+
+  func setGLiNERMinimumConfidence(_ value: Double) {
+    guard value.isFinite, (0 ... 1).contains(value), !isSubmitting else { return }
+    glinerMinimumConfidence = value
+    preferences.glinerMinimumConfidence = value
+    if provider == .gliner { updateGLiNERPolicy() }
+  }
+
+  private func updateGLiNERPolicy() {
+    guard let backend = loadedGLiNERBackend else { return }
+    let policy = DecisionPolicy(minimumConfidence: glinerMinimumConfidence)
+    engine = OracleGameEngine(backend: backend, configuration: .init(
+      policies: DecisionPolicies(noul: policy, choice: policy, score: policy)), fallbackEnabled: false)
   }
 
   func setGLiNERPilotEnabled(_ enabled: Bool) {

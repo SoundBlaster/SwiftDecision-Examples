@@ -3587,6 +3587,38 @@
           }
         }
       }
+    },
+    "GLiNER confidence threshold": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GLiNER confidence threshold"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Порог уверенности GLiNER"
+          }
+        }
+      }
+    },
+    "Distribution confidence, not the winning weight. Lower values allow closer results. The winning weight must still reach 55%. Default: 5%.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Distribution confidence, not the winning weight. Lower values allow closer results. The winning weight must still reach 55%. Default: 5%."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уверенность распределения, а не вес победителя. Меньший порог допускает более близкие результаты. Вес победителя по-прежнему должен достигать 55%. По умолчанию: 5%."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
