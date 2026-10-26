@@ -50,7 +50,14 @@ struct OracleGLiNERInstallerTests {
   @Test func validationFailureKeepsDownloadedFilesForDiagnosis() async {
     let source = Source()
     let installer = OracleGLiNERInstaller(source: source) { _ in throw OracleGLiNERModelError.invalidFolder }
-    await #expect(throws: OracleGLiNERModelError.invalidFolder) { try await installer.install { _ in } }
+    do {
+      try await installer.install { _ in }
+      Issue.record("Expected a validation failure")
+    } catch let failure as OracleGLiNERInstallationFailure {
+      #expect(failure.stage == .validation)
+    } catch {
+      Issue.record("Expected safe installation diagnostics")
+    }
     #expect(!source.released)
   }
 }

@@ -75,7 +75,14 @@ public actor OracleGLiNERModelStore {
       try manager.copyItem(at: file, to: staging.appendingPathComponent(name))
     }
     try distribution?.validate(directory: staging)
-    _ = try await loader(staging)
+    do {
+      _ = try await loader(staging)
+    } catch is CancellationError {
+      throw CancellationError()
+    } catch {
+      if distribution != nil { throw OracleGLiNERInstallationFailure.capture(error, stage: .runtime) }
+      throw error
+    }
     try Task.checkCancellation()
     // No suspension while replacing: failure restores the previous installation.
     let backup = parent.appendingPathComponent(".previous-\(UUID().uuidString)")

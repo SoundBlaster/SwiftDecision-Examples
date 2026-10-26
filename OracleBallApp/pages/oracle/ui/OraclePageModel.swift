@@ -224,7 +224,12 @@ final class OraclePageModel {
         self.isPreparingModel = false
         self.isModelInstalled = await self.modelStore.isInstalled
         if !(error is CancellationError) && !Task.isCancelled {
-          self.modelIssue = String(localized: "Could not install the Apple-hosted model. Please try again.")
+          let message = String(localized: "Could not install the Apple-hosted model. Please try again.")
+          if let failure = error as? OracleGLiNERInstallationFailure {
+            self.modelIssue = message + " [\(failure.stage.rawValue): \(failure.domain) \(failure.code)]"
+          } else {
+            self.modelIssue = message
+          }
         }
       }
     }

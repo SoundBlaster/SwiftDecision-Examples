@@ -1,6 +1,7 @@
 import BackgroundAssets
 import Foundation
 import OracleGLiNER
+import OSLog
 import System
 
 /// Apple hosting only. No GitHub or network-provider fallback is implicit.
@@ -9,6 +10,8 @@ final class OracleHostedModelDownloader: OracleGLiNERDownloadSource {
   static let assetPackID = "gliner-small-v1"
   private var currentProgress: Progress?
   private var cancelled = false
+  private var hostedFiles: OracleGLiNERHostedFiles?
+  private let logger = Logger(subsystem: "ru.egormerkushev.oracle", category: "ModelInstallation")
 
   func download(progress: @escaping @MainActor @Sendable (Double?) -> Void) async throws -> URL {
     cancelled = false
@@ -29,25 +32,41 @@ final class OracleHostedModelDownloader: OracleGLiNERDownloadSource {
       }
     }
     defer { updates.cancel(); currentProgress = nil }
-    let pack: AssetPack
-    if #available(iOS 27, *) {
-      guard let available = try await manager.manifest.assetPack(withID: Self.assetPackID) else {
-        throw ManagedBackgroundAssetsError.assetPackNotFound(withID: Self.assetPackID)
+    var stage: OracleGLiNERInstallationFailure.Stage = .manifest
+    do {
+      let pack: AssetPack
+      if #available(iOS 27, *) {
+        guard let available = try await manager.manifest.assetPack(withID: Self.assetPackID) else {
+          throw ManagedBackgroundAssetsError.assetPackNotFound(withID: Self.assetPackID)
+        }
+        pack = available
+      } else {
+        pack = try await manager.assetPack(withID: Self.assetPackID)
       }
-      pack = available
-    } else {
-      pack = try await manager.assetPack(withID: Self.assetPackID)
+      try Task.checkCancellation()
+      stage = .download
+      if #available(iOS 26.4, *) {
+        try await manager.ensureLocalAvailability(of: pack, requireLatestVersion: false)
+      } else {
+        try await manager.ensureLocalAvailability(of: pack)
+      }
+      try Task.checkCancellation()
+      guard !cancelled else { throw CancellationError() }
+      stage = .files
+      let files = try hostedFiles ?? OracleGLiNERHostedFiles()
+      hostedFiles = files
+      let assetPackID = Self.assetPackID
+      return try await files.materialize { path in
+        try manager.contents(at: FilePath("GLiNERSmall/" + path),
+                             searchingInAssetPackWithID: assetPackID)
+      }
+    } catch is CancellationError {
+      throw CancellationError()
+    } catch {
+      let failure = OracleGLiNERInstallationFailure.capture(error, stage: stage)
+      logger.error("Model installation failed at \(failure.stage.rawValue, privacy: .public): \(failure.domain, privacy: .public) code \(failure.code)")
+      throw failure
     }
-    try Task.checkCancellation()
-    if #available(iOS 26.4, *) {
-      try await manager.ensureLocalAvailability(of: pack, requireLatestVersion: false)
-    } else {
-      try await manager.ensureLocalAvailability(of: pack)
-    }
-    try Task.checkCancellation()
-    guard !cancelled else { throw CancellationError() }
-    // Resolve one known file; the remaining tree has the same unique pack prefix.
-    return try manager.url(for: FilePath("GLiNERSmall/gliner.json")).deletingLastPathComponent()
   }
 
   func cancel() {
@@ -56,6 +75,7 @@ final class OracleHostedModelDownloader: OracleGLiNERDownloadSource {
   }
 
   func releaseDownloadedFiles() async throws {
+    try await hostedFiles?.removeTemporaryFiles()
     try await AssetPackManager.shared.remove(assetPackWithID: Self.assetPackID)
   }
 }

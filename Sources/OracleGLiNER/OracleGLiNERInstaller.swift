@@ -24,7 +24,13 @@ public struct OracleGLiNERInstaller {
     let directory = try await source.download { update(.downloading($0)) }
     try Task.checkCancellation()
     update(.validating)
-    try await activate(directory)
+    do {
+      try await activate(directory)
+    } catch is CancellationError {
+      throw CancellationError()
+    } catch {
+      throw OracleGLiNERInstallationFailure.capture(error, stage: .validation)
+    }
     try Task.checkCancellation()
     // The store owns its validated copy. Cache cleanup cannot invalidate that activation.
     try? await source.releaseDownloadedFiles()

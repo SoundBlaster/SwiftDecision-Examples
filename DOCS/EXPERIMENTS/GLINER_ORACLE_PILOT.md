@@ -190,3 +190,38 @@ the latter still requires an iPhone.
 
 Apple lifecycle reference:
 https://developer.apple.com/documentation/corehaptics/preparing-your-app-to-play-haptics
+
+## Managed-file access and installation diagnostics, build 1.0 (4)
+
+The owner confirmed haptic feedback on the physical iPhone in TestFlight 1.0 (3).
+Model installation still failed after an indeterminate spinner, with immediate
+failure on retry. That UI alone does not prove download completion.
+
+The old adapter resolved one file URL and treated its parent as a complete
+checkpoint directory. The adapter now reads each pinned file through
+AssetPackManager.contents(at:searchingInAssetPackWithID:) and materializes an
+app-owned temporary tree on a separate actor. It does not enumerate or copy the
+managed logical directory. The pinned SHA-256 inventory and the model store's
+symlink/size checks remain enforced. Apple cache stays available on failure;
+successful activation releases both the temporary copy and the Apple cache.
+
+Safe installation failures identify manifest/download/files/validation/runtime
+and NSError domain/code, without raw localized descriptions, URLs, paths, or
+response bodies. Developer-import loader errors preserve their earlier contract.
+The settings error includes those diagnostics so a physical failure can be
+distinguished without guessing its phase.
+
+Validation: 20 no-trait GLiNER tests passed (the opt-in native test was skipped).
+Additional native smoke passed with the real pinned artifact and GLiNER enabled:
+file materialization, exact inventory validation and native Core ML activation
+on Mac. This smoke uses a file-reader fixture, not Apple's live delivery service.
+Actual iPhone installation and the exact cause of the earlier TestFlight failure
+remain unverified until the updated build is exercised.
+
+ASC asset pack version 1 is READY_FOR_TESTING internally and
+READY_FOR_BETA_SUBMISSION externally. The owner is recorded as an internal
+tester with 1.0 (3) installed; external asset review is a separate requirement.
+No external asset review was submitted by this change.
+
+Apple file-access contract:
+https://developer.apple.com/documentation/backgroundassets/assetpackmanager/url(for:)
