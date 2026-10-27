@@ -7,8 +7,8 @@ import UniformTypeIdentifiers
 /// Explicit provider selection and separately provisioned local model controls.
 struct OracleInferenceSettings: View {
   let model: OraclePageModel
+  let onShowInstallationLog: () -> Void
   @State private var isSelectingFolder = false
-  @State private var isShowingInstallationLog = false
 
   var body: some View {
     Section("Inference") {
@@ -80,9 +80,7 @@ struct OracleInferenceSettings: View {
               .font(.caption)
               .foregroundStyle(.secondary)
           }
-          Button {
-            isShowingInstallationLog = true
-          } label: {
+          Button(action: onShowInstallationLog) {
             Label("Model installation log", systemImage: "doc.text.magnifyingglass")
           }
           .accessibilityIdentifier("oracle.settings.gliner-log")
@@ -106,11 +104,6 @@ struct OracleInferenceSettings: View {
           }
       }
     }
-    .sheet(isPresented: $isShowingInstallationLog) {
-      OracleModelInstallationLogView(model: model)
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
-    }
     .fileImporter(isPresented: $isSelectingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
       switch result {
       case let .success(urls):
@@ -124,7 +117,7 @@ struct OracleInferenceSettings: View {
 
 
 /// A live diagnostic window with an immutable export snapshot on sharing.
-private struct OracleModelInstallationLogView: View {
+struct OracleModelInstallationLogView: View {
   let model: OraclePageModel
   @Environment(\.dismiss) private var dismiss
   @State private var followsLatest = true

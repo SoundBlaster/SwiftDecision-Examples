@@ -307,6 +307,7 @@ private struct OracleInfoSheet: View {
   @State private var apiKey: String
   @State private var isConfigured: Bool
   @State private var isConfirmingHistoryClear = false
+  @State private var isShowingInstallationLog = false
 
   private let savedAPIKey: String
   let inferenceModel: OraclePageModel
@@ -342,7 +343,9 @@ private struct OracleInfoSheet: View {
   var body: some View {
     NavigationStack {
     List {
-      OracleInferenceSettings(model: inferenceModel)
+      OracleInferenceSettings(model: inferenceModel) {
+        isShowingInstallationLog = true
+      }
       Section {
         VStack(alignment: .leading, spacing: selectedDetent == .large ? 16 : 8) {
           HStack {
@@ -509,6 +512,12 @@ private struct OracleInfoSheet: View {
     .toolbar(.hidden, for: .navigationBar)
     }
     .a11yRoot("oracle.settings")
+    // Keep the presentation host outside the List's reusable section rows.
+    .sheet(isPresented: $isShowingInstallationLog) {
+      OracleModelInstallationLogView(model: inferenceModel)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
   }
 
   private var canSaveAPIKey: Bool {
