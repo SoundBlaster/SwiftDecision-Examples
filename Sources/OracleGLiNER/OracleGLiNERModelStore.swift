@@ -14,15 +14,18 @@ public actor OracleGLiNERModelStore {
   private let directory: URL
   private let loader: @Sendable (URL) async throws -> OracleGLiNERBackend
   private var isImporting = false
+  private let diagnostic: OracleGLiNERDiagnosticSink
   private let requiredFiles = ["gliner.json", "tokenizer.json", "tokenizer_config.json", "GLiNERSmall.mlpackage"]
 
   /// Creates a store in a caller-owned application-support directory.
   public init(
     directory: URL,
+    diagnostic: @escaping OracleGLiNERDiagnosticSink = { _ in },
     loader: @escaping @Sendable (URL) async throws -> OracleGLiNERBackend = OracleGLiNERBackend.load(checkpointAt:)
   ) {
     self.directory = directory
     self.loader = loader
+    self.diagnostic = diagnostic
   }
 
   public var isInstalled: Bool {
@@ -37,6 +40,17 @@ public actor OracleGLiNERModelStore {
 
   /// Copies and validates a Files-selected checkpoint before replacing the active installation.
   public func importCheckpoint(from source: URL) async throws {
+    try await install(from: source, distribution: nil)
+  }
+
+  /// Installs only the licensed, checksum-pinned public distribution.
+  public func importDistribution(from source: URL) async throws {
+    let url = Bundle.module.url(forResource: "GLiNER-distribution", withExtension: "json")!
+    let distribution = try JSONDecoder().decode(OracleGLiNERDistribution.self, from: Data(contentsOf: url))
+    try await install(from: source, distribution: distribution)
+  }
+
+  private func install(from source: URL, distribution: OracleGLiNERDistribution?) async throws {
     guard !isImporting else { throw OracleGLiNERModelError.operationInProgress }
     guard source.isFileURL, directory.isFileURL, source.standardizedFileURL != directory.standardizedFileURL else {
       throw OracleGLiNERModelError.invalidFolder
@@ -54,14 +68,29 @@ public actor OracleGLiNERModelStore {
     let staging = parent.appendingPathComponent(".import-\(UUID().uuidString)")
     defer { try? manager.removeItem(at: staging) }
     try manager.createDirectory(at: staging, withIntermediateDirectories: false)
+    await diagnostic(.stage(.validation))
     var totalBytes = 0
-    for name in requiredFiles {
+    let notices = ["LICENSE-APACHE-2.0.txt", "LICENSE-MIT-DeBERTa.txt", "MODEL_CARD.md", "CHANGES.md", "distribution.json"]
+    let extras = notices.filter { distribution != nil || manager.fileExists(atPath: source.appendingPathComponent($0).path) }
+    for name in requiredFiles + extras {
       let file = source.appendingPathComponent(name)
       try validateTree(at: file, totalBytes: &totalBytes)
       try Task.checkCancellation()
       try manager.copyItem(at: file, to: staging.appendingPathComponent(name))
     }
-    _ = try await loader(staging)
+    try distribution?.validate(directory: staging)
+    if distribution != nil { await diagnostic(.inventoryVerified) }
+    await diagnostic(.stage(.runtime))
+    do {
+      _ = try await loader(staging)
+    } catch is CancellationError {
+      throw CancellationError()
+    } catch {
+      if distribution != nil { throw OracleGLiNERInstallationFailure.capture(error, stage: .runtime) }
+      throw error
+    }
+    try Task.checkCancellation()
+    await diagnostic(.stage(.activation))
     try Task.checkCancellation()
     // No suspension while replacing: failure restores the previous installation.
     let backup = parent.appendingPathComponent(".previous-\(UUID().uuidString)")
@@ -78,6 +107,7 @@ public actor OracleGLiNERModelStore {
     var values = URLResourceValues()
     values.isExcludedFromBackup = true
     try? ownedDirectory.setResourceValues(values)
+    await diagnostic(.activated)
   }
 
   /// Removes only the installed checkpoint owned by this store.

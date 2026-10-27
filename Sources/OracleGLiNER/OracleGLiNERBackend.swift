@@ -18,6 +18,16 @@ public struct OracleGLiNERBackend: OracleBackendMetadata {
     try await backend.predict(for: prompt)
   }
 
+  /// A local dummy inference prepares Core ML execution before accepting a real question.
+  /// This is not an Oracle decision and is never written to question history.
+  func warmUp() async throws {
+    try Task.checkCancellation()
+    _ = try await backend.predict(for: DecisionPrompt(id: "oracle.gliner.warm-up", kind: .choice,
+      instructions: "Choose a color.", context: "Blue is a color.",
+      options: [.init(id: "0", description: "red"), .init(id: "1", description: "blue")]))
+    try Task.checkCancellation()
+  }
+
   public static var isSupportedBuild: Bool {
     #if ORACLE_GLINER
     true
@@ -30,8 +40,10 @@ public struct OracleGLiNERBackend: OracleBackendMetadata {
   public static func load(checkpointAt directory: URL) async throws -> Self {
     #if ORACLE_GLINER
     guard #available(macOS 14, iOS 17, *) else { throw OracleGLiNERModelError.unsupportedBuild }
-    return try await Self(backend: GLiNERCoreMLBackend.load(checkpointAt: directory,
-                                                         choiceOrdering: .canonical))
+    let result = try await Self(backend: GLiNERCoreMLBackend.load(checkpointAt: directory,
+                                                               choiceOrdering: .canonical))
+    try await result.warmUp()
+    return result
     #else
     throw OracleGLiNERModelError.unsupportedBuild
     #endif

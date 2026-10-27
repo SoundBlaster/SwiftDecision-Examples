@@ -30,6 +30,7 @@ let package = Package(
       exact: "2.1.0"
     ),
     .package(url: "https://github.com/SoundBlaster/SwiftJev.git", exact: "0.5.0"),
+    .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
   ],
   targets: [
     .target(
@@ -62,13 +63,16 @@ let package = Package(
       name: "OracleGLiNER",
       dependencies: [
         "OracleGame",
+        .product(name: "ZIPFoundation", package: "ZIPFoundation", condition: .when(platforms: [.iOS, .macOS])),
         .product(name: "SwiftDecision", package: "SwiftDecision"),
         .product(name: "SwiftDecisionGLiNER", package: "SwiftDecision", condition: .when(platforms: [.iOS, .macOS], traits: ["GLiNER"])),
       ],
+      resources: [.process("Resources")],
       swiftSettings: [.define("ORACLE_GLINER", .when(platforms: [.iOS, .macOS], traits: ["GLiNER"]))]
     ),
     .testTarget(name: "OracleGLiNERTests", dependencies: [
-      "OracleGLiNER", "OracleGame", .product(name: "SwiftDecision", package: "SwiftDecision")]),
+      "OracleGLiNER", "OracleGame", .product(name: "SwiftDecision", package: "SwiftDecision"),
+      .product(name: "ZIPFoundation", package: "ZIPFoundation", condition: .when(platforms: [.iOS, .macOS]))]),
     .target(
       name: "CityChainGame",
       dependencies: [

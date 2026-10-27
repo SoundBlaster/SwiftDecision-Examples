@@ -4,6 +4,8 @@ Small applications that demonstrate model decisions composed with `Specification
 
 ## OracleBallApp
 
+Oracle is a free reference app for SwiftDecision and SwiftJev, with domain policies built on SpecificationCore. See the [product roadmap](DOCS/ORACLE_PRODUCT_ROADMAP.md) and [v1 release readiness](DOCS/ORACLE_V1_RELEASE_READINESS.md) for the first free release; optional paid customization is deferred.
+
 OracleBallApp is an iOS 26 SwiftUI and RealityKit Magic 8 Ball rendering demo.
 It supports offline answer simulation and optional inference providers while
 keeping the rendering boundary independent from model execution. The scene uses
@@ -24,10 +26,7 @@ questions and traces as JSON or readable text. See
 [`DOCS/ORACLE_HISTORY_EXPORT.md`](DOCS/ORACLE_HISTORY_EXPORT.md) for the format,
 precision and backward-compatibility contract.
 
-An opt-in GLiNER small pilot adds explicit **Jev / GLiNER small / None** provider
-selection and imports separately provisioned model files from Files. It does not
-bundle weights or automatically send local requests to a hosted provider. See
-[the pilot setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
+GLiNER adds explicit **Jev / GLiNER small / None** provider selection. Oracle requests its separately provisioned model through Apple-Hosted Background Assets after an explicit install action; developer folder import remains available. No weights are bundled and local inference never falls back to a cloud provider. See [delivery setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
 
 ## City Chain
 

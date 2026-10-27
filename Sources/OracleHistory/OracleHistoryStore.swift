@@ -1,7 +1,7 @@
 import Foundation
 import OracleGame
 
-/// A locally stored question and its display-ready oracle answer.
+/// A locally stored request and its answer or explicit failure.
 public struct OracleHistoryEntry: Codable, Hashable, Identifiable, Sendable {
   public let id: UUID
   public let question: String
@@ -12,6 +12,8 @@ public struct OracleHistoryEntry: Codable, Hashable, Identifiable, Sendable {
   public let createdAt: Date
   /// The saved SwiftDecision and SpecificationCore stages for this answer.
   public let pipeline: [OraclePipelineStage]?
+  /// Present only for a recorded failed request; `answer` is then empty.
+  public let failure: OracleHistoryFailure?
 
   public init(
     id: UUID = UUID(),
@@ -21,7 +23,8 @@ public struct OracleHistoryEntry: Codable, Hashable, Identifiable, Sendable {
     confidence: Double?,
     source: String,
     createdAt: Date = .now,
-    pipeline: [OraclePipelineStage]? = nil
+    pipeline: [OraclePipelineStage]? = nil,
+    failure: OracleHistoryFailure? = nil
   ) {
     self.id = id
     self.question = question
@@ -31,6 +34,7 @@ public struct OracleHistoryEntry: Codable, Hashable, Identifiable, Sendable {
     self.source = source
     self.createdAt = createdAt
     self.pipeline = pipeline
+    self.failure = failure
   }
 
   public init(
@@ -58,6 +62,17 @@ public struct OracleHistoryEntry: Codable, Hashable, Identifiable, Sendable {
     case let .model(identifier):
       identifier
     }
+  }
+}
+
+/// A safe failure category and display message, without a provider response body.
+public struct OracleHistoryFailure: Codable, Hashable, Sendable {
+  public let kind: String
+  public let message: String
+
+  public init(kind: String, message: String) {
+    self.kind = kind
+    self.message = message
   }
 }
 
@@ -110,6 +125,20 @@ public final class OracleHistoryStore {
   public func remove(id: OracleHistoryEntry.ID) {
     entries.removeAll { $0.id == id }
     persist()
+  }
+
+  /// Records an actual failed request without inventing an answer or confidence.
+  @discardableResult
+  public func appendFailure(
+    question: String, failure: OracleTracedFailure, message: String, createdAt: Date = .now
+  ) -> OracleHistoryEntry {
+    let entry = OracleHistoryEntry(question: question, answer: "", mode: failure.mode.rawValue,
+      confidence: nil, source: failure.provider, createdAt: createdAt, pipeline: failure.pipeline,
+      failure: .init(kind: failure.kind, message: message))
+    entries.insert(entry, at: 0)
+    entries = Array(entries.prefix(limit))
+    persist()
+    return entry
   }
 
   public func removeAll() {

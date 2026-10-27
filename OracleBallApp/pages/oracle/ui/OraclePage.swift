@@ -76,6 +76,7 @@ struct OraclePage: View {
           text: $model.question,
           isFocused: $isQuestionFocused,
           isSubmitting: model.isSubmitting,
+          isPreparingModel: model.isPreparingModel,
           onSubmit: model.submit)
           .onGeometryChange(for: CGRect.self) { geometry in
             geometry.frame(in: .named("oraclePage"))
@@ -306,6 +307,7 @@ private struct OracleInfoSheet: View {
   @State private var apiKey: String
   @State private var isConfigured: Bool
   @State private var isConfirmingHistoryClear = false
+  @State private var isShowingInstallationLog = false
 
   private let savedAPIKey: String
   let inferenceModel: OraclePageModel
@@ -341,7 +343,9 @@ private struct OracleInfoSheet: View {
   var body: some View {
     NavigationStack {
     List {
-      OracleInferenceSettings(model: inferenceModel)
+      OracleInferenceSettings(model: inferenceModel) {
+        isShowingInstallationLog = true
+      }
       Section {
         VStack(alignment: .leading, spacing: selectedDetent == .large ? 16 : 8) {
           HStack {
@@ -396,6 +400,8 @@ private struct OracleInfoSheet: View {
             systemImage: isConfigured ? "checkmark.circle.fill" : "circle.dashed")
             .font(.caption)
             .foregroundStyle(isConfigured ? .green : .secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
           HStack {
             Button("Clear key") {
@@ -453,7 +459,7 @@ private struct OracleInfoSheet: View {
               .tint(.oracleLavender)
               .nestedAccessibilityIdentifier("history.entry.\(entry.id.uuidString)")
               .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
-              .listRowSeparator(.visible, edges: .bottom)
+              .listRowSeparator(entry.id == historyEntries.last?.id ? .hidden : .visible, edges: .bottom)
               .listRowSeparatorTint(.white.opacity(0.12))
               .swipeActions(edge: .leading, allowsFullSwipe: false) {
                 Button {
@@ -473,11 +479,22 @@ private struct OracleInfoSheet: View {
               }
             }
           }
+        } footer: {
+          if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+             let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String {
+            Text("Version \(version) (build \(build))",
+                 comment: "App version and build number shown below the history; first is version, second is build.")
+              .font(.caption)
+              .foregroundStyle(.secondary)
+              .frame(maxWidth: .infinity, alignment: .center)
+              .accessibilityIdentifier("oracle.settings.app-version")
+          }
         }
         .textCase(nil)
       }
     }
     .listStyle(.insetGrouped)
+    .padding(.top, 16)
     .listSectionSpacing(.compact)
     .scrollContentBackground(.hidden)
     .background(Color.clear)
@@ -505,6 +522,12 @@ private struct OracleInfoSheet: View {
     .toolbar(.hidden, for: .navigationBar)
     }
     .a11yRoot("oracle.settings")
+    // Keep the presentation host outside the List's reusable section rows.
+    .sheet(isPresented: $isShowingInstallationLog) {
+      OracleModelInstallationLogView(model: inferenceModel)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
   }
 
   private var canSaveAPIKey: Bool {
@@ -559,9 +582,9 @@ private struct OracleHistoryRow: View {
         .foregroundStyle(.primary)
         .fixedSize(horizontal: false, vertical: true)
 
-      Text(entry.answer)
+      Text(entry.failure?.message ?? entry.answer)
         .font(.subheadline)
-        .foregroundStyle(Color.oracleLavender)
+        .foregroundStyle(entry.failure == nil ? Color.oracleLavender : .orange)
         .fixedSize(horizontal: false, vertical: true)
 
       HStack(spacing: 8) {

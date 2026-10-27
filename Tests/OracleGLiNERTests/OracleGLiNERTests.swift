@@ -11,7 +11,7 @@ private func fixtureBackend() -> OracleGLiNERBackend {
 }
 
 struct OracleGLiNERTests {
-  @Test func preferencesRequireExplicitPilotOptIn() {
+  @Test func localProviderDoesNotRequireLegacyPilotOptIn() {
     let name = "OracleGLiNERTests.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: name)!
     defer { defaults.removePersistentDomain(forName: name) }
@@ -21,7 +21,7 @@ struct OracleGLiNERTests {
     preferences.select(.none)
     #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true) == .none)
     preferences.select(.gliner)
-    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true) == .none)
+    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true) == .gliner)
     preferences.isPilotEnabled = true
     preferences.select(.gliner)
     #expect(preferences.provider(hasJevKey: false, supportsGLiNER: true) == .gliner)
@@ -167,7 +167,11 @@ struct OracleGLiNERLiveTests {
     let installation = FileManager.default.temporaryDirectory.appendingPathComponent("OracleGLiNERLive-\(UUID().uuidString)")
     defer { try? FileManager.default.removeItem(at: installation) }
     let store = OracleGLiNERModelStore(directory: installation)
-    try await store.importCheckpoint(from: directory)
+    if FileManager.default.fileExists(atPath: directory.appendingPathComponent("distribution.json").path) {
+      try await store.importDistribution(from: directory)
+    } else {
+      try await store.importCheckpoint(from: directory)
+    }
     #expect(await store.isInstalled)
     let backend = try await store.loadBackend()
     let engine = OracleGameEngine(backend: backend, fallbackEnabled: false)

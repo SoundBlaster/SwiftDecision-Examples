@@ -18,12 +18,18 @@ final class OraclePageModel {
   private let modelStore: OracleGLiNERModelStore
   private let usesInjectedEngine: Bool
   private var configurationTask: Task<Void, Never>?
+  let installationLog: OracleModelInstallationLog
+  private let modelDownloadSource: any OracleGLiNERDownloadSource
+  private var activeModelDownloadSource: (any OracleGLiNERDownloadSource)?
+  private(set) var isDownloadingModel = false
+  private(set) var modelDownloadProgress: Double?
   private var configurationID = 0
-  private(set) var isGLiNERPilotEnabled: Bool
   private(set) var isModelInstalled = false
   private(set) var isPreparingModel = false
   private(set) var modelIssue: String?
   private(set) var providerIssue: String?
+  private(set) var glinerMinimumConfidence: Double
+  private var loadedGLiNERBackend: OracleGLiNERBackend?
 
   var question = ""
   private(set) var historyEntries: [OracleHistoryEntry]
@@ -49,19 +55,26 @@ final class OraclePageModel {
     historyStore: OracleHistoryStore? = nil,
     haptics: (any OracleHapticFeedback)? = nil,
     preferences: OracleInferencePreferences = OracleInferencePreferences(),
-    modelStore: OracleGLiNERModelStore? = nil)
+    modelStore: OracleGLiNERModelStore? = nil,
+    modelDownloadSource: (any OracleGLiNERDownloadSource)? = nil)
   {
+    let installationLog = OracleModelInstallationLog()
+    self.installationLog = installationLog
+    let diagnostic: OracleGLiNERDiagnosticSink = { [weak installationLog] event in
+      await installationLog?.record(event)
+    }
+    self.modelDownloadSource = modelDownloadSource ?? OracleHostedModelDownloader(diagnostic: diagnostic)
     self.credentialsStore = credentialsStore
     usesSharedHistoryStore = historyStore == nil
     let resolvedHistoryStore = historyStore ?? Self.makeHistoryStore()
     self.historyStore = resolvedHistoryStore
     self.haptics = haptics ?? OracleHaptics()
     self.preferences = preferences
+    glinerMinimumConfidence = preferences.glinerMinimumConfidence
     self.modelStore = modelStore ?? OracleGLiNERModelStore(directory:
       FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("OracleGLiNER/active", isDirectory: true))
+        .appendingPathComponent("OracleGLiNER/active", isDirectory: true), diagnostic: diagnostic)
     usesInjectedEngine = engine != nil
-    isGLiNERPilotEnabled = preferences.isPilotEnabled
     let selectedProvider = preferences.provider(hasJevKey: credentialsStore.readAPIKey() != nil,
                                                supportsGLiNER: OracleGLiNERBackend.isSupportedBuild)
     provider = selectedProvider
@@ -132,7 +145,7 @@ final class OraclePageModel {
 
   func selectProvider(_ selection: OracleInferenceProvider) {
     guard !isPreparingModel else { return }
-    guard selection != .gliner || (supportsGLiNER && isGLiNERPilotEnabled) else { return }
+    guard selection != .gliner || supportsGLiNER else { return }
     cancelPendingSubmission()
     configurationTask?.cancel()
     configurationID += 1
@@ -144,6 +157,7 @@ final class OraclePageModel {
     answer = OracleAnswer(mode: mode, displayText: "", source: .offlineFixture)
     answerRequestID = requestID
     terminalRequestID = 0
+    loadedGLiNERBackend = nil
     engine = OracleGameEngine()
     switch selection {
     case .none: break
@@ -160,16 +174,22 @@ final class OraclePageModel {
         guard let self else { return }
         defer { if self.configurationID == token { self.isPreparingModel = false } }
         do {
+          if self.isModelInstalled { self.installationLog.record(.stage(.runtime)) }
           let backend = try await self.modelStore.loadBackend()
           try Task.checkCancellation()
           guard self.configurationID == token, self.provider == .gliner else { return }
-          self.engine = OracleGameEngine(backend: backend, fallbackEnabled: false)
+          self.loadedGLiNERBackend = backend
+          self.updateGLiNERPolicy()
+          self.installationLog.record(.providerReady)
           self.providerIssue = nil
           self.modelIssue = nil
         } catch is CancellationError {
           return
         } catch {
           guard self.configurationID == token else { return }
+          if self.isModelInstalled {
+            self.installationLog.record(.failed(.capture(error, stage: .runtime)))
+          }
           self.providerIssue = String(localized: "GLiNER is unavailable. Import a compatible model or choose another provider.")
           self.modelIssue = self.providerIssue
         }
@@ -177,11 +197,91 @@ final class OraclePageModel {
     }
   }
 
-  func setGLiNERPilotEnabled(_ enabled: Bool) {
+  func setGLiNERMinimumConfidence(_ value: Double) {
+    guard value.isFinite, (0 ... 1).contains(value), !isSubmitting else { return }
+    glinerMinimumConfidence = value
+    preferences.glinerMinimumConfidence = value
+    if provider == .gliner { updateGLiNERPolicy() }
+  }
+
+  private func updateGLiNERPolicy() {
+    guard let backend = loadedGLiNERBackend else { return }
+    let policy = DecisionPolicy(minimumConfidence: glinerMinimumConfidence)
+    engine = OracleGameEngine(backend: backend, configuration: .init(
+      policies: DecisionPolicies(noul: policy, choice: policy, score: policy)), fallbackEnabled: false)
+  }
+
+  func installHostedGLiNERModel() {
     guard !isPreparingModel else { return }
-    isGLiNERPilotEnabled = enabled && supportsGLiNER
-    preferences.isPilotEnabled = isGLiNERPilotEnabled
-    if !isGLiNERPilotEnabled, provider == .gliner { selectProvider(.none) }
+    installGLiNERModel(from: modelDownloadSource,
+      failureMessage: String(localized: "Could not install the Apple-hosted model. Please try again."))
+  }
+
+  #if DEBUG
+  func installDevelopmentGLiNERModel() {
+    let source = OracleGLiNERGitHubSource { [weak installationLog] event in
+      await installationLog?.record(event)
+    }
+    installGLiNERModel(from: source,
+      failureMessage: String(localized: "Could not install the GitHub model. Please try again."))
+  }
+  #endif
+
+  private func installGLiNERModel(from source: any OracleGLiNERDownloadSource, failureMessage: String) {
+    guard !isPreparingModel else { return }
+    activeModelDownloadSource = source
+    cancelPendingSubmission()
+    isPreparingModel = true
+    isDownloadingModel = true
+    modelDownloadProgress = nil
+    modelIssue = nil
+    installationLog.record(.started(
+      version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?",
+      build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"))
+    configurationTask = Task { [weak self] in
+      guard let self else { return }
+      defer { self.activeModelDownloadSource = nil }
+      do {
+        let installer = OracleGLiNERInstaller(source: source, store: self.modelStore,
+          diagnostic: { [weak installationLog = self.installationLog] event in
+            await installationLog?.record(event)
+          })
+        try await installer.install { [weak self] update in
+          switch update {
+          case let .downloading(value):
+            self?.modelDownloadProgress = value
+            if let value, value.isFinite {
+              self?.installationLog.record(.progress(Int((max(0, min(value, 1)) * 100).rounded())))
+            }
+          case .validating: self?.isDownloadingModel = false
+          }
+        }
+        self.isModelInstalled = await self.modelStore.isInstalled
+        self.installationLog.record(.completed)
+        self.isPreparingModel = false
+        self.selectProvider(.gliner)
+      } catch {
+        self.isDownloadingModel = false
+        self.isPreparingModel = false
+        self.isModelInstalled = await self.modelStore.isInstalled
+        if error is CancellationError || Task.isCancelled {
+          self.installationLog.record(.cancelled)
+        } else {
+          self.installationLog.record(.failed(.capture(error, stage: .validation)))
+          if let failure = error as? OracleGLiNERInstallationFailure {
+            self.modelIssue = failureMessage + " [\(failure.stage.rawValue): \(failure.domain) \(failure.code)]"
+          } else {
+            self.modelIssue = failureMessage
+          }
+        }
+      }
+    }
+  }
+
+  func cancelHostedModelInstallation() {
+    guard isDownloadingModel else { return }
+    activeModelDownloadSource?.cancel()
+    configurationTask?.cancel()
   }
 
   func importGLiNERModel(from directory: URL) {
@@ -241,7 +341,11 @@ final class OraclePageModel {
     isRandomSimulation: Bool,
     playSubmissionHaptic: Bool = true
   ) {
-    guard isRandomSimulation || (!isPreparingModel && providerIssue == nil) else {
+    let usesMissingModelSimulation = OracleMissingModelFallbackSpec().isSatisfiedBy(.init(
+      localModelSelected: provider == .gliner,
+      modelInstalled: isModelInstalled,
+      preparingModel: isPreparingModel))
+    guard isRandomSimulation || usesMissingModelSimulation || (!isPreparingModel && providerIssue == nil) else {
       statusMessage = providerIssue ?? String(localized: "Loading local model…")
       return
     }
@@ -257,10 +361,10 @@ final class OraclePageModel {
     requestTask = Task { [weak self, engine] in
       do {
         let tracedOutcome: OracleTracedOutcome
-        if isRandomSimulation {
+        if isRandomSimulation || usesMissingModelSimulation {
           tracedOutcome = try await engine.randomAnswerWithTrace()
         } else {
-          tracedOutcome = try await engine.answerWithTrace(for: request)
+          tracedOutcome = try await engine.answerWithTrace(for: request, capturingFailures: true)
         }
         guard let self else { return }
         guard self.requestID == requestID else { return }
@@ -274,7 +378,9 @@ final class OraclePageModel {
           self.historyEntries = self.historyStore.entries
           self.answerRequestID = requestID
           self.terminalRequestID = 0
-          self.statusMessage = isRandomSimulation
+          self.statusMessage = usesMissingModelSimulation
+            ? String(localized: "Random answer · without AI")
+            : isRandomSimulation
             ? String(localized: "Random answer")
             : (self.provider.isJev && answer.source == .offlineFixture
               ? String(localized: "Jev unavailable · offline answer used")
@@ -299,16 +405,35 @@ final class OraclePageModel {
         self.isSubmitting = false
       } catch is CancellationError {
         guard let self, self.requestID == requestID else { return }
+        if !Task.isCancelled {
+          self.recordFailure(OracleTracedFailure(kind: "cancelled", mode: request.mode,
+            provider: self.provider.rawValue, pipeline: []), request: request, requestID: requestID)
+        }
         self.isSubmitting = false
       } catch {
         guard let self, self.requestID == requestID else { return }
-        self.terminalRequestID = requestID
-        self.statusMessage = self.provider == .gliner
-          ? String(localized: "GLiNER could not answer. Try a shorter English question without parentheses or choose another provider.")
-          : error.localizedDescription
+        let failure = (error as? OracleTracedFailure) ?? OracleTracedFailure(
+          kind: "requestError", mode: request.mode, provider: self.provider.rawValue, pipeline: [])
+        self.recordFailure(failure, request: request, requestID: requestID)
         self.isSubmitting = false
       }
     }
+  }
+
+  private func recordFailure(_ failure: OracleTracedFailure, request: OracleRequest, requestID: Int) {
+    let message = failure.kind == "timeout"
+      ? String(localized: "The model timed out. Please try again.")
+      : String(localized: "The model could not answer. Please try again.")
+    // Render a status for this request, rather than restoring a previous, possibly empty plate.
+    answer = OracleAnswer(mode: failure.mode, displayText: String(localized: "Could not\nanswer"),
+                          source: .model(identifier: failure.provider))
+    historyStore.appendFailure(question: request.question.trimmingCharacters(in: .whitespacesAndNewlines),
+                               failure: failure, message: message)
+    historyEntries = historyStore.entries
+    answerRequestID = requestID
+    terminalRequestID = 0
+    statusMessage = message
+    haptics.play(.negativeResult)
   }
 
   func handleShake() {
@@ -335,7 +460,7 @@ final class OraclePageModel {
 
   private static func makeHistoryStore() -> OracleHistoryStore {
     let storageKey = "com.soundblaster.oracleball.question-history"
-    guard let sharedDefaults = UserDefaults(suiteName: "group.com.soundblaster.oracleball") else {
+    guard let sharedDefaults = UserDefaults(suiteName: "group.ru.egormerkushev.oracle") else {
       return OracleHistoryStore()
     }
 
@@ -400,5 +525,35 @@ final class OraclePageModel {
   func clearHistory() {
     historyStore.removeAll()
     historyEntries = historyStore.entries
+  }
+}
+
+
+/// UI-owned persistent journal; only typed, safe technical events reach storage.
+@MainActor
+@Observable
+final class OracleModelInstallationLog {
+  private static let key = "oracle.model-installation-log.v1"
+  private let defaults: UserDefaults
+  private(set) var journal: OracleGLiNERInstallationLog
+
+  init(defaults: UserDefaults = .standard) {
+    self.defaults = defaults
+    journal = defaults.data(forKey: Self.key)
+      .flatMap { try? JSONDecoder().decode(OracleGLiNERInstallationLog.self, from: $0) }
+      ?? OracleGLiNERInstallationLog()
+  }
+
+  func record(_ event: OracleGLiNERInstallationEvent) {
+    let previous = journal.entries.last?.id
+    journal.record(event)
+    guard journal.entries.last?.id != previous,
+          let data = try? JSONEncoder().encode(journal) else { return }
+    defaults.set(data, forKey: Self.key)
+  }
+
+  func clear() {
+    journal.clear()
+    defaults.removeObject(forKey: Self.key)
   }
 }

@@ -1,0 +1,58 @@
+{
+  "formatVersion": 1,
+  "distributionID": "gliner2.5-small-coreml-int8-v1",
+  "modelID": "fastino/gliner2.5-small-v1",
+  "revision": "df5910e44bc4ffdb0d95399a83b0ca4516349aa5",
+  "files": [
+    {
+      "path": "CHANGES.md",
+      "bytes": 491,
+      "sha256": "96effeeba793da934012a801344228373a037bd5d7a4e1b6cdd9c5c13fd23193"
+    },
+    {
+      "path": "GLiNERSmall.mlpackage/Data/com.apple.CoreML/model.mlmodel",
+      "bytes": 1676900,
+      "sha256": "3e0e2221cea9f76cfb82c7988174c4497ac2bdb0d97cf78e0183fe122fbb71a8"
+    },
+    {
+      "path": "GLiNERSmall.mlpackage/Data/com.apple.CoreML/weights/weight.bin",
+      "bytes": 76532224,
+      "sha256": "8268daf071e870558402f2c85ba4716195c2866b69361f8d02e3b2d4ecf27cd4"
+    },
+    {
+      "path": "GLiNERSmall.mlpackage/Manifest.json",
+      "bytes": 617,
+      "sha256": "9012443ef72362ebab75750a00af2d746047c3ceb8cb5ffe65871aabb19bab52"
+    },
+    {
+      "path": "LICENSE-APACHE-2.0.txt",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "LICENSE-MIT-DeBERTa.txt",
+      "bytes": 1141,
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+    },
+    {
+      "path": "MODEL_CARD.md",
+      "bytes": 746,
+      "sha256": "48f582c1adbc601701182caa215a69eb66b1f730ac3b597d303ad8c01112bb80"
+    },
+    {
+      "path": "gliner.json",
+      "bytes": 363,
+      "sha256": "084d843d0acb92504f611966dfdb69b12754f40bf0c83a95cc2a84770e8c7bd9"
+    },
+    {
+      "path": "tokenizer.json",
+      "bytes": 8333953,
+      "sha256": "59e858fa7dc08cfadc58ffd3ca685a1868a007a0aac05c4803828f58095f45cc"
+    },
+    {
+      "path": "tokenizer_config.json",
+      "bytes": 3335,
+      "sha256": "960328606ea8c518a42dc5273589d2f832741cd2cd3145108f356573a4dc0b89"
+    }
+  ]
+}

@@ -18,9 +18,23 @@ public struct OracleInferencePreferences {
 
   public init(defaults: UserDefaults = .standard) { self.defaults = defaults }
 
+  /// Legacy preference retained for older development installations; no longer gates GLiNER.
   public var isPilotEnabled: Bool {
     get { defaults.bool(forKey: pilotKey) }
     nonmutating set { defaults.set(newValue, forKey: pilotKey) }
+  }
+
+  /// GLiNER-only normalized entropy confidence threshold; existing policy defaults to 5%.
+  public var glinerMinimumConfidence: Double {
+    get {
+      guard let value = defaults.object(forKey: "com.soundblaster.oracleball.gliner-confidence") as? Double,
+            value.isFinite, (0 ... 1).contains(value) else { return 0.05 }
+      return value
+    }
+    nonmutating set {
+      guard newValue.isFinite, (0 ... 1).contains(newValue) else { return }
+      defaults.set(newValue, forKey: "com.soundblaster.oracleball.gliner-confidence")
+    }
   }
 
   /// Migrates existing Jev/offline installations; archived or disabled providers stay offline.
@@ -31,7 +45,7 @@ public struct OracleInferencePreferences {
     } else {
       selection = hasJevKey ? .jev : .none
     }
-    let resolved = selection == .gliner && (!isPilotEnabled || !supportsGLiNER) ? .none : selection
+    let resolved = selection == .gliner && !supportsGLiNER ? .none : selection
     select(resolved)
     return resolved
   }
