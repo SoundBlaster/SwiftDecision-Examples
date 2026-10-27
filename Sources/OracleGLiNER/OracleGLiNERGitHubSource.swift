@@ -12,6 +12,7 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
   private var directory: URL?
   private var isDownloading = false
   private var cancelled = false
+  private var backgroundArchiveReadyForCleanup = false
   private let url: URL
 
   public init(diagnostic: @escaping OracleGLiNERDiagnosticSink = { _ in }) {
@@ -35,6 +36,32 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
     await diagnostic(.stage(.download))
     progress(nil)
     await diagnostic(.githubConnecting)
+    #if os(iOS)
+    var stage: OracleGLiNERInstallationFailure.Stage = .download
+    do {
+      let archive = try await OracleGLiNERBackgroundTransfer.shared.download(from: url, progress: progress)
+      try Task.checkCancellation()
+      guard !cancelled else { throw CancellationError() }
+      progress(1)
+      stage = .files
+      await diagnostic(.stage(.files))
+      let inventory = try Data(contentsOf: Bundle.module.url(forResource: "GLiNER-distribution", withExtension: "json")!)
+      let result = try await OracleGLiNERReleaseArchive.extract(
+        at: archive, expectedBytes: 69_920_984,
+        expectedSHA256: "ff3de19deb3801b41a35194ebf3aa5f01e07eac630e761030829d8ef585c8248",
+        inventory: inventory)
+      directory = result
+      try Task.checkCancellation()
+      guard !cancelled else { throw CancellationError() }
+      backgroundArchiveReadyForCleanup = true
+      return result
+    } catch {
+      try? await releaseDownloadedFiles()
+      if cancelled || Task.isCancelled || error is CancellationError { throw CancellationError() }
+      if stage == .files { OracleGLiNERBackgroundTransfer.shared.finish() }
+      throw OracleGLiNERInstallationFailure.capture(error, stage: stage)
+    }
+    #else
     let stream = AsyncThrowingStream<ReleaseDownloadEvent, any Error>.makeStream()
     let delegate = ReleaseDownloadProgress(continuation: stream.continuation)
     let configuration = URLSessionConfiguration.ephemeral
@@ -82,10 +109,14 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
       if cancelled || Task.isCancelled || error is CancellationError { throw CancellationError() }
       throw OracleGLiNERInstallationFailure.capture(error, stage: stage)
     }
+    #endif
   }
 
   public func cancel() {
     cancelled = true
+    #if os(iOS)
+    OracleGLiNERBackgroundTransfer.shared.cancel()
+    #endif
     session?.invalidateAndCancel()
   }
 
@@ -94,6 +125,12 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
       try FileManager.default.removeItem(at: directory)
     }
     directory = nil
+    #if os(iOS)
+    if backgroundArchiveReadyForCleanup {
+      OracleGLiNERBackgroundTransfer.shared.finish()
+      backgroundArchiveReadyForCleanup = false
+    }
+    #endif
   }
 }
 

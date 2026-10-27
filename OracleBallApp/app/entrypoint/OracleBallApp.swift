@@ -1,5 +1,8 @@
 import RealityKit
 import SwiftUI
+#if DEBUG
+import OracleGLiNER
+#endif
 
 @main
 struct OracleBallApp: App {
@@ -13,5 +16,10 @@ struct OracleBallApp: App {
 
   var body: some SwiftUI.Scene {
     WindowGroup { OraclePage().preferredColorScheme(.dark) }
+    #if DEBUG
+      .backgroundTask(.urlSession(OracleGLiNERBackgroundTransfer.identifier)) {
+        await OracleGLiNERBackgroundTransfer.shared.handleBackgroundEvents()
+      }
+    #endif
   }
 }

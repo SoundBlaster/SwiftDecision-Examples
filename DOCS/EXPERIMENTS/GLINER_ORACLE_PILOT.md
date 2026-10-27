@@ -271,10 +271,15 @@ diagnostic callbacks, preserving cancellation and the store's no-suspension
 replacement section. Diagnostics never change a successful activation into
 failure if cache cleanup fails.
 
-Future download work: evaluate system-managed background delivery and recovery
-after interruption for the debug GitHub source, separately from Apple-hosted
-Background Assets. Define resume-data validation, server support, cancellation,
-and relaunch behavior before implementation; retain pinned size and hashes.
+Apple-hosted transfers use Managed Background Assets; an interrupted pending
+installation is reattached on the next app launch. The debug-only GitHub source
+uses a system background URLSession and SwiftUI background-session handler. It
+reuses a pending task or completed archive and saves system-provided resume data
+after failures; the operating system and server determine whether resumption is
+available. A user cancellation discards the pending transfer. A recovered archive
+still passes pinned size, SHA-256 and inventory checks before activation. The
+background lifecycle, relaunch, and error-resume paths require physical-device
+verification; force-quitting an app is not equivalent to system termination.
 
 Journal tests cover event/timestamp/identity serialization, safe failure export,
 bounded retention, throttled progress and file events before checksum failure.
