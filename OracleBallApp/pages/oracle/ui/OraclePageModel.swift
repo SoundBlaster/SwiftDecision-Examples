@@ -174,7 +174,6 @@ final class OraclePageModel {
         guard let self else { return }
         defer { if self.configurationID == token { self.isPreparingModel = false } }
         do {
-          if self.isModelInstalled { self.installationLog.record(.stage(.runtime)) }
           let backend = try await self.modelStore.loadBackend()
           try Task.checkCancellation()
           guard self.configurationID == token, self.provider == .gliner else { return }

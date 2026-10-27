@@ -22,6 +22,14 @@ pilot preference no longer hides it. Nothing downloads on startup.
    temporarily require additional storage beyond the roughly 87 MB runtime.
 5. **Remove local model** selects None when needed and removes this app's copy.
 
+The runtime loaded and warmed up during validation is handed off once after
+successful atomic activation. The next provider initialization reuses it and
+logs `Reused runtime validated during installation`; it does not compile and warm
+up the same model again. An invalid, cancelled or unactivated candidate is never
+handed off. Removal and replacement invalidate the previous installation, and a
+later cold start or provider change can still load the installed model normally.
+Device latency improvements must be measured separately on an iPhone.
+
 **Developer import** remains available for caller-provisioned compatible exports;
 it preserves known license/provenance files when present. It does not silently
 use GitHub as a fallback for a failed Apple download.

@@ -12,6 +12,7 @@ public enum OracleGLiNERInstallationEvent: Codable, Equatable, Sendable {
   case fileRead(path: String, bytes: Int)
   case downloadAvailable
   case inventoryVerified
+  case runtimeReused
   case activated
   case cacheReleased
   case cacheReleaseFailed(OracleGLiNERInstallationFailure)
@@ -35,6 +36,7 @@ public enum OracleGLiNERInstallationEvent: Codable, Equatable, Sendable {
     case let .fileRead(path, bytes): "Read: \(path) · \(bytes) bytes"
     case .downloadAvailable: "Apple reports asset pack locally available"
     case .inventoryVerified: "Pinned inventory and SHA-256 verified"
+    case .runtimeReused: "Reused runtime validated during installation"
     case .activated: "Model activated in app storage"
     case .cacheReleased: "Download cache released"
     case let .cacheReleaseFailed(failure): "Cache cleanup failed: \(Self.details(failure))"
