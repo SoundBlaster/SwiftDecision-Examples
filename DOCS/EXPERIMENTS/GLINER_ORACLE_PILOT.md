@@ -272,6 +272,11 @@ diagnostic callbacks, preserving cancellation and the store's no-suspension
 replacement section. Diagnostics never change a successful activation into
 failure if cache cleanup fails.
 
+Future download work: evaluate system-managed background delivery and recovery
+after interruption for the debug GitHub source, separately from Apple-hosted
+Background Assets. Define resume-data validation, server support, cancellation,
+and relaunch behavior before implementation; retain pinned size and hashes.
+
 Journal tests cover event/timestamp/identity serialization, safe failure export,
 bounded retention, throttled progress and file events before checksum failure.
 The full no-trait GLiNER suite passed with opt-in native tests skipped; native UI,
