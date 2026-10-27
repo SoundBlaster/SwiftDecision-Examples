@@ -57,7 +57,10 @@ struct OracleGLiNERReleaseArchiveTests {
                  "Explicit ~70 MB GitHub download; never runs in ordinary CI."))
   @MainActor func explicitLiveGitHubDownload() async throws {
     let source = OracleGLiNERGitHubSource()
-    let directory = try await source.download { _ in }
+    var progress: [Double] = []
+    let directory = try await source.download { if let value = $0 { progress.append(value) } }
+    #expect(progress.contains { $0 > 0 && $0 < 1 })
+    #expect(progress.last == 1)
     #expect(FileManager.default.fileExists(atPath: directory.appendingPathComponent("gliner.json").path))
     try await source.releaseDownloadedFiles()
     #expect(!FileManager.default.fileExists(atPath: directory.path))

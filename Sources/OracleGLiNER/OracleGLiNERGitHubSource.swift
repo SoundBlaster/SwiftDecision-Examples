@@ -40,13 +40,16 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
     let delegate = ReleaseDownloadProgress(continuation: stream.continuation)
     let configuration = URLSessionConfiguration.ephemeral
     configuration.timeoutIntervalForResource = 300
-    let session = URLSession(configuration: configuration)
+    // A session delegate receives download-task progress callbacks. The async
+    // download convenience API uses its own completion machinery and did not
+    // deliver didWriteData on device.
+    let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
     self.session = session
     defer { session.invalidateAndCancel(); self.session = nil }
     let url = URL(string: "https://github.com/SoundBlaster/SwiftDecision/releases/download/gliner2.5-small-coreml-int8-v1/gliner2.5-small-coreml-int8-v1.zip")!
     var stage: OracleGLiNERInstallationFailure.Stage = .download
     do {
-      let (archive, response) = try await session.download(from: url, delegate: delegate)
+      let (archive, response) = try await downloadArchive(from: url, session: session)
       defer { try? FileManager.default.removeItem(at: archive) }
       stream.continuation.finish()
       await observer.value
@@ -81,6 +84,23 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
   public func cancel() {
     cancelled = true
     session?.invalidateAndCancel()
+  }
+
+  private func downloadArchive(from url: URL, session: URLSession) async throws -> (URL, URLResponse) {
+    try await withCheckedThrowingContinuation { continuation in
+      session.downloadTask(with: url) { temporary, response, error in
+        if let error { continuation.resume(throwing: error); return }
+        guard let temporary, let response else {
+          continuation.resume(throwing: URLError(.badServerResponse)); return
+        }
+        // URLSession removes its temporary file as soon as this callback returns.
+        let owned = FileManager.default.temporaryDirectory.appendingPathComponent("OracleDownload-\(UUID().uuidString)")
+        do {
+          try FileManager.default.moveItem(at: temporary, to: owned)
+          continuation.resume(returning: (owned, response))
+        } catch { continuation.resume(throwing: error) }
+      }.resume()
+    }
   }
 
   public func releaseDownloadedFiles() async throws {
