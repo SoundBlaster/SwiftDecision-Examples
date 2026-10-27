@@ -10,6 +10,14 @@ struct OracleInferenceSettings: View {
   let onShowInstallationLog: () -> Void
   @State private var isSelectingFolder = false
 
+  @ViewBuilder private var downloadProgressLabel: some View {
+    if let progress = model.modelDownloadProgress {
+      Text("Downloading local model… \(progress, format: .percent.precision(.fractionLength(0)))")
+    } else {
+      Text("Connecting to download…")
+    }
+  }
+
   var body: some View {
     Section("Inference") {
       Picker("Provider", selection: Binding(get: { model.provider }, set: model.selectProvider)) {
@@ -66,7 +74,7 @@ struct OracleInferenceSettings: View {
             .accessibilityIdentifier("oracle.settings.gliner-model-status")
           if model.isDownloadingModel {
             ProgressView(value: model.modelDownloadProgress) {
-              Text("Downloading local model…")
+              downloadProgressLabel
             }
             Button("Cancel download", action: model.cancelHostedModelInstallation)
           } else if model.isPreparingModel {
@@ -140,7 +148,11 @@ struct OracleModelInstallationLogView: View {
       VStack {
         if model.isDownloadingModel {
           ProgressView(value: model.modelDownloadProgress) {
-            Text("Downloading local model…")
+            if let progress = model.modelDownloadProgress {
+              Text("Downloading local model… \(progress, format: .percent.precision(.fractionLength(0)))")
+            } else {
+              Text("Connecting to download…")
+            }
           }
           .padding(.horizontal)
         } else if model.isPreparingModel {

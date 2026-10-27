@@ -8,6 +8,9 @@ public enum OracleGLiNERInstallationEvent: Codable, Equatable, Sendable {
   case source(DownloadSource)
   case stage(OracleGLiNERInstallationFailure.Stage)
   case progress(Int)
+  case githubConnecting
+  case githubRedirect
+  case githubResponse(Int)
   case fileRequested(path: String)
   case fileRead(path: String, bytes: Int)
   case downloadAvailable
@@ -32,6 +35,9 @@ public enum OracleGLiNERInstallationEvent: Codable, Equatable, Sendable {
     case .source(.githubDevelopment): "Source: GitHub release (development only)"
     case let .stage(stage): "Stage: \(stage.rawValue)"
     case let .progress(percent): "Download: \(percent)%"
+    case .githubConnecting: "Connecting to GitHub over HTTPS"
+    case .githubRedirect: "GitHub redirected the download"
+    case let .githubResponse(status): "Download response: HTTP \(status)"
     case let .fileRequested(path): "Reading: \(path)"
     case let .fileRead(path, bytes): "Read: \(path) · \(bytes) bytes"
     case .downloadAvailable: "Apple reports asset pack locally available"

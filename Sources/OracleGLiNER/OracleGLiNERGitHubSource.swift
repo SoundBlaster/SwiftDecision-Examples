@@ -26,9 +26,15 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
     await diagnostic(.source(.githubDevelopment))
     await diagnostic(.stage(.download))
     progress(nil)
-    let stream = AsyncStream<Double>.makeStream(bufferingPolicy: .bufferingNewest(1))
+    await diagnostic(.githubConnecting)
+    let stream = AsyncStream<ReleaseDownloadEvent>.makeStream()
     let observer = Task {
-      for await value in stream.stream { progress(value) }
+      for await event in stream.stream {
+        switch event {
+        case let .progress(value): progress(value)
+        case .redirect: await diagnostic(.githubRedirect)
+        }
+      }
     }
     defer { stream.continuation.finish(); observer.cancel() }
     let delegate = ReleaseDownloadProgress(continuation: stream.continuation)
@@ -46,6 +52,9 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
       await observer.value
       try Task.checkCancellation()
       guard !cancelled else { throw CancellationError() }
+      if let response = response as? HTTPURLResponse {
+        await diagnostic(.githubResponse(response.statusCode))
+      }
       guard let response = response as? HTTPURLResponse, response.statusCode == 200,
             response.url?.scheme == "https" else {
         throw URLError(.badServerResponse)
@@ -82,17 +91,30 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
   }
 }
 
-private final class ReleaseDownloadProgress: NSObject, URLSessionDownloadDelegate {
-  let continuation: AsyncStream<Double>.Continuation
+private enum ReleaseDownloadEvent: Sendable {
+  case progress(Double)
+  case redirect
+}
 
-  init(continuation: AsyncStream<Double>.Continuation) { self.continuation = continuation }
+private final class ReleaseDownloadProgress: NSObject, URLSessionDownloadDelegate {
+  let continuation: AsyncStream<ReleaseDownloadEvent>.Continuation
+
+  init(continuation: AsyncStream<ReleaseDownloadEvent>.Continuation) { self.continuation = continuation }
+
+  func urlSession(_ session: URLSession, task: URLSessionTask,
+                  willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest,
+                  completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
+    continuation.yield(.redirect)
+    completionHandler(request)
+  }
 
   func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
                   didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
                   totalBytesExpectedToWrite: Int64) {
     guard totalBytesWritten <= 69_920_984 else { downloadTask.cancel(); return }
-    guard totalBytesExpectedToWrite > 0 else { return }
-    continuation.yield(min(1, Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)))
+    // GitHub's release response may omit Content-Length; the pinned archive size
+    // is also checked after download, before extracting any files.
+    continuation.yield(.progress(min(0.99, Double(totalBytesWritten) / 69_920_984)))
   }
 
   func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
