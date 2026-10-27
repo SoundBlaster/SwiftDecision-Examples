@@ -10,6 +10,7 @@ import UIKit
 @MainActor
 @Observable
 final class OraclePageModel {
+  private static let hostedInstallPendingKey = "oracle.gliner.apple.pending.v1"
   private(set) var engine: OracleGameEngine
   private let credentialsStore: OracleCredentialsStore
   private var historyStore: OracleHistoryStore
@@ -146,6 +147,21 @@ final class OraclePageModel {
   func prepareProvider() async {
     guard !usesInjectedEngine else { return }
     isModelInstalled = await modelStore.isInstalled
+    if UserDefaults.standard.bool(forKey: Self.hostedInstallPendingKey) {
+      if !isModelInstalled {
+        installHostedGLiNERModel()
+        await configurationTask?.value
+        return
+      }
+      UserDefaults.standard.removeObject(forKey: Self.hostedInstallPendingKey)
+    }
+    #if DEBUG
+    if OracleGLiNERBackgroundTransfer.shared.hasPendingDownload {
+      installDevelopmentGLiNERModel()
+      await configurationTask?.value
+      return
+    }
+    #endif
     guard provider == .gliner else { return }
     selectProvider(.gliner)
     await configurationTask?.value
@@ -220,8 +236,10 @@ final class OraclePageModel {
 
   func installHostedGLiNERModel() {
     guard !isPreparingModel else { return }
+    UserDefaults.standard.set(true, forKey: Self.hostedInstallPendingKey)
     installGLiNERModel(from: modelDownloadSource,
-      failureMessage: String(localized: "Could not install the Apple-hosted model. Please try again."))
+      failureMessage: String(localized: "Could not install the Apple-hosted model. Please try again."),
+      isHosted: true)
   }
 
   #if DEBUG
@@ -234,7 +252,8 @@ final class OraclePageModel {
   }
   #endif
 
-  private func installGLiNERModel(from source: any OracleGLiNERDownloadSource, failureMessage: String) {
+  private func installGLiNERModel(from source: any OracleGLiNERDownloadSource, failureMessage: String,
+                                  isHosted: Bool = false) {
     guard !isPreparingModel else { return }
     activeModelDownloadSource = source
     cancelPendingSubmission()
@@ -250,6 +269,7 @@ final class OraclePageModel {
       defer {
         self.setModelDownloading(false)
         self.activeModelDownloadSource = nil
+        if isHosted { UserDefaults.standard.removeObject(forKey: Self.hostedInstallPendingKey) }
       }
       do {
         let installer = OracleGLiNERInstaller(source: source, store: self.modelStore,
