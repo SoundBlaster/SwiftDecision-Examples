@@ -10,14 +10,6 @@ struct OracleInferenceSettings: View {
   let onShowInstallationLog: () -> Void
   @State private var isSelectingFolder = false
 
-  @ViewBuilder private var downloadProgressLabel: some View {
-    if let progress = model.modelDownloadProgress {
-      Text("Downloading local model… \(progress, format: .percent.precision(.fractionLength(0)))")
-    } else {
-      Text("Connecting to download…")
-    }
-  }
-
   var body: some View {
     Section("Inference") {
       Picker("Provider", selection: Binding(get: { model.provider }, set: model.selectProvider)) {
@@ -72,13 +64,13 @@ struct OracleInferenceSettings: View {
           Text(model.isModelInstalled ? "Local model installed" : "Local model not installed")
             .font(.subheadline)
             .accessibilityIdentifier("oracle.settings.gliner-model-status")
+          if model.isDownloadingModel || model.isPreparingModel {
+            OracleModelDownloadStatus(isDownloading: model.isDownloadingModel,
+                                      progress: model.modelDownloadProgress)
+              .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
+          }
           if model.isDownloadingModel {
-            ProgressView(value: model.modelDownloadProgress) {
-              downloadProgressLabel
-            }
             Button("Cancel download", action: model.cancelHostedModelInstallation)
-          } else if model.isPreparingModel {
-            ProgressView("Preparing local model…")
           }
           if !model.isModelInstalled {
             Button("Install local model", action: model.installHostedGLiNERModel)
@@ -91,6 +83,7 @@ struct OracleInferenceSettings: View {
           Button(action: onShowInstallationLog) {
             Label("Model installation log", systemImage: "doc.text.magnifyingglass")
           }
+          .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
           .accessibilityIdentifier("oracle.settings.gliner-log")
           DisclosureGroup("Developer import") {
           #if DEBUG
@@ -131,6 +124,41 @@ struct OracleInferenceSettings: View {
   }
 }
 
+/// The same stable status layout in settings and in the installation journal.
+private struct OracleModelDownloadStatus: View {
+  let isDownloading: Bool
+  let progress: Double?
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(alignment: .firstTextBaseline, spacing: 10) {
+        Image(systemName: isDownloading ? "arrow.down.circle" : "gearshape")
+          .foregroundStyle(.tint)
+          .symbolEffect(.pulse, options: .repeating, isActive: !reduceMotion)
+          .accessibilityHidden(true)
+        if !isDownloading {
+          Text("Preparing local model…")
+        } else if progress == nil {
+          Text("Connecting to download…")
+        } else {
+          Text("Downloading local model…")
+        }
+        Spacer(minLength: 8)
+        if isDownloading, let progress {
+          Text(progress, format: .percent.precision(.fractionLength(0)))
+            .monospacedDigit()
+            .foregroundStyle(.secondary)
+        }
+      }
+      ProgressView(value: progress ?? 0)
+        .opacity(!isDownloading && progress == nil ? 0.45 : 1)
+        .accessibilityHidden(true)
+    }
+    .accessibilityElement(children: .combine)
+  }
+}
+
 
 /// A live diagnostic window with an immutable export snapshot on sharing.
 struct OracleModelInstallationLogView: View {
@@ -146,17 +174,10 @@ struct OracleModelInstallationLogView: View {
   var body: some View {
     NavigationStack {
       VStack {
-        if model.isDownloadingModel {
-          ProgressView(value: model.modelDownloadProgress) {
-            if let progress = model.modelDownloadProgress {
-              Text("Downloading local model… \(progress, format: .percent.precision(.fractionLength(0)))")
-            } else {
-              Text("Connecting to download…")
-            }
-          }
+        if model.isDownloadingModel || model.isPreparingModel {
+          OracleModelDownloadStatus(isDownloading: model.isDownloadingModel,
+                                    progress: model.modelDownloadProgress)
           .padding(.horizontal)
-        } else if model.isPreparingModel {
-          ProgressView("Preparing local model…")
         }
         ScrollViewReader { proxy in
           List {

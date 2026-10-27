@@ -286,6 +286,7 @@ final class OraclePageModel {
   func importGLiNERModel(from directory: URL) {
     guard !isPreparingModel else { return }
     cancelPendingSubmission()
+    modelDownloadProgress = nil
     isPreparingModel = true
     modelIssue = nil
     configurationTask = Task { [weak self] in
@@ -305,6 +306,7 @@ final class OraclePageModel {
   func removeGLiNERModel() {
     guard !isPreparingModel else { return }
     if provider == .gliner { selectProvider(.none) }
+    modelDownloadProgress = nil
     isPreparingModel = true
     configurationTask = Task { [weak self] in
       guard let self else { return }
