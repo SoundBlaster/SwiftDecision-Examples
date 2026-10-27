@@ -19,10 +19,9 @@ let package = Package(
   ],
   traits: [.trait(name: "GLiNER", description: "Enable the experimental local GLiNER provider.")],
   dependencies: [
-    // Pilot dependency: SwiftDecision PR #23, pinned until its first release.
     .package(
       url: "https://github.com/SoundBlaster/SwiftDecision.git",
-      revision: "d655ab6d750bac2d69c3af1e27b0a7bb8b5c136c",
+      exact: "0.9.0",
       traits: [.trait(name: "GLiNER", condition: .when(traits: ["GLiNER"]))]
     ),
     .package(
