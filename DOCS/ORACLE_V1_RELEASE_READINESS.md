@@ -18,11 +18,13 @@
 
 Порядок R1–R5 — приоритет реализации. R6–R8 проверяют кандидата после продуктовых изменений. Указанные ниже критерии ещё не выполнены полностью.
 
-### R1. GLiNER без подготовки файлов разработчиком — реализация готовится, Apple delivery не проверена
+### R1. GLiNER без подготовки файлов разработчиком — успешная установка в TestFlight подтверждена
 
 **Обновление реализации:** приложение содержит Apple-hosted on-demand installer, downloader extension, progress/cancellation и checked-in SHA-256 inventory. Legacy pilot flag больше не скрывает provider. Тот же runtime упакован в отдельный licensed GitHub ZIP и Apple `.aar`; веса не входят в app bundle. Ручной import остаётся Developer import.
 
-**Оставшиеся условия:** новый extension должен получить профиль с App Group; доступный ASC credential был отклонён Xcode provisioning authentication. Запись приложения уже подтверждена: App ID `6827254640`. Созданы asset pack `gliner-small-v1` и version 1; статус загрузки записывается в delivery guide. Реальная доставка через TestFlight/Apple пока не подтверждена. Нельзя считать R1 закрытым по одному успешному build/packaging. Детали: [delivery guide](EXPERIMENTS/GLINER_ORACLE_PILOT.md).
+**Проверка владельца, 2026-10-27, TestFlight 1.0 (5), физический iPhone:** показаны состояние «Local model not installed», явная установка, индикатор прогресса, подготовка и «Local model installed». Журнал фиксирует проверку pinned inventory/SHA-256, активацию в хранилище приложения, освобождение download cache и «GLiNER provider ready after load and warm-up». Это подтверждает успешный путь Apple delivery → validation → activation → runtime readiness в TestFlight. Само наличие полосы прогресса не доказывает отсутствие ранее закэшированных байтов. Скриншоты этого запуска не содержат ответа на игровой вопрос.
+
+**Оставшиеся условия:** отдельно проверить отмену, повтор после сбоя, offline, недостаток места, удаление/повторную установку и игровой запрос на том же TestFlight build. Исправление самозакрытия журнала входит в готовящуюся 1.0 (6). App ID `6827254640`, asset pack `gliner-small-v1`, version 1; детали: [delivery guide](EXPERIMENTS/GLINER_ORACLE_PILOT.md).
 
 **Готово, когда:** чистая установка → явная загрузка → подготовка → реальный локальный запрос без Mac/Python/ключа; отмена, offline, недостаток места и неверный hash не ломают предыдущую модель; удаление освобождает только модель, история остаётся. До установки classic доступен. Public UI не требует скрытого launch argument или pilot-тумблера для заявленной основной функции.
 
@@ -60,7 +62,7 @@
 
 ### R6. Final Release archive / TestFlight — ещё не подтверждено
 
-**Факт:** проходили package tests, simulator CI build и signed Debug installation на Air. Это не подтверждает App Store distribution signing, upload validation и поведение Release. Новая Release archive в текущем аудите не создавалась.
+**Факт:** подписанные сборки 1.0 (2)–(5) были отправлены в App Store Connect; владелец подтвердил установку модели и готовность GLiNER в TestFlight 1.0 (5) на iPhone. Финальный release candidate после оставшихся продуктовых изменений ещё не выбран. Build 6 с исправлением показа журнала готовится отдельно; его отправка/обработка пока не подтверждены.
 
 **План:** зафиксировать release commit, синхронизировать version/build app + widget, собрать archive с distribution signing, проверить итоговые ресурсы/Metal shaders, icon, entitlement/app group, privacy manifests и linked dependencies. Иконка `.icon` есть, её отсутствие не является найденной проблемой; проверить именно exported archive. Прогнать TestFlight build на Air.
 
@@ -96,7 +98,7 @@ StoreKit, trial, цены, lifetime access, платные сцены/матер
 
 Сначала закрыть R1–R5, затем собрать и пройти R6–R8 на том же release candidate. После зелёной readiness-проверки и отдельной команды пользователя — submission. Текущий документ не создаёт приложение в ASC, не публикует модель, не запускает платный inference, не сливает PR и не отправляет приложение на review.
 
-Ближайшая задача: завершить provisioning/ASC setup для Apple asset pack и пройти реальную чистую установку через app UI, затем R2/R3. GitHub distribution и Apple hosting имеют отдельные статусы публикации.
+Ближайшая задача: проверить отправку 1.0 (6), журнал/экспорт и оставшиеся сценарии R1 на TestFlight, затем R2/R3. Успешная установка и готовность модели в TestFlight 1.0 (5) подтверждены владельцем; GitHub distribution и Apple hosting имеют отдельные статусы публикации.
 
 ## Источники
 
