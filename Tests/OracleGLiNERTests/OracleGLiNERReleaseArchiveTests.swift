@@ -65,5 +65,19 @@ struct OracleGLiNERReleaseArchiveTests {
     try await source.releaseDownloadedFiles()
     #expect(!FileManager.default.fileExists(atPath: directory.path))
   }
+
+  @Test(.enabled(if: ProcessInfo.processInfo.environment["ORACLE_DOWNLOAD_TEST_URL"] != nil,
+                 "Requires a local streaming HTTP fixture."))
+  @MainActor func localDownloadReportsIntermediateProgress() async throws {
+    let address = try #require(ProcessInfo.processInfo.environment["ORACLE_DOWNLOAD_TEST_URL"])
+    let url = try #require(URL(string: address))
+    let source = OracleGLiNERGitHubSource(testURL: url)
+    var progress: [Double] = []
+    do {
+      _ = try await source.download { if let value = $0 { progress.append(value) } }
+      Issue.record("A local HTTP fixture must not pass the HTTPS and integrity checks")
+    } catch { }
+    #expect(progress.contains { $0 > 0 && $0 < 1 })
+  }
 }
 #endif
