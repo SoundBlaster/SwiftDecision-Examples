@@ -5,6 +5,7 @@ public typealias OracleGLiNERDiagnosticSink = @Sendable (OracleGLiNERInstallatio
 /// Fixed technical fields only; deliberately excludes user text, credentials and raw errors.
 public enum OracleGLiNERInstallationEvent: Codable, Equatable, Sendable {
   case started(version: String, build: String)
+  case source(DownloadSource)
   case stage(OracleGLiNERInstallationFailure.Stage)
   case progress(Int)
   case fileRequested(path: String)
@@ -19,9 +20,15 @@ public enum OracleGLiNERInstallationEvent: Codable, Equatable, Sendable {
   case cancelled
   case failed(OracleGLiNERInstallationFailure)
 
+  public enum DownloadSource: String, Codable, Sendable {
+    case apple, githubDevelopment
+  }
+
   public var message: String {
     switch self {
     case let .started(version, build): "Install gliner-small-v1 · app \(version) (\(build))"
+    case .source(.apple): "Source: Apple-hosted asset pack"
+    case .source(.githubDevelopment): "Source: GitHub release (development only)"
     case let .stage(stage): "Stage: \(stage.rawValue)"
     case let .progress(percent): "Download: \(percent)%"
     case let .fileRequested(path): "Reading: \(path)"

@@ -85,6 +85,14 @@ struct OracleInferenceSettings: View {
           }
           .accessibilityIdentifier("oracle.settings.gliner-log")
           DisclosureGroup("Developer import") {
+          #if DEBUG
+          Button("Download from GitHub", action: model.installDevelopmentGLiNERModel)
+            .disabled(model.isPreparingModel || model.isModelInstalled)
+            .accessibilityIdentifier("oracle.settings.gliner-github")
+          Text("Development only. Download the same verified model from GitHub when Apple hosting is unavailable.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+          #endif
           Button("Import model folder") { isSelectingFolder = true }
             .disabled(model.isPreparingModel)
             .accessibilityIdentifier("oracle.settings.gliner-import")

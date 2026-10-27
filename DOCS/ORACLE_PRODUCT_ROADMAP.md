@@ -65,4 +65,4 @@ GLiNER — бесплатный локальный backend, а Jev с собст
 
 ## Ближайшая задача
 
-Проверить реальную доставку R1 через **Apple-Hosted Background Assets** после завершения provisioning нового downloader extension и загрузки asset pack в созданную запись ASC. Для разработчиков пакетов подготовлен отдельный GitHub Release с Core ML-архивом. Код установки не включает загрузку с GitHub как скрытый fallback. После проверки доставки продолжить R2 (раздел о пакетах) и R3 (privacy).
+Проверить реальную доставку R1 через **Apple-Hosted Background Assets** после завершения provisioning нового downloader extension и загрузки asset pack в созданную запись ASC. Для разработчиков пакетов подготовлен отдельный GitHub Release с Core ML-архивом. Только Debug-сборки из Xcode предлагают явную кнопку загрузки того же проверенного архива с GitHub в Developer import; в Release доставка остаётся через Apple. Скрытого переключения источника нет. После проверки доставки продолжить R2 (раздел о пакетах) и R3 (privacy).

@@ -24,8 +24,27 @@ pilot preference no longer hides it. Nothing downloads on startup.
 
 **Developer import** remains available for caller-provisioned compatible exports;
 it preserves known license/provenance files when present. It does not silently
-use GitHub as a fallback for a failed Apple download. The GitHub ZIP is an
-independent distribution for library users.
+use GitHub as a fallback for a failed Apple download.
+
+Debug builds from Xcode additionally expose **Developer import → Download from
+GitHub**. This is an explicit alternative for local development, not an automatic
+retry policy. Apple documents local asset-pack testing with a mock server and
+device Development Overrides; a direct Xcode install is not a TestFlight delivery
+test. TestFlight/App Store Release builds have neither the button nor the GitHub
+download implementation (`#if DEBUG`).
+
+The development downloader uses the separate library-user ZIP below. Its URL,
+69,920,984-byte length, and SHA-256 are pinned in source. The archive hash is
+verified before parsing; only regular files named by the checked-in inventory are
+extracted, then every file is checked again before the existing Core ML validation
+and atomic activation. Cancellation/failure leaves the active model unchanged.
+The installation journal records the selected source. Questions are never sent to
+GitHub. ZIP parsing uses [ZIPFoundation 0.9.20](https://github.com/weichsel/ZIPFoundation/tree/0.9.20),
+licensed under MIT; model license/provenance files remain part of the inventory.
+
+Opt-in live download check (through the public Swift source, not curl):
+`ORACLE_GITHUB_DOWNLOAD_SMOKE=1 swift test --filter OracleGLiNERReleaseArchiveTests`.
+This downloads about 70 MB and removes the temporary extracted model afterward.
 
 ## Build and publish the Apple asset pack
 

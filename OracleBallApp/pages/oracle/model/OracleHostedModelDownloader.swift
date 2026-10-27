@@ -39,6 +39,7 @@ final class OracleHostedModelDownloader: OracleGLiNERDownloadSource {
     defer { updates.cancel(); currentProgress = nil }
     var stage: OracleGLiNERInstallationFailure.Stage = .manifest
     do {
+      await diagnostic(.source(.apple))
       await diagnostic(.stage(.manifest))
       let pack: AssetPack
       if #available(iOS 27, *) {

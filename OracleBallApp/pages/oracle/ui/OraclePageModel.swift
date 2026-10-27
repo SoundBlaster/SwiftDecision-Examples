@@ -20,6 +20,7 @@ final class OraclePageModel {
   private var configurationTask: Task<Void, Never>?
   let installationLog: OracleModelInstallationLog
   private let modelDownloadSource: any OracleGLiNERDownloadSource
+  private var activeModelDownloadSource: (any OracleGLiNERDownloadSource)?
   private(set) var isDownloadingModel = false
   private(set) var modelDownloadProgress: Double?
   private var configurationID = 0
@@ -212,6 +213,23 @@ final class OraclePageModel {
 
   func installHostedGLiNERModel() {
     guard !isPreparingModel else { return }
+    installGLiNERModel(from: modelDownloadSource,
+      failureMessage: String(localized: "Could not install the Apple-hosted model. Please try again."))
+  }
+
+  #if DEBUG
+  func installDevelopmentGLiNERModel() {
+    let source = OracleGLiNERGitHubSource { [weak installationLog] event in
+      await installationLog?.record(event)
+    }
+    installGLiNERModel(from: source,
+      failureMessage: String(localized: "Could not install the GitHub model. Please try again."))
+  }
+  #endif
+
+  private func installGLiNERModel(from source: any OracleGLiNERDownloadSource, failureMessage: String) {
+    guard !isPreparingModel else { return }
+    activeModelDownloadSource = source
     cancelPendingSubmission()
     isPreparingModel = true
     isDownloadingModel = true
@@ -222,8 +240,9 @@ final class OraclePageModel {
       build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"))
     configurationTask = Task { [weak self] in
       guard let self else { return }
+      defer { self.activeModelDownloadSource = nil }
       do {
-        let installer = OracleGLiNERInstaller(source: self.modelDownloadSource, store: self.modelStore,
+        let installer = OracleGLiNERInstaller(source: source, store: self.modelStore,
           diagnostic: { [weak installationLog = self.installationLog] event in
             await installationLog?.record(event)
           })
@@ -249,11 +268,10 @@ final class OraclePageModel {
           self.installationLog.record(.cancelled)
         } else {
           self.installationLog.record(.failed(.capture(error, stage: .validation)))
-          let message = String(localized: "Could not install the Apple-hosted model. Please try again.")
           if let failure = error as? OracleGLiNERInstallationFailure {
-            self.modelIssue = message + " [\(failure.stage.rawValue): \(failure.domain) \(failure.code)]"
+            self.modelIssue = failureMessage + " [\(failure.stage.rawValue): \(failure.domain) \(failure.code)]"
           } else {
-            self.modelIssue = message
+            self.modelIssue = failureMessage
           }
         }
       }
@@ -262,7 +280,7 @@ final class OraclePageModel {
 
   func cancelHostedModelInstallation() {
     guard isDownloadingModel else { return }
-    modelDownloadSource.cancel()
+    activeModelDownloadSource?.cancel()
     configurationTask?.cancel()
   }
 

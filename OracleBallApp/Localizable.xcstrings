@@ -1,6 +1,58 @@
 {
   "sourceLanguage": "en",
   "strings": {
+"Download from GitHub" : {
+  "extractionState": "manual",
+  "localizations": {
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Download from GitHub"
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Скачать с GitHub"
+      }
+    }
+  }
+},
+"Development only. Download the same verified model from GitHub when Apple hosting is unavailable." : {
+  "extractionState": "manual",
+  "localizations": {
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Development only. Download the same verified model from GitHub when Apple hosting is unavailable."
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Только для разработки. Загрузите ту же проверенную модель с GitHub, если доставка через Apple недоступна."
+      }
+    }
+  }
+},
+"Could not install the GitHub model. Please try again." : {
+  "extractionState": "manual",
+  "localizations": {
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Could not install the GitHub model. Please try again."
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Не удалось установить модель с GitHub. Попробуйте ещё раз."
+      }
+    }
+  }
+},
+
   "Model installation log": {
     "extractionState": "manual",
     "localizations": {
