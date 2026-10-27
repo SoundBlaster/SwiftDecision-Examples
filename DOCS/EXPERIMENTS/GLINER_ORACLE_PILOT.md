@@ -1,9 +1,8 @@
 # Oracle GLiNER small pilot
 
-This is a new pilot based on `main`; the archived Apple Intelligence experiment
-remains on its closed PR branches. The dependency is the pinned implementation
-from [SwiftDecision PR #23](https://github.com/SoundBlaster/SwiftDecision/pull/23).
-It is not a released package update.
+This pilot uses the released [SwiftDecision 0.9.0](https://github.com/SoundBlaster/SwiftDecision/releases/tag/0.9.0),
+including its experimental GLiNER product. The archived Apple Intelligence
+experiment remains on its closed PR branches.
 
 ## Delivery and install
 
