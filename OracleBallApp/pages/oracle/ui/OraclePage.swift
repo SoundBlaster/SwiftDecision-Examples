@@ -459,7 +459,7 @@ private struct OracleInfoSheet: View {
               .tint(.oracleLavender)
               .nestedAccessibilityIdentifier("history.entry.\(entry.id.uuidString)")
               .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: 14, trailing: 20))
-              .listRowSeparator(.visible, edges: .bottom)
+              .listRowSeparator(entry.id == historyEntries.last?.id ? .hidden : .visible, edges: .bottom)
               .listRowSeparatorTint(.white.opacity(0.12))
               .swipeActions(edge: .leading, allowsFullSwipe: false) {
                 Button {
@@ -478,6 +478,16 @@ private struct OracleInfoSheet: View {
                 }
               }
             }
+          }
+        } footer: {
+          if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+             let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String {
+            Text("Version \(version) (build \(build))",
+                 comment: "App version and build number shown below the history; first is version, second is build.")
+              .font(.caption)
+              .foregroundStyle(.secondary)
+              .frame(maxWidth: .infinity, alignment: .center)
+              .accessibilityIdentifier("oracle.settings.app-version")
           }
         }
         .textCase(nil)
