@@ -12,9 +12,17 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
   private var directory: URL?
   private var isDownloading = false
   private var cancelled = false
+  private let url: URL
 
   public init(diagnostic: @escaping OracleGLiNERDiagnosticSink = { _ in }) {
     self.diagnostic = diagnostic
+    self.url = URL(string: "https://github.com/SoundBlaster/SwiftDecision/releases/download/gliner2.5-small-coreml-int8-v1/gliner2.5-small-coreml-int8-v1.zip")!
+  }
+
+  // Internal injection for a bounded local HTTP fixture; shipping callers use the pinned URL.
+  init(testURL: URL) {
+    self.diagnostic = { _ in }
+    self.url = testURL
   }
 
   public func download(progress: @escaping @MainActor @Sendable (Double?) -> Void) async throws -> URL {
@@ -26,26 +34,33 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
     await diagnostic(.source(.githubDevelopment))
     await diagnostic(.stage(.download))
     progress(nil)
-    let stream = AsyncStream<Double>.makeStream(bufferingPolicy: .bufferingNewest(1))
-    let observer = Task {
-      for await value in stream.stream { progress(value) }
-    }
-    defer { stream.continuation.finish(); observer.cancel() }
+    await diagnostic(.githubConnecting)
+    let stream = AsyncThrowingStream<ReleaseDownloadEvent, any Error>.makeStream()
     let delegate = ReleaseDownloadProgress(continuation: stream.continuation)
     let configuration = URLSessionConfiguration.ephemeral
     configuration.timeoutIntervalForResource = 300
-    let session = URLSession(configuration: configuration)
+    // Delegate-driven task: completion-handler tasks bypass download callbacks.
+    let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
     self.session = session
     defer { session.invalidateAndCancel(); self.session = nil }
-    let url = URL(string: "https://github.com/SoundBlaster/SwiftDecision/releases/download/gliner2.5-small-coreml-int8-v1/gliner2.5-small-coreml-int8-v1.zip")!
     var stage: OracleGLiNERInstallationFailure.Stage = .download
     do {
-      let (archive, response) = try await session.download(from: url, delegate: delegate)
+      session.downloadTask(with: url).resume()
+      var downloaded: (URL, URLResponse)?
+      for try await event in stream.stream {
+        switch event {
+        case let .progress(value): progress(value)
+        case .redirect: await diagnostic(.githubRedirect)
+        case let .completed(file, response): downloaded = (file, response)
+        }
+      }
+      guard let (archive, response) = downloaded else { throw CancellationError() }
       defer { try? FileManager.default.removeItem(at: archive) }
-      stream.continuation.finish()
-      await observer.value
       try Task.checkCancellation()
       guard !cancelled else { throw CancellationError() }
+      if let response = response as? HTTPURLResponse {
+        await diagnostic(.githubResponse(response.statusCode))
+      }
       guard let response = response as? HTTPURLResponse, response.statusCode == 200,
             response.url?.scheme == "https" else {
         throw URLError(.badServerResponse)
@@ -82,21 +97,51 @@ public final class OracleGLiNERGitHubSource: OracleGLiNERDownloadSource {
   }
 }
 
-private final class ReleaseDownloadProgress: NSObject, URLSessionDownloadDelegate {
-  let continuation: AsyncStream<Double>.Continuation
+private enum ReleaseDownloadEvent: Sendable {
+  case progress(Double)
+  case redirect
+  case completed(URL, URLResponse)
+}
 
-  init(continuation: AsyncStream<Double>.Continuation) { self.continuation = continuation }
+private final class ReleaseDownloadProgress: NSObject, URLSessionDownloadDelegate {
+  let continuation: AsyncThrowingStream<ReleaseDownloadEvent, any Error>.Continuation
+
+  init(continuation: AsyncThrowingStream<ReleaseDownloadEvent, any Error>.Continuation) { self.continuation = continuation }
+
+  func urlSession(_ session: URLSession, task: URLSessionTask,
+                  willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest,
+                  completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
+    continuation.yield(.redirect)
+    completionHandler(request)
+  }
 
   func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
                   didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
                   totalBytesExpectedToWrite: Int64) {
     guard totalBytesWritten <= 69_920_984 else { downloadTask.cancel(); return }
-    guard totalBytesExpectedToWrite > 0 else { return }
-    continuation.yield(min(1, Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)))
+    // GitHub's release response may omit Content-Length; the pinned archive size
+    // is also checked after download, before extracting any files.
+    continuation.yield(.progress(min(0.99, Double(totalBytesWritten) / 69_920_984)))
   }
 
   func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                  didFinishDownloadingTo location: URL) {}
+                  didFinishDownloadingTo location: URL) {
+    guard let response = downloadTask.response else {
+      continuation.finish(throwing: URLError(.badServerResponse)); return
+    }
+    let owned = FileManager.default.temporaryDirectory.appendingPathComponent("OracleDownload-\(UUID().uuidString)")
+    do {
+      try FileManager.default.moveItem(at: location, to: owned)
+      if case .terminated = continuation.yield(.completed(owned, response)) {
+        try? FileManager.default.removeItem(at: owned)
+      }
+      continuation.finish()
+    } catch { continuation.finish(throwing: error) }
+  }
+
+  func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
+    if let error { continuation.finish(throwing: error) }
+  }
 }
 
 /// Only the pinned archive is parsed; extracted files must also match the pinned inventory.

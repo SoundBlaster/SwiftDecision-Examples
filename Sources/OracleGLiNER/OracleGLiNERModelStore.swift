@@ -14,6 +14,9 @@ public actor OracleGLiNERModelStore {
   private let directory: URL
   private let loader: @Sendable (URL) async throws -> OracleGLiNERBackend
   private var isImporting = false
+  // One-shot handoff after activation. Switching providers still releases the runtime.
+  private var preparedBackend: OracleGLiNERBackend?
+  private var installationGeneration = 0
   private let diagnostic: OracleGLiNERDiagnosticSink
   private let requiredFiles = ["gliner.json", "tokenizer.json", "tokenizer_config.json", "GLiNERSmall.mlpackage"]
 
@@ -32,10 +35,25 @@ public actor OracleGLiNERModelStore {
     requiredFiles.allSatisfy { FileManager.default.fileExists(atPath: directory.appendingPathComponent($0).path) }
   }
 
-  /// Returns a new runtime for the installed checkpoint. Errors do not invoke offline inference.
+  /// Returns the validated runtime after installation, or loads the installed checkpoint.
   public func loadBackend() async throws -> OracleGLiNERBackend {
+    guard !isImporting else { throw OracleGLiNERModelError.operationInProgress }
     guard isInstalled else { throw OracleGLiNERModelError.missingModel }
-    return try await loader(directory)
+    let generation = installationGeneration
+    let cached = preparedBackend
+    preparedBackend = nil
+    await diagnostic(cached == nil ? .stage(.runtime) : .runtimeReused)
+    try Task.checkCancellation()
+    guard !isImporting, generation == installationGeneration, isInstalled else {
+      throw OracleGLiNERModelError.operationInProgress
+    }
+    let backend: OracleGLiNERBackend
+    if let cached { backend = cached } else { backend = try await loader(directory) }
+    try Task.checkCancellation()
+    guard !isImporting, generation == installationGeneration, isInstalled else {
+      throw OracleGLiNERModelError.operationInProgress
+    }
+    return backend
   }
 
   /// Copies and validates a Files-selected checkpoint before replacing the active installation.
@@ -81,8 +99,9 @@ public actor OracleGLiNERModelStore {
     try distribution?.validate(directory: staging)
     if distribution != nil { await diagnostic(.inventoryVerified) }
     await diagnostic(.stage(.runtime))
+    let candidate: OracleGLiNERBackend
     do {
-      _ = try await loader(staging)
+      candidate = try await loader(staging)
     } catch is CancellationError {
       throw CancellationError()
     } catch {
@@ -102,6 +121,8 @@ public actor OracleGLiNERModelStore {
       if hadPrevious { try? manager.moveItem(at: backup, to: directory) }
       throw error
     }
+    installationGeneration &+= 1
+    preparedBackend = candidate
     if hadPrevious { try? manager.removeItem(at: backup) }
     var ownedDirectory = directory
     var values = URLResourceValues()
@@ -116,6 +137,8 @@ public actor OracleGLiNERModelStore {
     if FileManager.default.fileExists(atPath: directory.path) {
       try FileManager.default.removeItem(at: directory)
     }
+    installationGeneration &+= 1
+    preparedBackend = nil
   }
 
   private func validateTree(at url: URL, totalBytes: inout Int) throws {

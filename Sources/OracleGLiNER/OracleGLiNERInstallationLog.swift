@@ -8,10 +8,14 @@ public enum OracleGLiNERInstallationEvent: Codable, Equatable, Sendable {
   case source(DownloadSource)
   case stage(OracleGLiNERInstallationFailure.Stage)
   case progress(Int)
+  case githubConnecting
+  case githubRedirect
+  case githubResponse(Int)
   case fileRequested(path: String)
   case fileRead(path: String, bytes: Int)
   case downloadAvailable
   case inventoryVerified
+  case runtimeReused
   case activated
   case cacheReleased
   case cacheReleaseFailed(OracleGLiNERInstallationFailure)
@@ -31,10 +35,14 @@ public enum OracleGLiNERInstallationEvent: Codable, Equatable, Sendable {
     case .source(.githubDevelopment): "Source: GitHub release (development only)"
     case let .stage(stage): "Stage: \(stage.rawValue)"
     case let .progress(percent): "Download: \(percent)%"
+    case .githubConnecting: "Connecting to GitHub over HTTPS"
+    case .githubRedirect: "GitHub redirected the download"
+    case let .githubResponse(status): "Download response: HTTP \(status)"
     case let .fileRequested(path): "Reading: \(path)"
     case let .fileRead(path, bytes): "Read: \(path) · \(bytes) bytes"
     case .downloadAvailable: "Apple reports asset pack locally available"
     case .inventoryVerified: "Pinned inventory and SHA-256 verified"
+    case .runtimeReused: "Reused runtime validated during installation"
     case .activated: "Model activated in app storage"
     case .cacheReleased: "Download cache released"
     case let .cacheReleaseFailed(failure): "Cache cleanup failed: \(Self.details(failure))"

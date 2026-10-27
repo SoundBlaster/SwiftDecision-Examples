@@ -5,6 +5,7 @@ import OracleHistory
 import OracleGLiNER
 import SpecificationCore
 import SwiftDecision
+import UIKit
 
 @MainActor
 @Observable
@@ -22,6 +23,7 @@ final class OraclePageModel {
   private let modelDownloadSource: any OracleGLiNERDownloadSource
   private var activeModelDownloadSource: (any OracleGLiNERDownloadSource)?
   private(set) var isDownloadingModel = false
+  private var previousIdleTimerDisabled: Bool?
   private(set) var modelDownloadProgress: Double?
   private var configurationID = 0
   private(set) var isModelInstalled = false
@@ -48,6 +50,12 @@ final class OraclePageModel {
 
   private(set) var provider: OracleInferenceProvider
   var supportsGLiNER: Bool { OracleGLiNERBackend.isSupportedBuild }
+
+  isolated deinit {
+    if let previousIdleTimerDisabled {
+      UIApplication.shared.isIdleTimerDisabled = previousIdleTimerDisabled
+    }
+  }
 
   init(
     engine: OracleGameEngine? = nil,
@@ -174,7 +182,6 @@ final class OraclePageModel {
         guard let self else { return }
         defer { if self.configurationID == token { self.isPreparingModel = false } }
         do {
-          if self.isModelInstalled { self.installationLog.record(.stage(.runtime)) }
           let backend = try await self.modelStore.loadBackend()
           try Task.checkCancellation()
           guard self.configurationID == token, self.provider == .gliner else { return }
@@ -232,7 +239,7 @@ final class OraclePageModel {
     activeModelDownloadSource = source
     cancelPendingSubmission()
     isPreparingModel = true
-    isDownloadingModel = true
+    setModelDownloading(true)
     modelDownloadProgress = nil
     modelIssue = nil
     installationLog.record(.started(
@@ -240,7 +247,10 @@ final class OraclePageModel {
       build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"))
     configurationTask = Task { [weak self] in
       guard let self else { return }
-      defer { self.activeModelDownloadSource = nil }
+      defer {
+        self.setModelDownloading(false)
+        self.activeModelDownloadSource = nil
+      }
       do {
         let installer = OracleGLiNERInstaller(source: source, store: self.modelStore,
           diagnostic: { [weak installationLog = self.installationLog] event in
@@ -253,7 +263,7 @@ final class OraclePageModel {
             if let value, value.isFinite {
               self?.installationLog.record(.progress(Int((max(0, min(value, 1)) * 100).rounded())))
             }
-          case .validating: self?.isDownloadingModel = false
+          case .validating: self?.setModelDownloading(false)
           }
         }
         self.isModelInstalled = await self.modelStore.isInstalled
@@ -261,7 +271,7 @@ final class OraclePageModel {
         self.isPreparingModel = false
         self.selectProvider(.gliner)
       } catch {
-        self.isDownloadingModel = false
+        self.setModelDownloading(false)
         self.isPreparingModel = false
         self.isModelInstalled = await self.modelStore.isInstalled
         if error is CancellationError || Task.isCancelled {
@@ -284,9 +294,21 @@ final class OraclePageModel {
     configurationTask?.cancel()
   }
 
+  private func setModelDownloading(_ downloading: Bool) {
+    if downloading, previousIdleTimerDisabled == nil {
+      previousIdleTimerDisabled = UIApplication.shared.isIdleTimerDisabled
+      UIApplication.shared.isIdleTimerDisabled = true
+    } else if !downloading, let previous = previousIdleTimerDisabled {
+      UIApplication.shared.isIdleTimerDisabled = previous
+      previousIdleTimerDisabled = nil
+    }
+    isDownloadingModel = downloading
+  }
+
   func importGLiNERModel(from directory: URL) {
     guard !isPreparingModel else { return }
     cancelPendingSubmission()
+    modelDownloadProgress = nil
     isPreparingModel = true
     modelIssue = nil
     configurationTask = Task { [weak self] in
@@ -306,6 +328,7 @@ final class OraclePageModel {
   func removeGLiNERModel() {
     guard !isPreparingModel else { return }
     if provider == .gliner { selectProvider(.none) }
+    modelDownloadProgress = nil
     isPreparingModel = true
     configurationTask = Task { [weak self] in
       guard let self else { return }

@@ -8,6 +8,9 @@ struct OracleGLiNERInstallationLogTests {
     let start = Date(timeIntervalSince1970: 1_000)
     log.record(.started(version: "1.0", build: "5"), at: start)
     log.record(.stage(.download), at: start.addingTimeInterval(1))
+    log.record(.githubConnecting, at: start.addingTimeInterval(1))
+    log.record(.githubRedirect, at: start.addingTimeInterval(1))
+    log.record(.githubResponse(200), at: start.addingTimeInterval(2))
     log.record(.progress(100), at: start.addingTimeInterval(2))
     let failure = OracleGLiNERInstallationFailure.capture(
       NSError(domain: "fixture", code: 17, userInfo: [NSLocalizedDescriptionKey: "secret-path"]),
@@ -19,6 +22,7 @@ struct OracleGLiNERInstallationLogTests {
     #expect(restored.entries.map(\.date) == log.entries.map(\.date))
     #expect(restored.entries.map(\.id) == log.entries.map(\.id))
     #expect(restored.text().contains("runtime · fixture · code 17"))
+    #expect(restored.text().contains("Download response: HTTP 200"))
     #expect(!restored.text().contains("secret-path"))
   }
 

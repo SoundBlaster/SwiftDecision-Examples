@@ -81,6 +81,47 @@ struct OracleGLiNERTests {
 }
 
 struct OracleGLiNERModelStoreTests {
+  private actor InstallationEvents {
+    private(set) var entries: [OracleGLiNERInstallationEvent] = []
+    func record(_ event: OracleGLiNERInstallationEvent) { entries.append(event) }
+  }
+
+  private actor LoaderProbe {
+    private(set) var calls = 0
+    func load(_ directory: URL) throws -> OracleGLiNERBackend {
+      calls += 1
+      let marker = try String(contentsOf: directory.appendingPathComponent("gliner.json"), encoding: .utf8)
+      if marker == "replacement-invalid" { throw OracleGLiNERModelError.invalidFolder }
+      return OracleGLiNERBackend(backend: ClosureDecisionBackend { _ in
+        DecisionPrediction(probabilities: [0.05, 0.95], modelIdentifier: marker)
+      })
+    }
+  }
+
+  private actor BlockingLoader {
+    private(set) var calls = 0
+    let started: AsyncStream<Void>
+    private let signal: AsyncStream<Void>.Continuation
+    private var blocked: CheckedContinuation<Void, Never>?
+
+    init() {
+      let stream = AsyncStream<Void>.makeStream()
+      started = stream.stream
+      signal = stream.continuation
+    }
+
+    func load(_ directory: URL) async -> OracleGLiNERBackend {
+      calls += 1
+      if calls == 2 {
+        signal.yield(())
+        await withCheckedContinuation { blocked = $0 }
+      }
+      return fixtureBackend()
+    }
+
+    func resume() { blocked?.resume(); blocked = nil }
+  }
+
   private func root() throws -> URL {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -156,6 +197,87 @@ struct OracleGLiNERModelStoreTests {
     }
     await #expect(throws: CancellationError.self) { try await task.value }
     #expect(await !store.isInstalled)
+  }
+
+  @Test func preparedRuntimeIsHandedOffOnceAfterActivation() async throws {
+    let root = try root()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let source = try checkpoint(in: root, name: "source")
+    let probe = LoaderProbe()
+    let events = InstallationEvents()
+    let store = OracleGLiNERModelStore(directory: root.appendingPathComponent("active"),
+                                       diagnostic: { await events.record($0) },
+                                       loader: { try await probe.load($0) })
+    try await store.importCheckpoint(from: source)
+    #expect(await probe.calls == 1)
+    _ = try await store.loadBackend()
+    #expect(await probe.calls == 1)
+    #expect(await events.entries.contains(.runtimeReused))
+    _ = try await store.loadBackend()
+    #expect(await probe.calls == 2)
+  }
+
+  @Test func failedReplacementKeepsPreparedRuntimeAndRemovalInvalidatesIt() async throws {
+    let root = try root()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let original = try checkpoint(in: root, name: "previous")
+    let invalid = try checkpoint(in: root, name: "replacement-invalid")
+    let replacement = try checkpoint(in: root, name: "replacement")
+    let probe = LoaderProbe()
+    let store = OracleGLiNERModelStore(directory: root.appendingPathComponent("active"),
+                                       loader: { try await probe.load($0) })
+    try await store.importCheckpoint(from: original)
+    await #expect(throws: OracleGLiNERModelError.invalidFolder) { try await store.importCheckpoint(from: invalid) }
+    _ = try await store.loadBackend()
+    #expect(await probe.calls == 2)
+    try await store.importCheckpoint(from: replacement)
+    try await store.removeModel()
+    await #expect(throws: OracleGLiNERModelError.missingModel) { try await store.loadBackend() }
+    #expect(await probe.calls == 3)
+    try await store.importCheckpoint(from: original)
+    _ = try await store.loadBackend()
+    #expect(await probe.calls == 4)
+  }
+
+  @Test func cancellationAfterRuntimePreparationKeepsThePreviousModel() async throws {
+    let root = try root()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let original = try checkpoint(in: root, name: "previous")
+    let replacement = try checkpoint(in: root, name: "replacement")
+    let probe = LoaderProbe()
+    let store = OracleGLiNERModelStore(directory: root.appendingPathComponent("active"), loader: { directory in
+      let marker = try String(contentsOf: directory.appendingPathComponent("gliner.json"), encoding: .utf8)
+      let backend = try await probe.load(directory)
+      if marker == "replacement" { withUnsafeCurrentTask { $0?.cancel() } }
+      return backend
+    })
+    try await store.importCheckpoint(from: original)
+    let replacementTask = Task { try await store.importCheckpoint(from: replacement) }
+    await #expect(throws: CancellationError.self) { try await replacementTask.value }
+    #expect(try String(contentsOf: root.appendingPathComponent("active/gliner.json"), encoding: .utf8) == "previous")
+    _ = try await store.loadBackend()
+    #expect(await probe.calls == 2)
+  }
+
+  @Test func concurrentReplacementDoesNotReturnTheOldRuntime() async throws {
+    let root = try root()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let original = try checkpoint(in: root, name: "previous")
+    let replacement = try checkpoint(in: root, name: "replacement")
+    let probe = BlockingLoader()
+    let store = OracleGLiNERModelStore(directory: root.appendingPathComponent("active"),
+                                       loader: { await probe.load($0) })
+    try await store.importCheckpoint(from: original)
+    _ = try await store.loadBackend() // Consume the one-shot handoff.
+    let staleLoad = Task { try await store.loadBackend() }
+    var started = probe.started.makeAsyncIterator()
+    _ = await started.next()
+    try await store.importCheckpoint(from: replacement)
+    await probe.resume()
+    await #expect(throws: OracleGLiNERModelError.operationInProgress) { try await staleLoad.value }
+    _ = try await store.loadBackend()
+    #expect(await probe.calls == 3) // The replacement's prepared runtime was retained.
+    #expect(try String(contentsOf: root.appendingPathComponent("active/gliner.json"), encoding: .utf8) == "replacement")
   }
 }
 
