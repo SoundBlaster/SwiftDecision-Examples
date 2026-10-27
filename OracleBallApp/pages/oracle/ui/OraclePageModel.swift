@@ -18,6 +18,7 @@ final class OraclePageModel {
   private let modelStore: OracleGLiNERModelStore
   private let usesInjectedEngine: Bool
   private var configurationTask: Task<Void, Never>?
+  let installationLog: OracleModelInstallationLog
   private let modelDownloadSource: any OracleGLiNERDownloadSource
   private(set) var isDownloadingModel = false
   private(set) var modelDownloadProgress: Double?
@@ -56,7 +57,12 @@ final class OraclePageModel {
     modelStore: OracleGLiNERModelStore? = nil,
     modelDownloadSource: (any OracleGLiNERDownloadSource)? = nil)
   {
-    self.modelDownloadSource = modelDownloadSource ?? OracleHostedModelDownloader()
+    let installationLog = OracleModelInstallationLog()
+    self.installationLog = installationLog
+    let diagnostic: OracleGLiNERDiagnosticSink = { [weak installationLog] event in
+      await installationLog?.record(event)
+    }
+    self.modelDownloadSource = modelDownloadSource ?? OracleHostedModelDownloader(diagnostic: diagnostic)
     self.credentialsStore = credentialsStore
     usesSharedHistoryStore = historyStore == nil
     let resolvedHistoryStore = historyStore ?? Self.makeHistoryStore()
@@ -66,7 +72,7 @@ final class OraclePageModel {
     glinerMinimumConfidence = preferences.glinerMinimumConfidence
     self.modelStore = modelStore ?? OracleGLiNERModelStore(directory:
       FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("OracleGLiNER/active", isDirectory: true))
+        .appendingPathComponent("OracleGLiNER/active", isDirectory: true), diagnostic: diagnostic)
     usesInjectedEngine = engine != nil
     let selectedProvider = preferences.provider(hasJevKey: credentialsStore.readAPIKey() != nil,
                                                supportsGLiNER: OracleGLiNERBackend.isSupportedBuild)
@@ -167,17 +173,22 @@ final class OraclePageModel {
         guard let self else { return }
         defer { if self.configurationID == token { self.isPreparingModel = false } }
         do {
+          if self.isModelInstalled { self.installationLog.record(.stage(.runtime)) }
           let backend = try await self.modelStore.loadBackend()
           try Task.checkCancellation()
           guard self.configurationID == token, self.provider == .gliner else { return }
           self.loadedGLiNERBackend = backend
           self.updateGLiNERPolicy()
+          self.installationLog.record(.providerReady)
           self.providerIssue = nil
           self.modelIssue = nil
         } catch is CancellationError {
           return
         } catch {
           guard self.configurationID == token else { return }
+          if self.isModelInstalled {
+            self.installationLog.record(.failed(.capture(error, stage: .runtime)))
+          }
           self.providerIssue = String(localized: "GLiNER is unavailable. Import a compatible model or choose another provider.")
           self.modelIssue = self.providerIssue
         }
@@ -206,24 +217,38 @@ final class OraclePageModel {
     isDownloadingModel = true
     modelDownloadProgress = nil
     modelIssue = nil
+    installationLog.record(.started(
+      version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?",
+      build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"))
     configurationTask = Task { [weak self] in
       guard let self else { return }
       do {
-        let installer = OracleGLiNERInstaller(source: self.modelDownloadSource, store: self.modelStore)
+        let installer = OracleGLiNERInstaller(source: self.modelDownloadSource, store: self.modelStore,
+          diagnostic: { [weak installationLog = self.installationLog] event in
+            await installationLog?.record(event)
+          })
         try await installer.install { [weak self] update in
           switch update {
-          case let .downloading(value): self?.modelDownloadProgress = value
+          case let .downloading(value):
+            self?.modelDownloadProgress = value
+            if let value, value.isFinite {
+              self?.installationLog.record(.progress(Int((max(0, min(value, 1)) * 100).rounded())))
+            }
           case .validating: self?.isDownloadingModel = false
           }
         }
         self.isModelInstalled = await self.modelStore.isInstalled
+        self.installationLog.record(.completed)
         self.isPreparingModel = false
         self.selectProvider(.gliner)
       } catch {
         self.isDownloadingModel = false
         self.isPreparingModel = false
         self.isModelInstalled = await self.modelStore.isInstalled
-        if !(error is CancellationError) && !Task.isCancelled {
+        if error is CancellationError || Task.isCancelled {
+          self.installationLog.record(.cancelled)
+        } else {
+          self.installationLog.record(.failed(.capture(error, stage: .validation)))
           let message = String(localized: "Could not install the Apple-hosted model. Please try again.")
           if let failure = error as? OracleGLiNERInstallationFailure {
             self.modelIssue = message + " [\(failure.stage.rawValue): \(failure.domain) \(failure.code)]"
@@ -482,5 +507,35 @@ final class OraclePageModel {
   func clearHistory() {
     historyStore.removeAll()
     historyEntries = historyStore.entries
+  }
+}
+
+
+/// UI-owned persistent journal; only typed, safe technical events reach storage.
+@MainActor
+@Observable
+final class OracleModelInstallationLog {
+  private static let key = "oracle.model-installation-log.v1"
+  private let defaults: UserDefaults
+  private(set) var journal: OracleGLiNERInstallationLog
+
+  init(defaults: UserDefaults = .standard) {
+    self.defaults = defaults
+    journal = defaults.data(forKey: Self.key)
+      .flatMap { try? JSONDecoder().decode(OracleGLiNERInstallationLog.self, from: $0) }
+      ?? OracleGLiNERInstallationLog()
+  }
+
+  func record(_ event: OracleGLiNERInstallationEvent) {
+    let previous = journal.entries.last?.id
+    journal.record(event)
+    guard journal.entries.last?.id != previous,
+          let data = try? JSONEncoder().encode(journal) else { return }
+    defaults.set(data, forKey: Self.key)
+  }
+
+  func clear() {
+    journal.clear()
+    defaults.removeObject(forKey: Self.key)
   }
 }

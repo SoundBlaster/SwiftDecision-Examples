@@ -8,16 +8,20 @@ public struct OracleGLiNERInstaller {
     case validating
   }
   private let source: any OracleGLiNERDownloadSource
+  private let diagnostic: OracleGLiNERDiagnosticSink
   private let activate: @Sendable (URL) async throws -> Void
 
-  public init(source: any OracleGLiNERDownloadSource, store: OracleGLiNERModelStore) {
+  public init(source: any OracleGLiNERDownloadSource, store: OracleGLiNERModelStore,
+              diagnostic: @escaping OracleGLiNERDiagnosticSink = { _ in }) {
     self.source = source
+    self.diagnostic = diagnostic
     self.activate = { try await store.importDistribution(from: $0) }
   }
 
   init(source: any OracleGLiNERDownloadSource, activate: @escaping @Sendable (URL) async throws -> Void) {
     self.source = source
     self.activate = activate
+    self.diagnostic = { _ in }
   }
 
   public func install(update: @escaping @MainActor @Sendable (Update) -> Void) async throws {
@@ -33,6 +37,12 @@ public struct OracleGLiNERInstaller {
     }
     try Task.checkCancellation()
     // The store owns its validated copy. Cache cleanup cannot invalidate that activation.
-    try? await source.releaseDownloadedFiles()
+    await diagnostic(.stage(.cacheCleanup))
+    do {
+      try await source.releaseDownloadedFiles()
+      await diagnostic(.cacheReleased)
+    } catch {
+      await diagnostic(.cacheReleaseFailed(.capture(error, stage: .cacheCleanup)))
+    }
   }
 }

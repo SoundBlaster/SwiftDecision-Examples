@@ -1,4 +1,6 @@
+import CoreTransferable
 import OracleGLiNER
+import UIKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -6,6 +8,7 @@ import UniformTypeIdentifiers
 struct OracleInferenceSettings: View {
   let model: OraclePageModel
   @State private var isSelectingFolder = false
+  @State private var isShowingInstallationLog = false
 
   var body: some View {
     Section("Inference") {
@@ -77,6 +80,12 @@ struct OracleInferenceSettings: View {
               .font(.caption)
               .foregroundStyle(.secondary)
           }
+          Button {
+            isShowingInstallationLog = true
+          } label: {
+            Label("Model installation log", systemImage: "doc.text.magnifyingglass")
+          }
+          .accessibilityIdentifier("oracle.settings.gliner-log")
           DisclosureGroup("Developer import") {
           Button("Import model folder") { isSelectingFolder = true }
             .disabled(model.isPreparingModel)
@@ -97,6 +106,11 @@ struct OracleInferenceSettings: View {
           }
       }
     }
+    .sheet(isPresented: $isShowingInstallationLog) {
+      OracleModelInstallationLogView(model: model)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
     .fileImporter(isPresented: $isSelectingFolder, allowedContentTypes: [.folder], allowsMultipleSelection: false) { result in
       switch result {
       case let .success(urls):
@@ -105,5 +119,112 @@ struct OracleInferenceSettings: View {
         if (error as NSError).code != CocoaError.userCancelled.rawValue { model.reportModelImportFailure() }
       }
     }
+  }
+}
+
+
+/// A live diagnostic window with an immutable export snapshot on sharing.
+private struct OracleModelInstallationLogView: View {
+  let model: OraclePageModel
+  @Environment(\.dismiss) private var dismiss
+  @State private var followsLatest = true
+  @State private var didCopy = false
+
+  private var entries: [OracleGLiNERInstallationLog.Entry] {
+    model.installationLog.journal.entries
+  }
+
+  var body: some View {
+    NavigationStack {
+      VStack {
+        if model.isDownloadingModel {
+          ProgressView(value: model.modelDownloadProgress) {
+            Text("Downloading local model…")
+          }
+          .padding(.horizontal)
+        } else if model.isPreparingModel {
+          ProgressView("Preparing local model…")
+        }
+        ScrollViewReader { proxy in
+          List {
+            if entries.isEmpty {
+              ContentUnavailableView("No installation events yet", systemImage: "doc.text")
+            }
+            ForEach(entries) { entry in
+              VStack(alignment: .leading, spacing: 4) {
+                Text(entry.date, style: .time)
+                  .font(.caption2)
+                  .foregroundStyle(.secondary)
+                Text(verbatim: entry.event.message)
+                  .font(.system(.caption, design: .monospaced))
+                  .foregroundStyle(entry.event.isFailure ? Color.orange : Color.primary)
+                  .textSelection(.enabled)
+                  .fixedSize(horizontal: false, vertical: true)
+              }
+              .id(entry.id)
+            }
+          }
+          .listStyle(.plain)
+          .onChange(of: entries.last?.id) { _, id in
+            if followsLatest, let id { proxy.scrollTo(id, anchor: .bottom) }
+          }
+          .onAppear {
+            if let id = entries.last?.id { proxy.scrollTo(id, anchor: .bottom) }
+          }
+        }
+        Toggle("Follow latest", isOn: $followsLatest)
+          .padding(.horizontal)
+        HStack {
+          if model.isDownloadingModel {
+            Button("Cancel download", action: model.cancelHostedModelInstallation)
+          } else if !model.isModelInstalled {
+            Button("Retry installation", action: model.installHostedGLiNERModel)
+              .disabled(model.isPreparingModel)
+          }
+          Spacer()
+          Button("Clear log", role: .destructive, action: model.installationLog.clear)
+            .disabled(entries.isEmpty)
+        }
+        .padding()
+      }
+      .navigationTitle("Model installation log")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          Menu {
+            Button {
+              UIPasteboard.general.string = model.installationLog.journal.text()
+              didCopy = true
+            } label: {
+              Label(didCopy ? "Copied" : "Copy log", systemImage: "doc.on.doc")
+            }
+            .accessibilityIdentifier("oracle.model-log.copy")
+            ShareLink(item: OracleInstallationLogExport(log: model.installationLog.journal),
+                      preview: SharePreview("Model installation log")) {
+              Label("Export log", systemImage: "square.and.arrow.up")
+            }
+            .accessibilityIdentifier("oracle.model-log.export")
+          } label: {
+            Label("Log actions", systemImage: "ellipsis.circle")
+          }
+          .disabled(entries.isEmpty)
+        }
+        ToolbarItem(placement: .confirmationAction) {
+          Button("Close") { dismiss() }
+        }
+      }
+    }
+    .accessibilityIdentifier("oracle.model-log")
+  }
+}
+
+private struct OracleInstallationLogExport: Transferable, Sendable {
+  let log: OracleGLiNERInstallationLog
+
+  static var transferRepresentation: some TransferRepresentation {
+    DataRepresentation(exportedContentType: .utf8PlainText) { item in
+      Data(item.log.text().utf8)
+    }
+    .suggestedFileName { _ in "oracle-model-installation-log.txt" }
   }
 }

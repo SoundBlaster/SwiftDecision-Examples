@@ -11,7 +11,12 @@ final class OracleHostedModelDownloader: OracleGLiNERDownloadSource {
   private var currentProgress: Progress?
   private var cancelled = false
   private var hostedFiles: OracleGLiNERHostedFiles?
+  private let diagnostic: OracleGLiNERDiagnosticSink
   private let logger = Logger(subsystem: "ru.egormerkushev.oracle", category: "ModelInstallation")
+
+  init(diagnostic: @escaping OracleGLiNERDiagnosticSink = { _ in }) {
+    self.diagnostic = diagnostic
+  }
 
   func download(progress: @escaping @MainActor @Sendable (Double?) -> Void) async throws -> URL {
     cancelled = false
@@ -34,6 +39,7 @@ final class OracleHostedModelDownloader: OracleGLiNERDownloadSource {
     defer { updates.cancel(); currentProgress = nil }
     var stage: OracleGLiNERInstallationFailure.Stage = .manifest
     do {
+      await diagnostic(.stage(.manifest))
       let pack: AssetPack
       if #available(iOS 27, *) {
         guard let available = try await manager.manifest.assetPack(withID: Self.assetPackID) else {
@@ -45,6 +51,7 @@ final class OracleHostedModelDownloader: OracleGLiNERDownloadSource {
       }
       try Task.checkCancellation()
       stage = .download
+      await diagnostic(.stage(.download))
       if #available(iOS 26.4, *) {
         try await manager.ensureLocalAvailability(of: pack, requireLatestVersion: false)
       } else {
@@ -52,11 +59,13 @@ final class OracleHostedModelDownloader: OracleGLiNERDownloadSource {
       }
       try Task.checkCancellation()
       guard !cancelled else { throw CancellationError() }
+      await diagnostic(.downloadAvailable)
       stage = .files
+      await diagnostic(.stage(.files))
       let files = try hostedFiles ?? OracleGLiNERHostedFiles()
       hostedFiles = files
       let assetPackID = Self.assetPackID
-      return try await files.materialize { path in
+      return try await files.materialize(diagnostic: diagnostic) { path in
         try manager.contents(at: FilePath("GLiNERSmall/" + path),
                              searchingInAssetPackWithID: assetPackID)
       }

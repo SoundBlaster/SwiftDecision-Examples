@@ -14,15 +14,18 @@ public actor OracleGLiNERModelStore {
   private let directory: URL
   private let loader: @Sendable (URL) async throws -> OracleGLiNERBackend
   private var isImporting = false
+  private let diagnostic: OracleGLiNERDiagnosticSink
   private let requiredFiles = ["gliner.json", "tokenizer.json", "tokenizer_config.json", "GLiNERSmall.mlpackage"]
 
   /// Creates a store in a caller-owned application-support directory.
   public init(
     directory: URL,
+    diagnostic: @escaping OracleGLiNERDiagnosticSink = { _ in },
     loader: @escaping @Sendable (URL) async throws -> OracleGLiNERBackend = OracleGLiNERBackend.load(checkpointAt:)
   ) {
     self.directory = directory
     self.loader = loader
+    self.diagnostic = diagnostic
   }
 
   public var isInstalled: Bool {
@@ -65,6 +68,7 @@ public actor OracleGLiNERModelStore {
     let staging = parent.appendingPathComponent(".import-\(UUID().uuidString)")
     defer { try? manager.removeItem(at: staging) }
     try manager.createDirectory(at: staging, withIntermediateDirectories: false)
+    await diagnostic(.stage(.validation))
     var totalBytes = 0
     let notices = ["LICENSE-APACHE-2.0.txt", "LICENSE-MIT-DeBERTa.txt", "MODEL_CARD.md", "CHANGES.md", "distribution.json"]
     let extras = notices.filter { distribution != nil || manager.fileExists(atPath: source.appendingPathComponent($0).path) }
@@ -75,6 +79,8 @@ public actor OracleGLiNERModelStore {
       try manager.copyItem(at: file, to: staging.appendingPathComponent(name))
     }
     try distribution?.validate(directory: staging)
+    if distribution != nil { await diagnostic(.inventoryVerified) }
+    await diagnostic(.stage(.runtime))
     do {
       _ = try await loader(staging)
     } catch is CancellationError {
@@ -83,6 +89,8 @@ public actor OracleGLiNERModelStore {
       if distribution != nil { throw OracleGLiNERInstallationFailure.capture(error, stage: .runtime) }
       throw error
     }
+    try Task.checkCancellation()
+    await diagnostic(.stage(.activation))
     try Task.checkCancellation()
     // No suspension while replacing: failure restores the previous installation.
     let backup = parent.appendingPathComponent(".previous-\(UUID().uuidString)")
@@ -99,6 +107,7 @@ public actor OracleGLiNERModelStore {
     var values = URLResourceValues()
     values.isExcludedFromBackup = true
     try? ownedDirectory.setResourceValues(values)
+    await diagnostic(.activated)
   }
 
   /// Removes only the installed checkpoint owned by this store.

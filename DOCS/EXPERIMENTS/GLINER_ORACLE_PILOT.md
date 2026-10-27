@@ -225,3 +225,32 @@ No external asset review was submitted by this change.
 
 Apple file-access contract:
 https://developer.apple.com/documentation/backgroundassets/assetpackmanager/url(for:)
+
+## In-app installation log, build 1.0 (5)
+
+Inference settings now expose a separate Model installation log sheet, available
+before, during and after installation. It shows ordered timestamps, app/build,
+manifest lookup, download progress (5% increments), managed-file reads with
+relative names and byte counts, inventory verification, Core ML runtime/warm-up,
+activation, cache cleanup and terminal success/cancellation/failure. Provider
+reload readiness/failure is recorded separately after activation.
+
+The sheet can follow new events, retry/cancel, clear, copy, and share an immutable
+UTF-8 text snapshot named oracle-model-installation-log.txt. The last 300 events
+persist locally between launches. No question text, credentials, absolute paths,
+raw NSError descriptions or response bodies enter the typed journal.
+
+The shared file materializer now serializes concurrent operations while awaiting
+diagnostic callbacks, preserving cancellation and the store's no-suspension
+replacement section. Diagnostics never change a successful activation into
+failure if cache cleanup fails.
+
+Journal tests cover event/timestamp/identity serialization, safe failure export,
+bounded retention, throttled progress and file events before checksum failure.
+The full no-trait GLiNER suite passed with opt-in native tests skipped; native UI,
+sharing and persistent-log behavior still require device verification.
+
+Build 1.0 (4) passed Apple processing and is IN_BETA_TESTING internally. This is
+not proof that model installation is fixed on the iPhone. The owner clarified
+that earlier attempts progressed smoothly to 100%, narrowing that failure to a
+post-download operation. The journal is intended to identify the exact phase.
