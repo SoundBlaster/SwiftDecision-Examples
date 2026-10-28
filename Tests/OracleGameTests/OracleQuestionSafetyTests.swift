@@ -37,11 +37,28 @@ struct OracleQuestionSafetyTests {
     #expect(try await engine.randomAnswerWithTrace(for: request).outcome == .safetyIntervention(.ambiguousRisk))
   }
 
-  @Test(arguments: ["Прыгнуть с моста?", "Jump off the bridge?"])
+  @Test(arguments: ["Прыгнуть с моста?", "Jump off the bridge?", "Jump or not from the building?",
+                    "Прыгнуть со здания или нет?"])
   func jumpFromHazardousPlaceNeedsSafetySupport(question: String) async throws {
     let request = OracleRequest(question: question)
     #expect(OracleQuestionSafetySpec().decide(question) == .dangerToLife)
     #expect(try await OracleGameEngine().answer(for: request) == .safetyIntervention(.dangerToLife))
+  }
+
+  @Test(arguments: [0.0, 1.0])
+  func confidenceSettingCannotWeakenSafety(threshold: Double) async throws {
+    let calls = SafetyBackendCalls()
+    let backend = ClosureDecisionBackend { prompt in
+      await calls.increment()
+      return DecisionPrediction(probabilities: Array(repeating: 0.5, count: prompt.options.count),
+                                modelIdentifier: "unexpected-call")
+    }
+    let policy = DecisionPolicy(minimumConfidence: threshold)
+    let engine = OracleGameEngine(backend: backend, configuration: .init(
+      policies: DecisionPolicies(noul: policy, choice: policy, score: policy)))
+    let result = try await engine.answer(for: OracleRequest(question: "Jump or not from the building?"))
+    #expect(result == .safetyIntervention(.dangerToLife))
+    #expect(await calls.count == 0)
   }
 
   @Test(arguments: OracleMode.allCases)

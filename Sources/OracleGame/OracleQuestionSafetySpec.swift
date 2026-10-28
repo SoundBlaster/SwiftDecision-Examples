@@ -54,8 +54,8 @@ public struct OracleQuestionSafetySpec: DecisionSpec {
     ]
     if ambiguousJumps.contains(normalized) { return .ambiguousRisk }
     let jumpWords = ["прыгать", "прыгнуть", "прыгну", "jump", "jumping", "leap"]
-    let hazardousPlaces = ["мост", "крыш", "окн", "балкон", "обрыв", "скал", "поезд",
-                           "bridge", "roof", "window", "balcony", "cliff", "train"]
+    let hazardousPlaces = ["мост", "крыш", "окн", "балкон", "обрыв", "скал", "поезд", "здани",
+                           "bridge", "roof", "window", "balcony", "cliff", "train", "building"]
     if words.contains(where: { jumpWords.contains(String($0)) })
       && words.contains(where: { word in hazardousPlaces.contains(where: { word.hasPrefix($0) }) }) {
       return .dangerToLife
