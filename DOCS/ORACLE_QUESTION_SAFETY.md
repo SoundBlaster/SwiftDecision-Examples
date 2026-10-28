@@ -13,7 +13,7 @@ When a jump is explicitly associated with selected hazardous places, Oracle
 presents safety support instead.
 
 The built-in phrase screen and optional lexicon are not a general moderation or crisis detection
-model. It can miss paraphrases, implicit intent, other languages, spelling
+model. They can miss paraphrases, implicit intent, other languages, spelling
 variants and context, and it can also match benign discussion. It must not be
 represented as comprehensive protection. Expanding coverage requires a
 separately evaluated classifier, a representative test corpus, and a review of
@@ -28,7 +28,7 @@ Git. Neither is included in a fresh checkout; the built-in guard remains active
 when the resource is absent. A corrupted or invalid *present* resource prevents
 nonempty questions from reaching a provider, with a visible unavailable status.
 
-Create the JSON file yourself. The schema is:
+Create the `private` directory and JSON file yourself. The schema is:
 
 ```json
 {
@@ -51,6 +51,8 @@ valid but adds no coverage.
 From this checkout, run:
 
 ```sh
+mkdir -p private
+# Create or edit private/OracleSafetyLexicon.json before packing.
 python3 scripts/pack-oracle-safety-lexicon.py
 git check-ignore -v private/OracleSafetyLexicon.json Sources/OracleGame/Resources/OracleSafetyLexicon.private.bin
 ```
