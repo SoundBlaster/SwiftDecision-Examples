@@ -29,6 +29,17 @@ struct OraclePilotPage: View {
       let headerOnBall = frames.ball.width >= 200 && frames.ball.height >= 80
       let headerHeight: CGFloat = headerOnBall ? 48 : 0
       let side = max(1, min(frames.ball.width - 24, frames.ball.height - headerHeight - 24))
+      let isSideBySide = frames.plan == .expandedPanes || frames.plan == .book
+      // In the wide layout, center the sphere in the visible pane. Other
+      // arrangements leave extra room for the header above the scene.
+      let ballOffset: CGFloat = isSideBySide ? 0
+        : headerHeight / 2 + min(side * 0.06, max(0, frames.ball.height - headerHeight - side) / 2)
+      // Leave breathing room below the vertical system status area, but let the
+      // composer reclaim that space in a short or keyboard-reduced viewport.
+      let needsStatusClearance = OracleStatusAreaClearanceSpec().isSatisfiedBy(.init(
+        plan: frames.plan, isKeyboardVisible: isKeyboardVisible))
+      let controlsTopInset: CGFloat = needsStatusClearance
+        ? min(72, max(0, frames.controls.height - 180)) : 0
       let showsBall = OracleBallVisibilitySpec().isSatisfiedBy(Double(side))
       let showsHistory = OracleInlineHistorySpec().isSatisfiedBy(.init(
         plan: frames.plan, controlsHeight: Double(frames.controls.height),
@@ -52,7 +63,7 @@ struct OraclePilotPage: View {
             || selectedHistoryEntry != nil,
           isShakeEnabled: !showsInfo && selectedHistoryEntry == nil && showsBall)
           .frame(width: side, height: side)
-          .offset(y: headerHeight / 2 + min(side * 0.06, max(0, frames.ball.height - headerHeight - side) / 2))
+          .offset(y: ballOffset)
           .frame(width: frames.ball.width, height: frames.ball.height)
           .position(x: frames.ball.midX, y: frames.ball.midY)
           .opacity(showsBall ? 1 : 0)
@@ -76,6 +87,7 @@ struct OraclePilotPage: View {
           showsHeader: !headerOnBall,
           isExpanded: frames.plan.supportsInlineHistory,
           showsFooter: !frames.plan.supportsInlineHistory && !isKeyboardVisible,
+          topInset: controlsTopInset,
           showsTextAnswer: !showsBall,
           onInfo: {
             isQuestionFocused = false
@@ -204,6 +216,7 @@ private struct OraclePilotControls: View {
   let showsHeader: Bool
   let isExpanded: Bool
   let showsFooter: Bool
+  let topInset: CGFloat
   let showsTextAnswer: Bool
   let onInfo: () -> Void
   let onQuestionFrameChanged: (CGRect) -> Void
@@ -250,6 +263,7 @@ private struct OraclePilotControls: View {
         }
       }
       .padding(16)
+      .padding(.top, topInset)
       .frame(maxWidth: 520)
       .frame(maxWidth: .infinity)
     }

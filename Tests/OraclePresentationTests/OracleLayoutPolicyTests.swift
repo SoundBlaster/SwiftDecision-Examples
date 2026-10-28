@@ -70,3 +70,12 @@ private func fold(_ axis: Context.Division.Axis, before: (Double, Double),
   #expect(spec.isSatisfiedBy(100))
   #expect(!spec.isSatisfiedBy(.infinity))
 }
+
+@Test func statusAreaClearanceYieldsToTheKeyboard() {
+  let spec = OracleStatusAreaClearanceSpec()
+  #expect(spec.isSatisfiedBy(.init(plan: .book, isKeyboardVisible: false)))
+  #expect(spec.isSatisfiedBy(.init(plan: .expandedPanes, isKeyboardVisible: false)))
+  #expect(!spec.isSatisfiedBy(.init(plan: .book, isKeyboardVisible: true)))
+  #expect(!spec.isSatisfiedBy(.init(plan: .tabletop, isKeyboardVisible: false)))
+  #expect(!spec.isSatisfiedBy(.init(plan: .singlePane, isKeyboardVisible: false)))
+}

@@ -40,7 +40,8 @@ generated Xcode project. The committed configuration and CI use Xcode 27.1.
 `PredicateSpec` rules and an ordered `FirstMatchSpec` with a single-pane fallback.
 The policy receives dimensions and environment facts; SwiftUI owns coordinates,
 focus, presentation, and rendering. `OracleBallVisibilitySpec` and
-`OracleInlineHistorySpec` describe the separate visibility requirements; they
+`OracleInlineHistorySpec` describe the separate visibility requirements;
+`OracleStatusAreaClearanceSpec` controls clearance below the side status area; they
 are tested without a view hierarchy. iPhone landscape orientations are enabled
 so a horizontal division can be used in tabletop.
 
@@ -87,7 +88,7 @@ moves the composer into the usable region above the fold.
 ## Local evidence
 
 On 2026-10-28, the OracleBallApp Debug iOS Simulator build succeeded with Xcode
-27.1 and the 20 OraclePresentation tests passed. Layout-policy tests cover
+27.1 and the 21 OraclePresentation tests passed. Layout-policy tests cover
 book, tabletop, keyboard fallback, visibility thresholds, and ordinary fallback.
 A successful build and policy tests do not prove runtime rendering or focus.
 
