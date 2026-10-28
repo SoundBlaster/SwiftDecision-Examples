@@ -25,7 +25,7 @@ struct OracleWelcomeView: View {
       .frame(maxWidth: 460)
       .frame(maxWidth: .infinity)
       .padding(.horizontal, 28)
-      .padding(.top, 50)
+      .padding(.top, 90)
       .padding(.bottom, 24)
     }
     .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
@@ -49,8 +49,8 @@ struct OracleWelcomeView: View {
 
   private var welcomeContent: some View {
     VStack(spacing: 32) {
-      welcomeHeader(symbol: "sparkles", title: "Welcome to Endless Answers",
-                    subtitle: "A little wonder for the questions on your mind.")
+      welcomeHeader(symbol: "sparkles", title: "Welcome to\nEndless Answers",
+                    subtitle: "A little wonder for the\nquestions on your mind.")
       VStack(alignment: .leading, spacing: 28) {
         feature(symbol: "dice.fill", title: "Random game",
                 description: "Shake the ball or tap send without a question for a random answer.")
@@ -64,8 +64,8 @@ struct OracleWelcomeView: View {
 
   private var ageContent: some View {
     VStack(spacing: 28) {
-      welcomeHeader(symbol: "person.crop.circle.badge.checkmark", title: "For adults, 18 and over",
-                    subtitle: "Endless Answers is intended for adults.")
+      welcomeHeader(symbol: "person.crop.circle.badge.checkmark", title: "For adults\n18 and over",
+                    subtitle: "Endless Answers is intended\nfor adults.")
       Text("This is an entertainment app. Do not rely on its answers for decisions about safety, health, or other important matters.")
         .font(.body)
         .foregroundStyle(.secondary)
@@ -75,11 +75,11 @@ struct OracleWelcomeView: View {
 
   private var modelContent: some View {
     VStack(spacing: 28) {
-      welcomeHeader(symbol: "arrow.down.circle.fill", title: "On-device AI",
-                    subtitle: "Download GLiNER small to explore questions on your device.")
+      welcomeHeader(symbol: "arrow.down.circle.fill", title: "AI on\nyour device",
+                    subtitle: "Download GLiNER small to explore\nquestions on your device.")
       VStack(alignment: .leading, spacing: 24) {
         feature(symbol: "iphone", title: "Private by design",
-                description: "When using GLiNER, questions are processed on this device.")
+                description: "With GLiNER, questions are processed on this device.\nNo internet is needed after installation.")
         feature(symbol: "internaldrive", title: "Optional download",
                 description: "About 70 MB to download and 87 MB of storage. You can install or remove it later in Settings.")
         feature(symbol: "text.bubble", title: "Experimental English model",
@@ -126,14 +126,6 @@ struct OracleWelcomeView: View {
 
   private var controls: some View {
     VStack(spacing: 14) {
-      HStack(spacing: 7) {
-        ForEach(0..<3) { index in
-          Circle().fill(index == page.rawValue ? Color.primary : Color.secondary.opacity(0.35))
-            .frame(width: 7, height: 7)
-        }
-      }
-      .accessibilityLabel("Step \(page.rawValue + 1) of 3")
-
       switch page {
       case .welcome:
         primaryButton("Continue") { page = .age }
@@ -167,10 +159,9 @@ struct OracleWelcomeView: View {
 
   private func primaryButton(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
     Button(action: action) {
-      Text(title).frame(maxWidth: .infinity).padding(.vertical, 10)
+      Text(title).frame(maxWidth: .infinity).frame(minHeight: 50)
     }
-    .buttonStyle(.borderedProminent)
-    .buttonBorderShape(.roundedRectangle(radius: 16))
+    .buttonStyle(OracleWelcomeButtonStyle())
   }
 
   private func welcomeHeader(symbol: String, title: LocalizedStringKey,
@@ -178,7 +169,7 @@ struct OracleWelcomeView: View {
     VStack(spacing: 16) {
       Image(systemName: symbol)
         .font(.system(size: 48, weight: .medium))
-        .foregroundStyle(.tint)
+        .foregroundStyle(oracleWelcomeGradient)
         .accessibilityHidden(true)
       Text(title).font(.largeTitle.bold()).multilineTextAlignment(.center)
       Text(subtitle).font(.body).foregroundStyle(.secondary).multilineTextAlignment(.center)
@@ -190,7 +181,7 @@ struct OracleWelcomeView: View {
     HStack(alignment: .top, spacing: 18) {
       Image(systemName: symbol)
         .font(.title2.weight(.semibold))
-        .foregroundStyle(.tint)
+        .foregroundStyle(oracleWelcomeGradient)
         .frame(width: 36)
         .accessibilityHidden(true)
       VStack(alignment: .leading, spacing: 4) {
@@ -199,5 +190,19 @@ struct OracleWelcomeView: View {
       }
     }
     .accessibilityElement(children: .combine)
+  }
+}
+
+private let oracleWelcomeGradient = LinearGradient(
+  colors: [Color(red: 0.91, green: 0.20, blue: 0.91), Color(red: 0.69, green: 0.16, blue: 0.91)],
+  startPoint: .topLeading,
+  endPoint: .bottomTrailing)
+
+private struct OracleWelcomeButtonStyle: ButtonStyle {
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .foregroundStyle(.white)
+      .background(oracleWelcomeGradient, in: RoundedRectangle(cornerRadius: 16))
+      .opacity(configuration.isPressed ? 0.75 : 1)
   }
 }
