@@ -32,7 +32,7 @@ struct OraclePilotPage: View {
       let isSideBySide = frames.plan == .expandedPanes || frames.plan == .book
       // In the wide layout, center the sphere in the visible pane. Other
       // arrangements leave extra room for the header above the scene.
-      let ballOffset: CGFloat = isSideBySide ? 0
+      let ballOffset: CGFloat = isSideBySide ? 0 : frames.plan == .tabletop ? -side * 0.06
         : headerHeight / 2 + min(side * 0.06, max(0, frames.ball.height - headerHeight - side) / 2)
       // Leave breathing room below the vertical system status area, but let the
       // composer reclaim that space in a short or keyboard-reduced viewport.
@@ -63,8 +63,12 @@ struct OraclePilotPage: View {
             || selectedHistoryEntry != nil,
           isShakeEnabled: !showsInfo && selectedHistoryEntry == nil && showsBall)
           .frame(width: side, height: side)
+          // The tabletop pane has more room for the scene; retain clearance for its rings.
+          .scaleEffect(frames.plan == .tabletop ? 1.4 : 1)
           .offset(y: ballOffset)
           .frame(width: frames.ball.width, height: frames.ball.height)
+          .clipped()
+          .contentShape(Rectangle())
           .position(x: frames.ball.midX, y: frames.ball.midY)
           .opacity(showsBall ? 1 : 0)
           .allowsHitTesting(showsBall)
