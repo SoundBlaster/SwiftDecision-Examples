@@ -48,7 +48,6 @@ final class OraclePageModel {
   var isSubmitting = false
   var statusMessage: String?
   var showsSafetyIntervention = false
-  var safetyNeedsClarification = false
   private var requestTask: Task<Void, Never>?
 
   private(set) var provider: OracleInferenceProvider
@@ -437,7 +436,7 @@ final class OraclePageModel {
           } else if answer.noulValue == true || answer.mode != .noul {
             self.haptics.play(.positiveResult)
           }
-        case let .abstained(reason):
+        case .abstained:
           if self.provider == .gliner {
             self.answer = OracleAnswer(mode: request.mode, displayText: String(localized: "Not enough\ninformation"),
                                        source: .model(identifier: "fastino/gliner2.5-small-v1"))
@@ -447,15 +446,17 @@ final class OraclePageModel {
             self.answerRequestID = requestID
           }
           self.terminalRequestID = self.provider == .gliner ? 0 : requestID
-          self.statusMessage = reason
+          self.statusMessage = String(localized: "Try rephrasing your question")
         case let .safetyIntervention(category):
-          self.answer = OracleAnswer(mode: request.mode, displayText: "", source: .offlineFixture)
+          let needsContext = category == .ambiguousRisk
+          self.answer = OracleAnswer(mode: request.mode,
+                                     displayText: needsContext ? String(localized: "Not enough\ninformation") : "",
+                                     source: .offlineFixture)
           self.answerRequestID = requestID
           self.terminalRequestID = 0
-          self.safetyNeedsClarification = category == .ambiguousRisk
-          self.statusMessage = self.safetyNeedsClarification
+          self.statusMessage = needsContext
             ? String(localized: "Please add context") : String(localized: "Please seek support")
-          self.showsSafetyIntervention = true
+          self.showsSafetyIntervention = !needsContext
         }
         self.isSubmitting = false
       } catch is CancellationError {

@@ -174,15 +174,10 @@ struct OraclePage: View {
     }
     .a11yRoot("oracle")
     .preferredColorScheme(.dark)
-    .alert(model.safetyNeedsClarification ? Text("Please add context") : Text("Safety first"),
-           isPresented: $model.showsSafetyIntervention) {
+    .alert("Safety first", isPresented: $model.showsSafetyIntervention) {
       Button("OK", role: .cancel) {}
     } message: {
-      if model.safetyNeedsClarification {
-        Text("What kind of jump do you mean? Add context so the oracle does not make a potentially unsafe choice. If anyone is in immediate danger, contact local emergency services.")
-      } else {
-        Text("This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service.")
-      }
+      Text("This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service.")
     }
     .task { await model.prepareProvider() }
     .sheet(isPresented: $isShowingInfo, onDismiss: focusQuestionAfterInfoDismissal) {

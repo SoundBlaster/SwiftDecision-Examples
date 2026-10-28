@@ -1209,11 +1209,17 @@ public final class OracleGameEngine: @unchecked Sendable {
     details: [OraclePipelineDetail]? = nil
   ) -> OraclePipelineStage {
     let provider = result.trace.first { $0.stage == .inferenceCompleted }?.detail
+    let abstentionDetails: [OraclePipelineDetail]
+    if case let .abstained(reason) = result.outcome {
+      abstentionDetails = [traceDetail("abstention-reason", "Reason", reason)]
+    } else {
+      abstentionDetails = []
+    }
     return OraclePipelineStage(
       id: title,
       title: title,
       summary: summary,
-      details: (details ?? []) + (provider.map { [traceDetail("provider", "Provider", $0)] } ?? []),
+      details: (details ?? []) + abstentionDetails + (provider.map { [traceDetail("provider", "Provider", $0)] } ?? []),
       decisionEvents: result.trace.map { event in
         OracleDecisionTraceStep(
           stage: event.stage.pipelineLabel,

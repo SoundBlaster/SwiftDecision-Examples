@@ -7,9 +7,10 @@ the previous ball answer and presents support guidance, without sending the
 question to a provider or adding it to answer history.
 
 An ambiguous, context-free question such as “Прыгать или нет?” may refer to
-either recreation or imminent danger. Oracle asks for context rather than
-inferring intent or returning an arbitrary answer. It also asks for context
-when a jump is explicitly associated with selected hazardous places.
+either recreation or imminent danger. Oracle displays a neutral abstention and
+asks for context instead of inferring intent or returning an arbitrary answer.
+When a jump is explicitly associated with selected hazardous places, Oracle
+presents safety support instead.
 
 This is a phrase-based screen, not a general moderation or crisis detection
 model. It can miss paraphrases, implicit intent, other languages, spelling

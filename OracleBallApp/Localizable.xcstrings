@@ -3970,10 +3970,10 @@
         "ru": { "stringUnit": { "state": "translated", "value": "Уточните контекст" } }
       }
     },
-    "What kind of jump do you mean? Add context so the oracle does not make a potentially unsafe choice. If anyone is in immediate danger, contact local emergency services.": {
+    "Try rephrasing your question": {
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "What kind of jump do you mean? Add context so the oracle does not make a potentially unsafe choice. If anyone is in immediate danger, contact local emergency services." } },
-        "ru": { "stringUnit": { "state": "translated", "value": "О каком прыжке идёт речь? Добавьте контекст, чтобы оракул не сделал потенциально опасный выбор. Если кому-то угрожает непосредственная опасность, обратитесь в местные экстренные службы." } }
+        "en": { "stringUnit": { "state": "translated", "value": "Try rephrasing your question" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Попробуйте переформулировать вопрос" } }
       }
     },
     "Please seek support": {

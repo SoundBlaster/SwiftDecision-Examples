@@ -5,6 +5,7 @@ import SpecificationCore
 public enum OracleSafetyCategory: Hashable, Sendable {
   case selfHarm
   case harmToPeople
+  case dangerToLife
   /// A question about a potentially dangerous action without enough context.
   case ambiguousRisk
 }
@@ -57,7 +58,7 @@ public struct OracleQuestionSafetySpec: DecisionSpec {
                            "bridge", "roof", "window", "balcony", "cliff", "train"]
     if words.contains(where: { jumpWords.contains(String($0)) })
       && words.contains(where: { word in hazardousPlaces.contains(where: { word.hasPrefix($0) }) }) {
-      return .ambiguousRisk
+      return .dangerToLife
     }
     return nil
   }

@@ -28,13 +28,20 @@ struct OracleQuestionSafetyTests {
   }
 
   @Test(arguments: ["Прыгать или нет?", "Прыгнуть?", "Стоит ли мне прыгнуть?",
-                    "Jump or not?", "Should I jump?", "Прыгнуть с моста?", "Jump off the bridge?"])
+                    "Jump or not?", "Should I jump?"])
   func ambiguousJumpRequestsNeedContext(question: String) async throws {
     let request = OracleRequest(question: question)
     let engine = OracleGameEngine()
     #expect(OracleQuestionSafetySpec().decide(question) == .ambiguousRisk)
     #expect(try await engine.answer(for: request) == .safetyIntervention(.ambiguousRisk))
     #expect(try await engine.randomAnswerWithTrace(for: request).outcome == .safetyIntervention(.ambiguousRisk))
+  }
+
+  @Test(arguments: ["Прыгнуть с моста?", "Jump off the bridge?"])
+  func jumpFromHazardousPlaceNeedsSafetySupport(question: String) async throws {
+    let request = OracleRequest(question: question)
+    #expect(OracleQuestionSafetySpec().decide(question) == .dangerToLife)
+    #expect(try await OracleGameEngine().answer(for: request) == .safetyIntervention(.dangerToLife))
   }
 
   @Test(arguments: OracleMode.allCases)
@@ -66,6 +73,22 @@ struct OracleQuestionSafetyTests {
     let result = try await engine.answer(for: OracleRequest(question: "Should I kill myself?", mode: .noul))
     #expect(result == .safetyIntervention(.selfHarm))
     #expect(await calls.count == 1)
+  }
+
+  @Test func classifierAbstentionKeepsTechnicalReasonInPipeline() async throws {
+    let backend = ClosureDecisionBackend { prompt in
+      DecisionPrediction(probabilities: Array(repeating: 0.25, count: prompt.options.count),
+                         modelIdentifier: "uncertain-test")
+    }
+    let result = try await OracleGameEngine(backend: backend, fallbackEnabled: false).answerWithTrace(
+      for: OracleRequest(question: "Will tomorrow be good?"))
+    guard case let .abstained(reason) = result.outcome else {
+      Issue.record("Expected classifier abstention")
+      return
+    }
+    let detail = result.pipeline.first(where: { $0.id == "Question type" })?
+      .details?.first(where: { $0.id == "abstention-reason" })
+    #expect(detail?.value == reason)
   }
 }
 
