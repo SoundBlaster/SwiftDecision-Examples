@@ -47,6 +47,7 @@ final class OraclePageModel {
   var terminalRequestID = 0
   var isSubmitting = false
   var statusMessage: String?
+  var showsSafetyIntervention = false
   private var requestTask: Task<Void, Never>?
 
   private(set) var provider: OracleInferenceProvider
@@ -388,7 +389,9 @@ final class OraclePageModel {
       localModelSelected: provider == .gliner,
       modelInstalled: isModelInstalled,
       preparingModel: isPreparingModel))
-    guard isRandomSimulation || usesMissingModelSimulation || (!isPreparingModel && providerIssue == nil) else {
+    let requiresSafetyIntervention = OracleQuestionSafetySpec().decide(question) != nil
+    guard requiresSafetyIntervention || isRandomSimulation || usesMissingModelSimulation
+      || (!isPreparingModel && providerIssue == nil) else {
       statusMessage = providerIssue ?? String(localized: "Loading local model…")
       return
     }
@@ -405,7 +408,7 @@ final class OraclePageModel {
       do {
         let tracedOutcome: OracleTracedOutcome
         if isRandomSimulation || usesMissingModelSimulation {
-          tracedOutcome = try await engine.randomAnswerWithTrace()
+          tracedOutcome = try await engine.randomAnswerWithTrace(for: request)
         } else {
           tracedOutcome = try await engine.answerWithTrace(for: request, capturingFailures: true)
         }
@@ -444,6 +447,12 @@ final class OraclePageModel {
           }
           self.terminalRequestID = self.provider == .gliner ? 0 : requestID
           self.statusMessage = reason
+        case .safetyIntervention:
+          self.answer = OracleAnswer(mode: request.mode, displayText: "", source: .offlineFixture)
+          self.answerRequestID = requestID
+          self.terminalRequestID = 0
+          self.statusMessage = String(localized: "Please seek support")
+          self.showsSafetyIntervention = true
         }
         self.isSubmitting = false
       } catch is CancellationError {

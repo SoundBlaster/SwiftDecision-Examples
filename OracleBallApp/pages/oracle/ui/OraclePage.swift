@@ -174,6 +174,11 @@ struct OraclePage: View {
     }
     .a11yRoot("oracle")
     .preferredColorScheme(.dark)
+    .alert("Safety first", isPresented: $model.showsSafetyIntervention) {
+      Button("OK", role: .cancel) {}
+    } message: {
+      Text("This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service.")
+    }
     .task { await model.prepareProvider() }
     .sheet(isPresented: $isShowingInfo, onDismiss: focusQuestionAfterInfoDismissal) {
       OracleInfoSheet(

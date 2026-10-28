@@ -3958,6 +3958,24 @@
         }
       }
     },
+    "Safety first": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Safety first" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Безопасность прежде всего" } }
+      }
+    },
+    "Please seek support": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Please seek support" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Обратитесь за поддержкой" } }
+      }
+    },
+    "This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "В такой ситуации нужна поддержка человека, а не предсказание. Если кому-то угрожает непосредственная опасность, обратитесь в местные экстренные службы. Свяжитесь с человеком, которому доверяете, или с квалифицированной кризисной службой." } }
+      }
+    },
     "Could not install the Apple-hosted model. Please try again.": {
       "localizations": {
         "en": {

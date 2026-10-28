@@ -113,6 +113,7 @@ public enum OracleOutcome: Hashable, Sendable {
   case accepted(OracleAnswer)
   case fallback(OracleAnswer, reason: String)
   case abstained(reason: String)
+  case safetyIntervention(OracleSafetyCategory)
 }
 
 /// A curated snapshot of one important decision stage in an Oracle request.
@@ -609,7 +610,8 @@ public final class OracleGameEngine: @unchecked Sendable {
 
   /// Generates a simulated binary answer from 100 random Boolean samples.
   /// A tied distribution produces an explicit unknown answer.
-  public func randomAnswerWithTrace() async throws -> OracleTracedOutcome {
+  public func randomAnswerWithTrace(for request: OracleRequest? = nil) async throws -> OracleTracedOutcome {
+    if let request, let blocked = safetyIntervention(for: request) { return blocked }
     let randomTraceRecorder = SpecificationTraceRecorder()
     let distributionSpecification = OracleRandomBooleanDistributionSpecification()
       .traced("Random Boolean distribution")
@@ -681,6 +683,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     for request: OracleRequest,
     capturingFailures: Bool = false
   ) async throws -> OracleTracedOutcome {
+    if let blocked = safetyIntervention(for: request) { return blocked }
     if supportsTransientFailureFallback, await providerCircuitBreaker.isCoolingDown {
       let cooldownContext = OracleProviderFallbackContext(
         providerSupportsFallback: true,
@@ -725,6 +728,11 @@ public final class OracleGameEngine: @unchecked Sendable {
         failure: failure,
         preserving: routedFailure?.pipeline ?? [])
     }
+  }
+
+  private func safetyIntervention(for request: OracleRequest) -> OracleTracedOutcome? {
+    guard let category = OracleQuestionSafetySpec().decide(request.question) else { return nil }
+    return OracleTracedOutcome(outcome: .safetyIntervention(category), pipeline: [])
   }
 
   private func answerWithConfiguredBackend(
@@ -843,6 +851,8 @@ public final class OracleGameEngine: @unchecked Sendable {
       outcome = .fallback(answer, reason: reason)
     case let .abstained(abstentionReason):
       outcome = .abstained(reason: abstentionReason)
+    case let .safetyIntervention(category):
+      outcome = .safetyIntervention(category)
     }
     let fallbackStage = OraclePipelineStage(
       id: "Provider fallback",
