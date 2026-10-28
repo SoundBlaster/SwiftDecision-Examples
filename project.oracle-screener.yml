@@ -1,0 +1,31 @@
+# Standalone, opt-in simulator project. The regular project never links Screener.
+include:
+  - project.yml
+name: OracleScreener
+packages:
+  SwiftDecisionExamples:
+    path: ${ORACLE_SCREENER_ROOT}
+  Screener:
+    url: https://github.com/SoundBlaster/Screener.git
+    exactVersion: 0.2.0
+targets:
+  OracleWidgetsExtension:
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle.screener.widgets
+  OracleModelDownloader:
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle.screener.model-downloader
+  OracleBallApp:
+    dependencies:
+      - package: Screener
+        product: ScreenerKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle.screener
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG ORACLE_SCREENER"
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]": "$(inherited) DEBUG ORACLE_HAS_RESERVED_REGIONS ORACLE_SCREENER"
+          "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]": "$(inherited) DEBUG ORACLE_HAS_RESERVED_REGIONS ORACLE_SCREENER"

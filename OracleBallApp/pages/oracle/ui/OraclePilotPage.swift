@@ -107,6 +107,12 @@ struct OraclePilotPage: View {
           .clipped()
           .position(x: frames.controls.midX, y: frames.controls.midY)
       }
+#if DEBUG && ORACLE_SCREENER && targetEnvironment(simulator)
+      .background(OracleScreenerProbe(
+        layout: String(describing: frames.plan), sceneSide: Double(side),
+        sceneScale: Double(sceneScale), ballCenterY: Double(frames.ball.midY + ballOffset),
+        controlsTop: Double(frames.controls.minY)).allowsHitTesting(false))
+#endif
       .coordinateSpace(name: "oraclePilot")
       .contentShape(Rectangle())
       .simultaneousGesture(
