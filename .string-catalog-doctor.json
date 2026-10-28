@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "locales": ["ru"],
+  "baseline": "scripts/oracle-strings-baseline.json",
+  "catalogs": [
+    {"path": "OracleBallApp/Localizable.xcstrings"},
+    {"path": "OracleWidgets/Localizable.xcstrings"},
+    {"path": "Sources/OracleGame/Resources/Localizable.xcstrings"}
+  ]
+}
