@@ -23,8 +23,8 @@ for the offline fixture.
 
 The [Duo layout pilot](DOCS/ORACLE_DUO_LAYOUT_PILOT.md) adds adaptive single-pane,
 expanded, book, and tabletop arrangements selected by SpecificationCore. It is
-disabled by default; enable `ORACLE_DUO_LAYOUT_PILOT=1` in the OracleBallApp scheme
-to try it with Xcode 27.1.
+enabled by default on iOS 27.1 and later. Set `ORACLE_DUO_LAYOUT_PILOT=0` in the
+OracleBallApp scheme to use the legacy layout.
 
 Use the share button in History or an entry's Decision pipeline to export saved
 questions and traces as JSON or readable text. See

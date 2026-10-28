@@ -26,8 +26,14 @@ struct OraclePilotPage: View {
         geometry: geometry, restingHeight: restingHeight,
         hasRegularWidth: horizontalSizeClass == .regular,
         usesAccessibilityTextSize: dynamicTypeSize.isAccessibilitySize)
-      let side = max(1, min(frames.ball.width - 24, frames.ball.height - 24))
-      let showsBall = side >= 100
+      let headerOnBall = frames.ball.width >= 200 && frames.ball.height >= 80
+      let headerHeight: CGFloat = headerOnBall ? 48 : 0
+      let side = max(1, min(frames.ball.width - 24, frames.ball.height - headerHeight - 24))
+      let showsBall = OracleBallVisibilitySpec().isSatisfiedBy(Double(side))
+      let showsHistory = OracleInlineHistorySpec().isSatisfiedBy(.init(
+        plan: frames.plan, controlsHeight: Double(frames.controls.height),
+        isKeyboardVisible: isKeyboardVisible,
+        usesAccessibilityTextSize: dynamicTypeSize.isAccessibilitySize))
 
       ZStack(alignment: .topLeading) {
         OracleCosmicBackground()
@@ -46,7 +52,7 @@ struct OraclePilotPage: View {
             || selectedHistoryEntry != nil,
           isShakeEnabled: !showsInfo && selectedHistoryEntry == nil && showsBall)
           .frame(width: side, height: side)
-          .offset(y: min(side * 0.06, max(0, frames.ball.height - side) / 2))
+          .offset(y: headerHeight / 2 + min(side * 0.06, max(0, frames.ball.height - headerHeight - side) / 2))
           .frame(width: frames.ball.width, height: frames.ball.height)
           .position(x: frames.ball.midX, y: frames.ball.midY)
           .opacity(showsBall ? 1 : 0)
@@ -54,12 +60,25 @@ struct OraclePilotPage: View {
           .accessibilityHidden(!showsBall)
           .nestedAccessibilityIdentifier("ball")
 
+        if headerOnBall {
+          OracleHeader {
+            isQuestionFocused = false
+            infoDetent = .medium
+            showsInfo = true
+          }
+          .frame(width: frames.ball.width, height: headerHeight)
+          .position(x: frames.ball.midX, y: frames.ball.minY + headerHeight / 2)
+        }
+
         OraclePilotControls(
           model: model, isQuestionFocused: $isQuestionFocused,
-          showsHistory: frames.plan.supportsInlineHistory && !isKeyboardVisible
-            && !dynamicTypeSize.isAccessibilitySize && frames.controls.height >= 300,
+          showsHistory: showsHistory,
+          showsHeader: !headerOnBall,
+          isExpanded: frames.plan.supportsInlineHistory,
+          showsFooter: !frames.plan.supportsInlineHistory && !isKeyboardVisible,
           showsTextAnswer: !showsBall,
           onInfo: {
+            isQuestionFocused = false
             infoDetent = .medium
             showsInfo = true
           },
@@ -77,6 +96,19 @@ struct OraclePilotPage: View {
             if isQuestionFocused && !questionFrame.contains(tap.location) {
               isQuestionFocused = false
             }
+          })
+      .simultaneousGesture(
+        DragGesture(minimumDistance: 36, coordinateSpace: .named("oraclePilot"))
+          .onEnded { gesture in
+            let startsInLowerHalf = gesture.startLocation.y >= geometry.size.height / 2
+            let isUpwardSwipe = gesture.translation.height <= -56
+            let isMostlyVertical = abs(gesture.translation.width) < abs(gesture.translation.height)
+            let startsOnFreeArea = !frames.ball.contains(gesture.startLocation)
+              && !frames.controls.contains(gesture.startLocation)
+            guard startsInLowerHalf, startsOnFreeArea, isUpwardSwipe, isMostlyVertical else { return }
+            isQuestionFocused = false
+            infoDetent = .medium
+            showsInfo = true
           })
       .onReceive(NotificationCenter.default.publisher(
         for: UIResponder.keyboardWillChangeFrameNotification)
@@ -103,10 +135,11 @@ struct OraclePilotPage: View {
     }
     .a11yRoot("oracle")
     .preferredColorScheme(.dark)
+    .task { await model.prepareProvider() }
     .sheet(isPresented: $showsInfo, onDismiss: sheetDismissed) {
       OracleInfoSheet(
         apiKey: model.configuredAPIKey,
-        providerDescription: model.providerDescription,
+        inferenceModel: model,
         historyEntries: model.historyEntries,
         selectedDetent: $infoDetent,
         onSave: model.saveAPIKey,
@@ -168,6 +201,9 @@ private struct OraclePilotControls: View {
   @Bindable var model: OraclePageModel
   let isQuestionFocused: FocusState<Bool>.Binding
   let showsHistory: Bool
+  let showsHeader: Bool
+  let isExpanded: Bool
+  let showsFooter: Bool
   let showsTextAnswer: Bool
   let onInfo: () -> Void
   let onQuestionFrameChanged: (CGRect) -> Void
@@ -176,11 +212,12 @@ private struct OraclePilotControls: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 16) {
-        OracleHeader(onInfo: onInfo)
+        if showsHeader { OracleHeader(onInfo: onInfo) }
 
         AskOracleField(
           text: $model.question, isFocused: isQuestionFocused,
-          isSubmitting: model.isSubmitting, onSubmit: model.submit)
+          isSubmitting: model.isSubmitting, isPreparingModel: model.isPreparingModel,
+          onSubmit: model.submit)
           .frame(maxWidth: 420)
           .frame(maxWidth: .infinity)
           .onGeometryChange(for: CGRect.self) {
@@ -200,35 +237,16 @@ private struct OraclePilotControls: View {
           .fixedSize(horizontal: false, vertical: true)
           .nestedAccessibilityIdentifier("status")
 
+        if showsFooter {
+          Text("AI MAGIC 8-BALL  ·  ASK WITH INTENT")
+            .font(.caption2.weight(.medium))
+            .tracking(1.4)
+            .foregroundStyle(.white.opacity(0.3))
+            .frame(maxWidth: .infinity)
+        }
+
         if showsHistory {
-          Text("History")
-            .font(.headline)
-            .foregroundStyle(.white.opacity(0.85))
-          if model.historyEntries.isEmpty {
-            Text("Your questions and answers will appear here.")
-              .font(.subheadline)
-              .foregroundStyle(.white.opacity(0.55))
-          }
-          ForEach(model.historyEntries) { entry in
-            Button {
-              onHistorySelection(entry)
-            } label: {
-              OracleHistoryRow(entry: entry)
-                .padding(12)
-                .background(.white.opacity(0.06),
-                  in: RoundedRectangle(cornerRadius: 18))
-            }
-            .buttonStyle(.plain)
-            .nestedAccessibilityIdentifier("history.entry.\(entry.id.uuidString)")
-            .contextMenu {
-              Button("Repeat", systemImage: "arrow.clockwise") {
-                model.repeatQuestion(entry.question)
-              }
-              Button("Delete", systemImage: "trash", role: .destructive) {
-                model.deleteHistoryEntry(id: entry.id)
-              }
-            }
-          }
+          OraclePilotHistory(model: model, onSelection: onHistorySelection)
         }
       }
       .padding(16)
@@ -236,8 +254,73 @@ private struct OraclePilotControls: View {
       .frame(maxWidth: .infinity)
     }
     .scrollDismissesKeyboard(.interactively)
-    .background(.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 24))
+    .background(.black.opacity(isExpanded ? 0.18 : 0), in: RoundedRectangle(cornerRadius: 24))
     .nestedAccessibilityIdentifier("controls")
+  }
+}
+
+private struct OraclePilotHistory: View {
+  let model: OraclePageModel
+  let onSelection: (OracleHistoryEntry) -> Void
+  @State private var confirmsClear = false
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      HStack {
+        Text("History")
+          .font(.headline)
+        if !model.historyEntries.isEmpty {
+          Text("• \(model.historyEntries.count)")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+        Spacer()
+        OracleHistoryExportMenu(entries: model.historyEntries)
+          .labelStyle(.iconOnly)
+          .frame(width: 44, height: 44)
+        Button(role: .destructive) { confirmsClear = true } label: {
+          Image(systemName: "trash").frame(width: 44, height: 44)
+        }
+        .disabled(model.historyEntries.isEmpty)
+        .accessibilityLabel("Delete all history")
+      }
+      if model.historyEntries.isEmpty {
+        Text("Your questions and answers will appear here.")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+          .padding(.vertical, 12)
+      } else {
+        ForEach(model.historyEntries) { entry in
+          Divider()
+          Button { onSelection(entry) } label: {
+            HStack {
+              OracleHistoryRow(entry: entry)
+              Image(systemName: "chevron.right")
+                .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 12)
+          }
+          .buttonStyle(.plain)
+          .nestedAccessibilityIdentifier("history.entry.\(entry.id.uuidString)")
+          .contextMenu {
+            Button("Repeat", systemImage: "arrow.clockwise") {
+              model.repeatQuestion(entry.question)
+            }
+            Button("Delete", systemImage: "trash", role: .destructive) {
+              model.deleteHistoryEntry(id: entry.id)
+            }
+          }
+        }
+      }
+    }
+    .padding(.horizontal, 16)
+    .background(Color(uiColor: .secondarySystemGroupedBackground),
+                in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    .confirmationDialog("Delete all question history?", isPresented: $confirmsClear,
+                        titleVisibility: .visible) {
+      Button("Delete All", role: .destructive, action: model.clearHistory)
+      Button("Cancel", role: .cancel) {}
+    }
   }
 }
 
@@ -300,7 +383,7 @@ private struct OraclePilotFrames {
     case .singlePane, .focusedBeforeFold, .focusedAfterFold:
       let region = plan == .focusedBeforeFold ? before
         : plan == .focusedAfterFold ? after : bounds
-      let controlHeight = min(region.height, max(180, min(240, region.height * 0.32)))
+      let controlHeight = min(region.height, max(150, min(190, region.height * 0.25)))
       let ballHeight = max(0, region.height - controlHeight)
       ball = CGRect(x: region.minX, y: region.minY, width: region.width, height: ballHeight)
       controls = CGRect(x: region.minX + 8, y: region.minY + ballHeight,

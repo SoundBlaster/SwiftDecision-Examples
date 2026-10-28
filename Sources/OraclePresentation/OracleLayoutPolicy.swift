@@ -63,6 +63,7 @@ public struct OracleLayoutPolicy: DecisionSpec {
   public static let minimumControlsWidth = 280.0
   public static let minimumControlsHeight = 180.0
   public static let minimumExpandedWidth = 760.0
+  public static let minimumExpandedRestingHeight = 360.0
 
   public init() {}
 
@@ -93,7 +94,7 @@ public struct OracleLayoutPolicy: DecisionSpec {
     let expanded = PredicateSpec<OracleLayoutContext>(description: "oracle.layout.expanded") {
       !$0.usesAccessibilityTextSize && $0.hasRegularWidth
         && $0.viewport.width >= Self.minimumExpandedWidth
-        && $0.restingHeight >= 360
+        && $0.restingHeight >= Self.minimumExpandedRestingHeight
     }
     return FirstMatchSpec<OracleLayoutContext, OracleLayoutPlan>.withFallback([
       (book, .book), (tabletop, .tabletop),

@@ -1,12 +1,13 @@
 # Magic 8 Ball: Duo layout pilot
 
-Status: opt-in implementation. The default layout is unchanged. The app still
-supports iOS 26; active division geometry is available on iOS 27.1 and later.
+Status: adaptive layout enabled by default on iOS 27.1 and later. The app still
+supports iOS 26 using the legacy layout; active division geometry is available
+on iOS 27.1 and later.
 Build the project with Xcode 27.1, as configured in CI.
 
 ## Enable and roll back
 
-In the **OracleBallApp** scheme, add this Run environment variable:
+To force the adaptive layout on in the **OracleBallApp** scheme, add this Run environment variable:
 
 ```text
 ORACLE_DUO_LAYOUT_PILOT=1
@@ -18,28 +19,30 @@ Alternatively, add these launch arguments:
 -oracleDuoLayoutPilot YES
 ```
 
-The environment value takes precedence over UserDefaults. Values `1` and `true`
+The environment value takes precedence over an explicitly stored UserDefaults value. Values `1` and `true`
 enable the pilot; any other supplied environment value disables it. With neither
-an environment override nor an enabled UserDefaults value, the flag is off.
+override, the pilot is enabled on iOS 27.1 and later and disabled on older iOS.
 
 The root view samples the flag into State for the lifetime of the page. Enabling
 or disabling it requires relaunching the app and does not swap a live renderer
 during an answer. To roll back, set the environment value to `0` and relaunch,
-or remove the environment override and the launch arguments if no enabled value
-was saved in UserDefaults.
+or set `-oracleDuoLayoutPilot NO` as launch arguments.
 
 `ORACLE_HAS_RESERVED_REGIONS` is a separate **compile-time** condition on the
 OracleBallApp target. It enables the SDK adapter; it does not enable the pilot.
-The adapter checks iOS 27.1 availability before calling the API. An older SDK
-can compile the ordinary adaptive path by removing that build condition, but
-the committed configuration and CI use Xcode 27.1.
+The adapter checks iOS 27.1 availability before calling the API. The build
+condition is limited to the corresponding SDKs in both project.yml and the
+generated Xcode project. The committed configuration and CI use Xcode 27.1.
 
 ## Composition and policy
 
 `OracleLayoutPolicy` lives in `OraclePresentation`. It uses named
 `PredicateSpec` rules and an ordered `FirstMatchSpec` with a single-pane fallback.
 The policy receives dimensions and environment facts; SwiftUI owns coordinates,
-focus, presentation, and rendering.
+focus, presentation, and rendering. `OracleBallVisibilitySpec` and
+`OracleInlineHistorySpec` describe the separate visibility requirements; they
+are tested without a view hierarchy. iPhone landscape orientations are enabled
+so a horizontal division can be used in tabletop.
 
 | Priority | Layout | Condition and composition |
 | --- | --- | --- |
@@ -73,7 +76,7 @@ moves the composer into the usable region above the fold.
   attached to those children.
 - When the ball becomes too small to show, it remains mounted and is paused.
   The controls show the answer as text and remain scrollable.
-- History appears inline in expanded, book, and tabletop arrangements when space
+- History appears as an inline card with export and clear actions in expanded, book, and tabletop arrangements when space
   permits. It hides while a bottom-attached software keyboard is visible or an
   accessibility text size is selected. History remains available in the info sheet.
 - Selecting inline history opens the existing pipeline detail. Repeat and delete
@@ -83,7 +86,12 @@ moves the composer into the usable region above the fold.
 
 ## Local evidence
 
-On 2026-10-02:
+On 2026-10-28, the OracleBallApp Debug iOS Simulator build succeeded with Xcode
+27.1 and the 20 OraclePresentation tests passed. Layout-policy tests cover
+book, tabletop, keyboard fallback, visibility thresholds, and ordinary fallback.
+A successful build and policy tests do not prove runtime rendering or focus.
+
+Earlier, on 2026-10-02:
 
 - `swift build --target OraclePresentation` passed.
 - Xcode compiler diagnostics reported no issues in `OraclePage.swift` and
@@ -94,8 +102,8 @@ On 2026-10-02:
   requires renewed approval for `SpecificationCoreMacros` at the resolved 2.1.0
   revision. No macro trust record or global validation setting was changed.
 
-No tests or runtime/device checks were run for this pilot. CI already builds
-OracleBallApp with Xcode 27.1; its results are separate from these local checks.
+These historical checks precede the update against main. Current tests and runtime
+validation must be reported separately for the updated branch.
 
 ## Remaining runtime evaluation
 

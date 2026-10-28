@@ -106,6 +106,8 @@ targets:
         UILaunchStoryboardName: LaunchScreen
         "UISupportedInterfaceOrientations~iphone":
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         "UISupportedInterfaceOrientations~ipad":
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
@@ -123,6 +125,8 @@ targets:
         DEVELOPMENT_TEAM: P8T2366K8X
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
         PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]": "$(inherited) ORACLE_HAS_RESERVED_REGIONS"
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]": "$(inherited) ORACLE_HAS_RESERVED_REGIONS"
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
     scheme:

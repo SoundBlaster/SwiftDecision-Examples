@@ -13,9 +13,15 @@ struct OraclePage: View {
   init(model: OraclePageModel = OraclePageModel()) {
     _model = State(initialValue: model)
     let environment = ProcessInfo.processInfo.environment["ORACLE_DUO_LAYOUT_PILOT"]
-    _usesDuoPilot = State(initialValue:
-      environment.map { $0 == "1" || $0.lowercased() == "true" }
-        ?? UserDefaults.standard.bool(forKey: "oracleDuoLayoutPilot"))
+    let override = environment.map { $0 == "1" || $0.lowercased() == "true" }
+      ?? (UserDefaults.standard.object(forKey: "oracleDuoLayoutPilot") as? Bool)
+    if let override {
+      _usesDuoPilot = State(initialValue: override)
+    } else if #available(iOS 27.1, *) {
+      _usesDuoPilot = State(initialValue: true)
+    } else {
+      _usesDuoPilot = State(initialValue: false)
+    }
   }
 
   var body: some View {

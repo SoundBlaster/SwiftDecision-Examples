@@ -72,7 +72,6 @@
 		C7BD59E26A02FB2014A3DEC9 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 632F2811B6281ED49A08F2E4 /* Localizable.xcstrings */; };
 		CA7B6FB826C11092AB41EF8B /* CityTurnRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 346C1BCD4A824791392C194B /* CityTurnRow.swift */; };
 		CC9713D79CF8C5FF87AAEE84 /* InstantPredictionWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B9F7144567D17541E66E983 /* InstantPredictionWidget.swift */; };
-		CCAD00000000000000000001 /* CityChainPresentation in Frameworks */ = {isa = PBXBuildFile; productRef = CCAD00000000000000000002 /* CityChainPresentation */; };
 		CE982400AFC0CA0CEAC8CB7A /* OracleCredentialsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */; };
 		D2642B91F5B4C9FF8DB60BF8 /* OraclePresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 01B68DE758911AE15B2AAEBE /* OraclePresentation */; };
 		D35C1FB39BB776E196D9B2FC /* OracleBallGestureLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2B4E27431CA8AC53D80BBF0 /* OracleBallGestureLayer.swift */; };
@@ -156,7 +155,7 @@
 		1837C0086090A683556A031F /* SwiftDecision-Examples-oracle-pilot */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "SwiftDecision-Examples-oracle-pilot"; path = .; sourceTree = SOURCE_ROOT; };
 		189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCredentialsStore.swift; sourceTree = "<group>"; };
 		2083F00EA6DAE97338B46E3A /* OracleMotionComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionComponent.swift; sourceTree = "<group>"; };
-		25EEF5E55A5683493177C464 /* us-states-2024.geojson */ = {isa = PBXFileReference; lastKnownFileType = text; path = "us-states-2024.geojson"; sourceTree = "<group>"; };
+		25EEF5E55A5683493177C464 /* us-states-2024.geojson */ = {isa = PBXFileReference; path = "us-states-2024.geojson"; sourceTree = "<group>"; };
 		2DA8BA71F7348C43E25554FC /* CityAtlasMapData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityAtlasMapData.swift; sourceTree = "<group>"; };
 		2E1891ADC92C6E7280C6B041 /* ScoutFactCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutFactCatalog.swift; sourceTree = "<group>"; };
 		2E564316622538C1B0F24094 /* SubmitCityForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmitCityForm.swift; sourceTree = "<group>"; };
@@ -1633,10 +1632,6 @@
 		BCFC25CE5B72400FF274C46C /* CityChainGame */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CityChainGame;
-		};
-		CCAD00000000000000000002 /* CityChainPresentation */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = CityChainPresentation;
 		};
 		E14F9F1E7EE4A975AA0F6EC8 /* OracleHistory */ = {
 			isa = XCSwiftPackageProductDependency;
