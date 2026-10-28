@@ -7,6 +7,11 @@ import OracleGLiNER
 @main
 struct OracleBallApp: App {
   init() {
+    #if DEBUG
+    if ProcessInfo.processInfo.arguments.contains("-oracle.resetWelcome") {
+      UserDefaults.standard.removeObject(forKey: "oracle.welcome.completed.v1")
+    }
+    #endif
     OracleRevealComponent.registerComponent()
     OracleMotionComponent.registerComponent()
     OracleFieldComponent.registerComponent()

@@ -7,6 +7,7 @@ import NestedA11yIDs
 
 struct OraclePage: View {
   @Environment(\.scenePhase) private var scenePhase
+  @AppStorage("oracle.welcome.completed.v1") private var hasCompletedWelcome = false
   @State private var model: OraclePageModel
   @State private var isShowingInfo = false
   @State private var shouldFocusQuestionAfterInfoDismissal = false
@@ -180,6 +181,12 @@ struct OraclePage: View {
       Text("This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service.")
     }
     .task { await model.prepareProvider() }
+    .fullScreenCover(isPresented: Binding(
+      get: { !hasCompletedWelcome },
+      set: { _ in })) {
+      OracleWelcomeView(model: model) { hasCompletedWelcome = true }
+        .interactiveDismissDisabled()
+    }
     .sheet(isPresented: $isShowingInfo, onDismiss: focusQuestionAfterInfoDismissal) {
       OracleInfoSheet(
         apiKey: model.configuredAPIKey,
@@ -195,6 +202,7 @@ struct OraclePage: View {
     }
     .onOpenURL { url in
       guard url.scheme == "oracleball", url.host == "random" else { return }
+      guard hasCompletedWelcome else { return }
       model.handleWidgetPrediction()
       if isShowingInfo {
         shouldFocusQuestionAfterInfoDismissal = true

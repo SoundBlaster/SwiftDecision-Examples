@@ -4,6 +4,7 @@ final class OracleKeyboardDismissalUITests: XCTestCase {
   @MainActor
   func testTappingOutsideQuestionFieldDismissesKeyboard() throws {
     let app = XCUIApplication()
+    app.launchArguments += ["-oracle.welcome.completed.v1", "YES"]
     app.launch()
 
     let questionField = app.textFields["oracle.question.input"]
@@ -31,6 +32,7 @@ final class OracleKeyboardDismissalUITests: XCTestCase {
   @MainActor
   func testTappingTheOracleBallDismissesKeyboard() throws {
     let app = XCUIApplication()
+    app.launchArguments += ["-oracle.welcome.completed.v1", "YES"]
     app.launch()
 
     let questionField = app.textFields["oracle.question.input"]
