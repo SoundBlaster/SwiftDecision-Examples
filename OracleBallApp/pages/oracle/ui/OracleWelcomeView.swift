@@ -168,7 +168,7 @@ struct OracleWelcomeView: View {
                              subtitle: LocalizedStringKey) -> some View {
     VStack(spacing: 16) {
       Image(systemName: symbol)
-        .font(.system(size: 48, weight: .medium))
+        .font(.system(size: 96, weight: .medium))
         .foregroundStyle(oracleWelcomeGradient)
         .accessibilityHidden(true)
       Text(title).font(.largeTitle.bold()).multilineTextAlignment(.center)
