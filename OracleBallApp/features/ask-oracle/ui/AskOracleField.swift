@@ -6,10 +6,13 @@ struct AskOracleField: View {
   @FocusState.Binding var isFocused: Bool
   @ScaledMetric(relativeTo: .body) private var submitButtonSize: CGFloat = 44
   let isSubmitting: Bool
+  var isPreparingModel = false
   let onSubmit: () -> Void
 
+  private var isBusy: Bool { isSubmitting || isPreparingModel }
+
   private func submit() {
-    guard !isSubmitting else { return }
+    guard !isBusy else { return }
     isFocused = false
     onSubmit()
   }
@@ -30,7 +33,7 @@ struct AskOracleField: View {
 
       Button(action: submit) {
         ZStack {
-          if isSubmitting {
+          if isBusy {
             ProgressView()
               .progressViewStyle(.circular)
               .tint(.white)
@@ -51,13 +54,13 @@ struct AskOracleField: View {
           ), in: Circle()
         )
         .shadow(color: .oraclePurple.opacity(0.35), radius: 12, y: 4)
-        .animation(.easeInOut(duration: 0.2), value: isSubmitting)
+        .animation(.easeInOut(duration: 0.2), value: isBusy)
       }
       .buttonStyle(.plain)
-      .disabled(isSubmitting)
-      .accessibilityLabel(isSubmitting ? "Waiting for answer" : "Reveal answer")
+      .disabled(isBusy)
+      .accessibilityLabel(isPreparingModel ? "Preparing local model" : (isSubmitting ? "Waiting for answer" : "Reveal answer"))
       .accessibilityHint(
-        isSubmitting
+        isPreparingModel ? "The local model is preparing before accepting questions" : isSubmitting
           ? "The oracle is preparing an answer"
           : "The oracle chooses the answer format automatically")
       .nestedAccessibilityIdentifier("submit")

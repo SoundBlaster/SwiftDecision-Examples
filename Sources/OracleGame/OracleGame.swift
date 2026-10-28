@@ -126,6 +126,8 @@ public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
   /// Unified, ordered events from SwiftDecision's invocation-scoped timeline when available.
   /// Optional so history entries written by earlier app versions remain decodable.
   public let orderedTrace: [OraclePipelineTimelineEvent]?
+  /// Full-precision scores aligned to their options, absent in older history entries.
+  public let distribution: OracleDecisionDistribution?
 
   public init(
     id: String,
@@ -134,7 +136,8 @@ public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
     details: [OraclePipelineDetail]? = nil,
     decisionEvents: [OracleDecisionTraceStep] = [],
     specificationEvents: [OracleSpecificationTraceStep] = [],
-    orderedTrace: [OraclePipelineTimelineEvent]? = nil
+    orderedTrace: [OraclePipelineTimelineEvent]? = nil,
+    distribution: OracleDecisionDistribution? = nil
   ) {
     self.id = id
     self.title = title
@@ -143,6 +146,20 @@ public struct OraclePipelineStage: Codable, Hashable, Identifiable, Sendable {
     self.decisionEvents = decisionEvents
     self.specificationEvents = specificationEvents
     self.orderedTrace = orderedTrace
+    self.distribution = distribution
+  }
+}
+
+/// Numeric decision evidence retained without display rounding.
+public struct OracleDecisionDistribution: Codable, Hashable, Sendable {
+  public let options: [String]
+  public let probabilities: [Double]
+  public let confidence: Double
+
+  public init(options: [String], probabilities: [Double], confidence: Double) {
+    self.options = options
+    self.probabilities = probabilities
+    self.confidence = confidence
   }
 }
 
@@ -449,6 +466,11 @@ private struct OracleRequestPolicy {
       .addPredicate({ $0.mode == .choice }, result: OracleOperationSelection(.choice))
       .addPredicate({ $0.mode == .score }, result: OracleOperationSelection(.score))
       .addPredicate({ $0.mode == .unsupported }, result: OracleOperationSelection(.unsupported))
+      .add(
+        AnyAsyncSpecification<OracleRoutingContext> {
+          $0.mode == .automatic && $0.hasValidChoicePlan && !$0.asksForProbability
+        }.tracedAsync("Explicit alternatives select Choice"),
+        result: OracleOperationSelection(.choice))
       .addPredicate({ $0.mode == .automatic }, result: OracleOperationSelection(.automatic))
       .fallback(OracleOperationSelection(.automatic))
       .build()
@@ -459,6 +481,7 @@ private struct OracleRoutedProviderFailure: Error {
   let underlyingError: any Error
   let mode: OracleMode
   let pipeline: [OraclePipelineStage]
+  let stageTitle: String
 }
 
 private struct OracleEvaluation: Sendable {
@@ -515,6 +538,7 @@ private extension DecisionTraceEvent.Stage {
 /// The engine owns immutable policies and a sendable DecisionEngine. The unchecked
 /// conformance is intentional: specifications are immutable after initialization.
 public final class OracleGameEngine: @unchecked Sendable {
+  private let backend: any DecisionBackend
   private let decisionEngine: DecisionEngine
   private let configuration: DecisionEngine.Configuration
   private let maximumResponseTime: TimeInterval?
@@ -532,6 +556,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     backendIdentifier: String? = nil,
     fallbackEnabled: Bool = true
   ) {
+    self.backend = backend
     decisionEngine = DecisionEngine(backend: backend, configuration: configuration)
     self.configuration = configuration
     self.fallbackEnabled = fallbackEnabled
@@ -640,6 +665,7 @@ public final class OracleGameEngine: @unchecked Sendable {
       displayText: selectedValue.map(OracleAnswerPhrases.random(for:)) ?? oracleLocalized("Unknown"),
       noulValue: selectedValue,
       result: result,
+      options: ["False", "True"],
       details: [
         traceDetail("selected-option", "Selected option", selectedLabel),
         traceDetail("probabilities", "Probabilities", probabilities),
@@ -649,7 +675,12 @@ public final class OracleGameEngine: @unchecked Sendable {
     return try await resolve(evaluation, appendingTo: [generationStage])
   }
 
-  public func answerWithTrace(for request: OracleRequest) async throws -> OracleTracedOutcome {
+  /// Set `capturingFailures` to receive `OracleTracedFailure` with available diagnostics.
+  /// The default preserves the original thrown-error contract. Cancellation is never wrapped.
+  public func answerWithTrace(
+    for request: OracleRequest,
+    capturingFailures: Bool = false
+  ) async throws -> OracleTracedOutcome {
     if supportsTransientFailureFallback, await providerCircuitBreaker.isCoolingDown {
       let cooldownContext = OracleProviderFallbackContext(
         providerSupportsFallback: true,
@@ -659,9 +690,14 @@ public final class OracleGameEngine: @unchecked Sendable {
       }
     }
 
+    let failureRecorder = OracleFailureTraceRecorder()
+    let requestEngine = capturingFailures
+      ? DecisionEngine(backend: backend, configuration: configuration,
+                       decisionTraceHandler: { failureRecorder.record($0) })
+      : decisionEngine
     do {
       let budget = try maximumResponseTime.map { try DecisionBudget(timeout: $0) }
-      let result = try await answerWithConfiguredBackend(for: request, budget: budget)
+      let result = try await answerWithConfiguredBackend(for: request, budget: budget, decisionEngine: requestEngine)
       if supportsTransientFailureFallback {
         await providerCircuitBreaker.recordSuccess()
       }
@@ -673,7 +709,16 @@ public final class OracleGameEngine: @unchecked Sendable {
       let context = OracleProviderFallbackContext(
         providerSupportsFallback: supportsTransientFailureFallback,
         failure: failure)
-      guard OracleProviderFallbackSpec().isSatisfiedBy(context) else { throw underlyingError }
+      guard OracleProviderFallbackSpec().isSatisfiedBy(context) else {
+        guard capturingFailures, failure != .cancelled else { throw underlyingError }
+        let failureStage = OraclePipelineTraceRecorder.failureStage(
+          title: routedFailure?.stageTitle ?? "Request failure",
+          snapshot: failureRecorder.latest(),
+          provider: backendIdentifier, kind: failure.code,
+          errorType: String(reflecting: type(of: underlyingError)))
+        throw OracleTracedFailure(kind: failure.code, mode: routedFailure?.mode ?? request.mode,
+          provider: backendIdentifier, pipeline: (routedFailure?.pipeline ?? []) + [failureStage])
+      }
       await providerCircuitBreaker.recordTransientFailure()
       return try await offlineFallback(
         for: routedFailure.map { OracleRequest(question: request.question, mode: $0.mode) } ?? request,
@@ -684,7 +729,8 @@ public final class OracleGameEngine: @unchecked Sendable {
 
   private func answerWithConfiguredBackend(
     for request: OracleRequest,
-    budget: DecisionBudget?
+    budget: DecisionBudget?,
+    decisionEngine: DecisionEngine
   ) async throws -> OracleTracedOutcome {
     var pipeline: [OraclePipelineStage] = []
     let eligibilityRecorder = SpecificationTraceRecorder()
@@ -709,6 +755,7 @@ public final class OracleGameEngine: @unchecked Sendable {
     let routingContext = OracleRoutingContext(
       mode: request.mode,
       choicePlan: choicePlan,
+      hasValidChoicePlan: isChoicePlanValid,
       asksForProbability: OracleChoicePlanner.asksForProbability(question))
     let routingRecorder = SpecificationTraceRecorder()
     guard var selection = try await SpecificationTraceRuntime.decideAsync(
@@ -734,10 +781,17 @@ public final class OracleGameEngine: @unchecked Sendable {
     } else if selection.operation == .automatic {
       let classifier = OracleIntentClassifier(
         engine: decisionEngine, fallbackEnabled: fallbackEnabled)
-      let intent = try await classifier.classify(question, budget: budget)
+      let intent: DecisionResult<OracleOperation>
+      do {
+        intent = try await classifier.classify(question, budget: budget)
+      } catch {
+        throw OracleRoutedProviderFailure(underlyingError: error, mode: .automatic,
+          pipeline: pipeline, stageTitle: "Question type")
+      }
       pipeline.append(decisionStage(
         "Question type",
         result: intent,
+        options: ["Noul", "Choice", "Score", "Unsupported"],
         summary: intent.value.map { "\($0.traceLabel) · \(percentage(intent.confidence))" },
         details: intentDiagnostics(for: intent)))
       guard let operation = intent.value else {
@@ -764,10 +818,10 @@ public final class OracleGameEngine: @unchecked Sendable {
 
     let evaluation: OracleEvaluation
     do {
-      evaluation = try await evaluate(request, selection: selection, budget: budget)
+      evaluation = try await evaluate(request, selection: selection, budget: budget, decisionEngine: decisionEngine)
     } catch {
       throw OracleRoutedProviderFailure(
-        underlyingError: error, mode: selection.operation.mode, pipeline: pipeline)
+        underlyingError: error, mode: selection.operation.mode, pipeline: pipeline, stageTitle: "Answer decision")
     }
     return try await resolve(evaluation, appendingTo: pipeline)
   }
@@ -900,7 +954,8 @@ public final class OracleGameEngine: @unchecked Sendable {
   private func evaluate(
     _ request: OracleRequest,
     selection: OracleOperationSelection,
-    budget: DecisionBudget? = nil
+    budget: DecisionBudget? = nil,
+    decisionEngine: DecisionEngine
   ) async throws -> OracleEvaluation {
     let question = request.question.trimmingCharacters(in: .whitespacesAndNewlines)
     switch selection.operation {
@@ -917,6 +972,7 @@ public final class OracleGameEngine: @unchecked Sendable {
         displayText: result.value.map(OracleAnswerPhrases.random(for:)),
         noulValue: result.value,
         result: result,
+        options: ["No", "Yes"],
         details: distributionDetails(
           options: ["No", "Yes"],
           selected: result.value.map { $0 ? "Yes" : "No" },
@@ -930,8 +986,8 @@ public final class OracleGameEngine: @unchecked Sendable {
         ? (options.contains("later") ? "later" : options.first)
         : nil
       let result = try await decisionEngine.choice(
-        instructions: question,
-        context: question,
+        instructions: selection.choicePlan.selectionInstructions ?? question,
+        context: selection.choicePlan.selectionInstructions == nil ? question : "No additional observations.",
         options: options.map { option in
           ChoiceOption(label: option, description: option)
         },
@@ -951,6 +1007,7 @@ public final class OracleGameEngine: @unchecked Sendable {
           }
         },
         result: result,
+        options: options,
         details: distributionDetails(
           options: options,
           selected: result.value,
@@ -976,6 +1033,7 @@ public final class OracleGameEngine: @unchecked Sendable {
         mode: .score,
         displayText: text,
         result: result,
+        options: scoreLevels,
         details: distributionDetails(
           options: scoreLevels,
           selected: result.value.map { scoreLevels[$0.level] },
@@ -991,10 +1049,11 @@ public final class OracleGameEngine: @unchecked Sendable {
     displayText: String?,
     noulValue: Bool? = nil,
     result: DecisionResult<Value>,
+    options: [String] = [],
     details: [OraclePipelineDetail] = [],
     sourceOverride: OracleAnswerSource? = nil
   ) async throws -> OracleEvaluation {
-    let decisionTraceStage = decisionStage("Answer decision", result: result, details: details)
+    let decisionTraceStage = decisionStage("Answer decision", result: result, options: options, details: details)
     switch result.outcome {
     case let .abstained(reason):
       return OracleEvaluation(
@@ -1135,6 +1194,7 @@ public final class OracleGameEngine: @unchecked Sendable {
   private func decisionStage<Value: Sendable>(
     _ title: String,
     result: DecisionResult<Value>,
+    options: [String] = [],
     summary: String? = nil,
     details: [OraclePipelineDetail]? = nil
   ) -> OraclePipelineStage {
@@ -1151,7 +1211,9 @@ public final class OracleGameEngine: @unchecked Sendable {
           detail: event.detail ?? event.stage.pipelineExplanation)
       },
       specificationEvents: OraclePipelineTraceRecorder.decisionDetails(from: result.specificationTrace),
-      orderedTrace: OraclePipelineTraceRecorder.orderedDecisionTrace(from: result.orderedTrace))
+      orderedTrace: OraclePipelineTraceRecorder.orderedDecisionTrace(from: result.orderedTrace),
+      distribution: options.isEmpty ? nil : OracleDecisionDistribution(
+        options: options, probabilities: result.probabilities, confidence: result.confidence))
   }
 
   private func intentDiagnostics(

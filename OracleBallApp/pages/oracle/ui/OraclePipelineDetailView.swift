@@ -12,7 +12,13 @@ struct OraclePipelineDetailView: View {
         detailValue(
           "Question",
           value: entry.question.isEmpty ? String(localized: "Random answer") : entry.question)
-        detailValue("Answer", value: entry.answer, tint: .oracleLavender)
+        if let failure = entry.failure {
+          detailValue("Status", value: String(localized: "Request failed"), tint: .orange)
+          detailValue("Failure", value: failure.message)
+          detailValue("Failure kind", value: failure.kind)
+        } else {
+          detailValue("Answer", value: entry.answer, tint: .oracleLavender)
+        }
         detailValue("Decision", value: localizedPipelineText(entry.mode))
         detailValue("Provider", value: localizedPipelineText(entry.source))
         detailValue("Timestamp", value: entry.createdAt.formatted(date: .abbreviated, time: .shortened))
@@ -102,6 +108,12 @@ struct OraclePipelineDetailView: View {
     .listStyle(.insetGrouped)
     .navigationBarTitle("Decision pipeline", displayMode: .inline)
     .navigationBarHidden(false)
+    .toolbar {
+      ToolbarItem(placement: .topBarTrailing) {
+        OracleHistoryExportMenu(entries: [entry], isSingleQuestion: true)
+          .labelStyle(.iconOnly)
+      }
+    }
     .a11yRoot("oracle.pipeline")
   }
 

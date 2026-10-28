@@ -1,5 +1,5 @@
 {
-  "originHash" : "3e15aad366617e02c9e4829cfd90b5965bfd2949bc692e812cb5e291a77502ba",
+  "originHash" : "d143a56e377ababdc9c5665871a89b3ac6a86442970b6f71d8f07792e5837dca",
   "pins" : [
     {
       "identity" : "specificationcore",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SoundBlaster/SwiftDecision.git",
       "state" : {
-        "revision" : "fc28e77976228885b225ca053d08ccbd08c57893",
-        "version" : "0.6.0"
+        "revision" : "d98ebbc36f2d3df311790cb431a04cefbd64b36f",
+        "version" : "0.9.0"
       }
     },
     {
@@ -33,8 +33,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SoundBlaster/SwiftJev.git",
       "state" : {
-        "revision" : "aaecdeab577686a7205b052b0758d5089f84e7ef",
-        "version" : "0.3.0"
+        "revision" : "94ac161300e588d20a2d4957a1118b4aed8792eb",
+        "version" : "0.5.0"
+      }
+    },
+    {
+      "identity" : "zipfoundation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/weichsel/ZIPFoundation.git",
+      "state" : {
+        "revision" : "22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
+        "version" : "0.9.20"
       }
     }
   ],

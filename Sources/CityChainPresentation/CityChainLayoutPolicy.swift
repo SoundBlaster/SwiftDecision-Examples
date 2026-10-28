@@ -163,3 +163,29 @@ public struct CityChainScenicRouteSpec: Specification {
       && !context.usesAccessibilityTextSize
   }
 }
+
+/// Keeps a route card in every game arrangement that can show secondary content.
+/// The illustrated version needs a tall, single-column canvas; shared panes use
+/// the shorter classic card, while tabletop layouts keep route history in the atlas.
+public enum CityChainRoutePresentation: Equatable, Sendable {
+  case scenic, compact, none
+}
+
+public struct CityChainRoutePresentationSpec: DecisionSpec {
+  public typealias Context = CityChainScenicRouteSpec.Context
+
+  public init() {}
+
+  public func decide(_ context: Context) -> CityChainRoutePresentation? {
+    let scenic = PredicateSpec<Context>(description: "city.route.scenic") {
+      CityChainScenicRouteSpec().isSatisfiedBy($0)
+    }
+    let compact = PredicateSpec<Context>(description: "city.route.compact") {
+      $0.plan != .foldAwareNotebook
+    }
+    return FirstMatchSpec<Context, CityChainRoutePresentation>.withFallback([
+      (scenic, .scenic),
+      (compact, .compact),
+    ], fallback: .none).decide(context)
+  }
+}

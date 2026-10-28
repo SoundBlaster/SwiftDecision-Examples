@@ -4,9 +4,11 @@ Small applications that demonstrate model decisions composed with `Specification
 
 ## OracleBallApp
 
+Oracle is a free reference app for SwiftDecision and SwiftJev, with domain policies built on SpecificationCore. See the [product roadmap](DOCS/ORACLE_PRODUCT_ROADMAP.md) and [v1 release readiness](DOCS/ORACLE_V1_RELEASE_READINESS.md) for the first free release; optional paid customization is deferred.
+
 OracleBallApp is an iOS 26 SwiftUI and RealityKit Magic 8 Ball rendering demo.
-It uses a deterministic local answer for the presentation flow and keeps the
-rendering boundary ready for a future SwiftDecision provider. The scene uses
+It supports offline answer simulation and optional inference providers while
+keeping the rendering boundary independent from model execution. The scene uses
 procedural geometry, a depth-layered open shell, a textured triangular answer
 plate, and a custom Metal absorption effect. See
 [`DOCS/ORACLE_RENDERING.md`](DOCS/ORACLE_RENDERING.md) for the scene ownership,
@@ -23,6 +25,14 @@ The [Duo layout pilot](DOCS/ORACLE_DUO_LAYOUT_PILOT.md) adds adaptive single-pan
 expanded, book, and tabletop arrangements selected by SpecificationCore. It is
 disabled by default; enable `ORACLE_DUO_LAYOUT_PILOT=1` in the OracleBallApp scheme
 to try it with Xcode 27.1.
+
+Use the share button in History or an entry's Decision pipeline to export saved
+questions and traces as JSON or readable text. See
+[`DOCS/ORACLE_HISTORY_EXPORT.md`](DOCS/ORACLE_HISTORY_EXPORT.md) for the format,
+precision and backward-compatibility contract.
+
+GLiNER adds explicit **Jev / GLiNER small / None** provider selection. Oracle requests its separately provisioned model through Apple-Hosted Background Assets after an explicit install action; developer folder import remains available. No weights are bundled and local inference never falls back to a cloud provider. See [delivery setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
+
 
 ## City Chain
 
@@ -44,7 +54,7 @@ The engine package supports iOS 15+ and macOS 10.15+. A SwiftUI example app can 
 
 ## Optional TypeSafe Jev backend
 
-The package resolves [SwiftJev 0.3.0](https://github.com/SoundBlaster/SwiftJev/releases/tag/0.3.0), [SwiftDecision 0.6.0](https://github.com/SoundBlaster/SwiftDecision/releases/tag/0.6.0), and [SpecificationCore 2.1.0](https://github.com/SoundBlaster/SpecificationCore/releases/tag/2.1.0). The game remains offline by default; choose the hosted provider explicitly through `CityChainBackendFactory` when a caller has configured a key:
+The pilot pins SwiftDecision to the implementation revision in [PR #23](https://github.com/SoundBlaster/SwiftDecision/pull/23), alongside [SwiftJev 0.5.0](https://github.com/SoundBlaster/SwiftJev/releases/tag/0.5.0) and [SpecificationCore 2.1.0](https://github.com/SoundBlaster/SpecificationCore/releases/tag/2.1.0). This is not a SwiftDecision release update. The game remains offline by default; choose the hosted provider explicitly through `CityChainBackendFactory` when a caller has configured a key:
 
 ```swift
 let backend = try CityChainBackendFactory.makeJev(apiKey: apiKey)

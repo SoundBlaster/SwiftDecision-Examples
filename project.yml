@@ -7,6 +7,7 @@ options:
 packages:
   SwiftDecisionExamples:
     path: .
+    traits: [GLiNER]
   NestedA11yIDs:
     url: https://github.com/SoundBlaster/NestedA11yIDs.git
     from: 1.0.0
@@ -75,23 +76,32 @@ targets:
     dependencies:
       - target: OracleWidgetsExtension
         embed: true
+      - target: OracleModelDownloader
+        embed: true
       - package: SwiftDecisionExamples
         product: OraclePresentation
       - package: SwiftDecisionExamples
         product: OracleGame
       - package: SwiftDecisionExamples
         product: OracleHistory
+      - package: SwiftDecisionExamples
+        product: OracleGLiNER
       - package: NestedA11yIDs
         product: NestedA11yIDs
     entitlements:
       path: OracleBallApp/OracleBallApp.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.soundblaster.oracleball
+          - group.ru.egormerkushev.oracle
     info:
       path: OracleBallApp/Info.plist
       properties:
-        CFBundleDisplayName: Oracle
+        CFBundleDisplayName: "Endless Answers"
+        ITSAppUsesNonExemptEncryption: false
+        CFBundleVersion: "6"
+        BAAppGroupID: group.ru.egormerkushev.oracle
+        BAHasManagedAssetPacks: true
+        BAUsesAppleHosting: true
         NSMotionUsageDescription: Phone motion brings the oracle scene to life.
         UILaunchStoryboardName: LaunchScreen
         "UISupportedInterfaceOrientations~iphone":
@@ -102,7 +112,7 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         CFBundleURLTypes:
-          - CFBundleURLName: com.soundblaster.oracleball
+          - CFBundleURLName: ru.egormerkushev.oracle
             CFBundleURLSchemes:
               - oracleball
     settings:
@@ -112,7 +122,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: OracleBallApp/OracleBallApp.entitlements
         DEVELOPMENT_TEAM: P8T2366K8X
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
     scheme:
@@ -131,7 +141,7 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle.uitests
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
 
@@ -152,10 +162,12 @@ targets:
       path: OracleWidgetsExtension.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.soundblaster.oracleball
+          - group.ru.egormerkushev.oracle
     info:
       path: OracleWidgets/Info.plist
       properties:
+        CFBundleDisplayName: Endless Answers Widgets
+        CFBundleVersion: "6"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -164,7 +176,37 @@ targets:
         CODE_SIGN_ENTITLEMENTS: OracleWidgetsExtension.entitlements
         DEVELOPMENT_TEAM: P8T2366K8X
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-        PRODUCT_BUNDLE_IDENTIFIER: com.soundblaster.oracleball.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle.widgets
+        SKIP_INSTALL: YES
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+
+  OracleModelDownloader:
+    type: extensionkit-extension
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: OracleModelDownloader
+        excludes: [Info.plist]
+    entitlements:
+      path: OracleModelDownloader/OracleModelDownloader.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.ru.egormerkushev.oracle
+    info:
+      path: OracleModelDownloader/Info.plist
+      properties:
+        CFBundleDisplayName: Endless Answers Model Downloader
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "6"
+        EXAppExtensionAttributes:
+          EXExtensionPointIdentifier: com.apple.background-asset-downloader-extension
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: YES
+        CODE_SIGN_ENTITLEMENTS: OracleModelDownloader/OracleModelDownloader.entitlements
+        DEVELOPMENT_TEAM: P8T2366K8X
+        PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle.model-downloader
         SKIP_INSTALL: YES
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"

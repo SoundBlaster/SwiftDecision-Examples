@@ -21,6 +21,18 @@ enum OracleProviderFailure: Sendable, Equatable {
     }
   }
 
+  var code: String {
+    switch self {
+    case .cancelled: "cancelled"
+    case .timedOut: "timeout"
+    case .transport: "transport"
+    case .rateLimited: "rateLimited"
+    case .serviceUnavailable: "serviceUnavailable"
+    case .circuitOpen: "circuitOpen"
+    case .permanent: "providerError"
+    }
+  }
+
   var traceLabel: String {
     switch self {
     case .cancelled: "Cancelled"

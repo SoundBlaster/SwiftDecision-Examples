@@ -9,9 +9,9 @@ jobs:
   architecture:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Checkout FSD tooling
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: SoundBlaster/FSD
           ref: v0.4.0

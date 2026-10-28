@@ -12,7 +12,7 @@ The source ZIPs are pinned by SHA-256 in `scripts/build_city_atlas_data.py`. The
 
 ## Rebuild
 
-Use Python 3.10 or newer. Shapely's shared-coverage simplifier needs GEOS 3.12 or newer; the pinned Shapely wheel supplies a compatible GEOS build.
+Use Python 3.11 or newer; the pinned Shapely release requires it. Shapely's shared-coverage simplifier needs GEOS 3.12 or newer; the pinned Shapely wheel supplies a compatible GEOS build.
 
 ```sh
 python3 -m venv /tmp/city-atlas-venv

@@ -9,7 +9,7 @@ private struct CityChainAdaptiveFrames {
   let plan: CityChainLayoutPlan
   let atlas: CGRect
   let game: CGRect
-  let showsScenicRoute: Bool
+  let routePresentation: CityChainRoutePresentation
 
   init(
     geometry: GeometryProxy, restingHeight: CGFloat, hasRegularWidth: Bool,
@@ -80,9 +80,9 @@ private struct CityChainAdaptiveFrames {
     }
     // The single column spans the whole viewport, so judge it at rest: the route
     // card must not unmount (and lose its travel animation) while the player types.
-    showsScenicRoute = CityChainScenicRouteSpec().isSatisfiedBy(.init(
+    routePresentation = CityChainRoutePresentationSpec().decide(.init(
       plan: plan, gameHeight: plan == .singleColumn ? context.restingHeight : game.height,
-      usesAccessibilityTextSize: usesAccessibilityTextSize))
+      usesAccessibilityTextSize: usesAccessibilityTextSize)) ?? .compact
   }
 }
 
@@ -165,7 +165,7 @@ struct CityChainPage: View {
 
           CityChainGamePane(
             model: model, snapshot: snapshot, suggestions: suggestions,
-            showsScenicRoute: frames.showsScenicRoute,
+            routePresentation: frames.routePresentation,
             isNotebook: frames.plan == .foldAwareNotebook,
             onTapScout: openMapFromScout,
             onShowAtlas: { showsAtlas = true },
@@ -180,12 +180,16 @@ struct CityChainPage: View {
         .background(CityChainBackdrop())
       }
       .background {
-        // Extends under the keyboard to report the resting height.
-        Color.clear
-          .ignoresSafeArea(.keyboard)
-          .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
-            restingContentHeight = $0
-          }
+        // Measure inside the view that ignores the keyboard safe area. Measuring
+        // outside that modifier reports the reduced viewport and switches the
+        // route card to the legacy Scout feedback while the player is typing.
+        GeometryReader { restingGeometry in
+          Color.clear
+            .onChange(of: restingGeometry.size.height, initial: true) { _, height in
+              restingContentHeight = height
+            }
+        }
+        .ignoresSafeArea(.keyboard)
       }
       .navigationDestination(isPresented: $isMapDetailPresented) {
         cityMapDetailDestination
@@ -382,7 +386,7 @@ private struct CityChainGamePane: View {
   @Bindable var model: CityChainPageModel
   let snapshot: CityGameSnapshot?
   let suggestions: [USCity]
-  let showsScenicRoute: Bool
+  let routePresentation: CityChainRoutePresentation
   /// Notebook fold: Scout speaks over the map above, so this pane keeps only the
   /// turn and the composer.
   let isNotebook: Bool
@@ -401,7 +405,7 @@ private struct CityChainGamePane: View {
   var body: some View {
     ScrollView {
       VStack(spacing: 14) {
-        if showsScenicRoute {
+        if routePresentation == .scenic {
           ScenicRouteJourneyCard(
             cities: snapshot?.usedCities,
             isWaitingForScout: model.isSubmitting && model.hasCommittedPlayerCityForCurrentTurn)
@@ -416,10 +420,15 @@ private struct CityChainGamePane: View {
                 onDismiss: model.dismissTurnFeedback)
                 .accessibilityIdentifier("cityChain.home.routeScout")
             }
+        } else if routePresentation == .compact {
+          RouteJourneyCard(
+            cities: snapshot?.usedCities,
+            isWaitingForScout: model.isSubmitting && model.hasCommittedPlayerCityForCurrentTurn)
+            .accessibilityIdentifier("cityChain.home.lastLeg")
         }
         LetterPromptCard(snapshot: snapshot, scoutState: model.scoutState)
           .accessibilityIdentifier("cityChain.home.letterPrompt")
-        if !showsScenicRoute, !isNotebook, scoutMessage != nil {
+        if routePresentation != .scenic, !isNotebook, scoutMessage != nil {
           ScoutSpeechFeedbackView(
             message: scoutMessage,
             presentation: model.scoutPresentation,
@@ -432,6 +441,7 @@ private struct CityChainGamePane: View {
             maximumBubbleHeight: 120,
             canDismissMessage: model.hasTurnFeedback,
             onTapScout: onTapScout)
+            .accessibilityIdentifier("cityChain.home.routeScout")
         }
         if showsInlineCityHints && !isNotebook && !suggestions.isEmpty {
           InlineCityHints(

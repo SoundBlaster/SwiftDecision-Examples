@@ -7,6 +7,27 @@ import SwiftDecision
 /// pluggable event sink. Oracle therefore records into a short-lived Core recorder, then
 /// keeps only these curated events in its persisted pipeline snapshot.
 enum OraclePipelineTraceRecorder {
+  static func failureStage(
+    title: String, snapshot: DecisionTraceSnapshot?, provider: String, kind: String, errorType: String
+  ) -> OraclePipelineStage {
+    let records = snapshot?.records ?? []
+    let specifications = records.compactMap { record -> SpecificationTraceEvent? in
+      guard case let .specification(event) = record else { return nil }
+      return event
+    }
+    let lifecycle = records.compactMap { record -> OracleDecisionTraceStep? in
+      guard case let .lifecycle(event) = record else { return nil }
+      return OracleDecisionTraceStep(stage: lifecycleName(event.stage), timestamp: event.timestamp,
+        detail: event.detail ?? lifecycleExplanation(event.stage))
+    }
+    return OraclePipelineStage(id: title, title: title, summary: "Request failed",
+      details: [.init(id: "provider", label: "Provider", value: provider),
+                .init(id: "failure-kind", label: "Failure", value: kind),
+                .init(id: "error-type", label: "Error type", value: errorType)],
+      decisionEvents: lifecycle, specificationEvents: decisionDetails(from: specifications),
+      orderedTrace: snapshot.map(orderedDecisionTrace))
+  }
+
   private static let decisionEventNames: Set<String> = [
     "request validation",
     "policy routing",
