@@ -1,4 +1,5 @@
 import SwiftUI
+import OraclePresentation
 
 /// A short first-run introduction. Age confirmation is self-declared, not verification.
 struct OracleWelcomeView: View {
@@ -14,30 +15,33 @@ struct OracleWelcomeView: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(spacing: 32) {
-        switch page {
-        case .welcome: welcomeContent
-        case .age: ageContent
-        case .model: modelContent
+    GeometryReader { geometry in
+      let compact = OracleWelcomeCompactLayoutSpec().isSatisfiedBy(Double(geometry.size.height))
+      ScrollView {
+        VStack(spacing: compact ? 16 : 32) {
+          switch page {
+          case .welcome: welcomeContent(compact: compact)
+          case .age: ageContent(compact: compact)
+          case .model: modelContent(compact: compact)
+          }
         }
-      }
-      .frame(maxWidth: 460)
-      .frame(maxWidth: .infinity)
-      .padding(.horizontal, 28)
-      .padding(.top, 90)
-      .padding(.bottom, 24)
-    }
-    .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
-    .safeAreaInset(edge: .bottom, spacing: 0) {
-      controls
         .frame(maxWidth: 460)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 28)
-        .padding(.top, 14)
-        .padding(.bottom, 12)
-        .background(.regularMaterial)
+        .padding(.top, compact ? 24 : 90)
+        .padding(.bottom, compact ? 12 : 24)
+      }
+      .safeAreaInset(edge: .bottom, spacing: 0) {
+        controls
+          .frame(maxWidth: 460)
+          .frame(maxWidth: .infinity)
+          .padding(.horizontal, 28)
+          .padding(.top, 14)
+          .padding(.bottom, 12)
+          .background(.regularMaterial)
+      }
     }
+    .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
     .tint(.purple)
     .alert("For adults only", isPresented: $showsUnderageNotice) {
       Button("OK", role: .cancel) { }
@@ -47,11 +51,11 @@ struct OracleWelcomeView: View {
     .accessibilityIdentifier("oracle.welcome")
   }
 
-  private var welcomeContent: some View {
-    VStack(spacing: 32) {
+  private func welcomeContent(compact: Bool) -> some View {
+    VStack(spacing: compact ? 14 : 32) {
       welcomeHeader(symbol: "sparkles", title: "Welcome to\nEndless Answers",
-                    subtitle: "A little wonder for the\nquestions on your mind.")
-      VStack(alignment: .leading, spacing: 28) {
+                    subtitle: "A little wonder for the\nquestions on your mind.", compact: compact)
+      VStack(alignment: .leading, spacing: compact ? 12 : 28) {
         feature(symbol: "dice.fill", title: "Random game",
                 description: "Shake the ball or tap send without a question for a random answer.")
         feature(symbol: "brain", title: "On-device AI",
@@ -62,10 +66,10 @@ struct OracleWelcomeView: View {
     }
   }
 
-  private var ageContent: some View {
-    VStack(spacing: 28) {
+  private func ageContent(compact: Bool) -> some View {
+    VStack(spacing: compact ? 14 : 28) {
       welcomeHeader(symbol: "person.crop.circle.badge.checkmark", title: "For adults\n18 and over",
-                    subtitle: "Endless Answers is intended\nfor adults.")
+                    subtitle: "Endless Answers is intended\nfor adults.", compact: compact)
       Text("This is an entertainment app. Do not rely on its answers for decisions about safety, health, or other important matters.")
         .font(.body)
         .foregroundStyle(.secondary)
@@ -73,11 +77,11 @@ struct OracleWelcomeView: View {
     }
   }
 
-  private var modelContent: some View {
-    VStack(spacing: 28) {
+  private func modelContent(compact: Bool) -> some View {
+    VStack(spacing: compact ? 14 : 28) {
       welcomeHeader(symbol: "arrow.down.circle.fill", title: "AI on\nyour device",
-                    subtitle: "Download GLiNER small to explore\nquestions on your device.")
-      VStack(alignment: .leading, spacing: 24) {
+                    subtitle: "Download GLiNER small to explore\nquestions on your device.", compact: compact)
+      VStack(alignment: .leading, spacing: compact ? 12 : 24) {
         feature(symbol: "iphone", title: "Private by design",
                 description: "With GLiNER, questions are processed on this device.\nNo internet is needed after installation.")
         feature(symbol: "internaldrive", title: "Optional download",
@@ -165,8 +169,8 @@ struct OracleWelcomeView: View {
   }
 
   private func welcomeHeader(symbol: String, title: LocalizedStringKey,
-                             subtitle: LocalizedStringKey) -> some View {
-    VStack(spacing: 16) {
+                             subtitle: LocalizedStringKey, compact: Bool) -> some View {
+    VStack(spacing: compact ? 10 : 16) {
       Image(systemName: symbol)
         .font(.system(size: 96, weight: .medium))
         .foregroundStyle(oracleWelcomeGradient)
