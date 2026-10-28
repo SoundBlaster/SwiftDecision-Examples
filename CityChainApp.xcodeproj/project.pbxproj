@@ -1296,6 +1296,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ru.egormerkushev.oracle;
 				SDKROOT = iphoneos;
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]" = "$(inherited) ORACLE_HAS_RESERVED_REGIONS";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]" = "$(inherited) ORACLE_HAS_RESERVED_REGIONS";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1505,6 +1507,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = ru.egormerkushev.oracle;
 				SDKROOT = iphoneos;
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]" = "$(inherited) ORACLE_HAS_RESERVED_REGIONS";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]" = "$(inherited) ORACLE_HAS_RESERVED_REGIONS";
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
