@@ -29,6 +29,10 @@ struct OraclePilotPage: View {
       let headerOnBall = frames.ball.width >= 200 && frames.ball.height >= 80
       let headerHeight: CGFloat = headerOnBall ? 48 : 0
       let side = max(1, min(frames.ball.width - 24, frames.ball.height - headerHeight - 24))
+      // Keep RealityView's drawable stable while the fold changes the layout.
+      // Resize the rendered scene instead of resizing its underlying viewport.
+      let sceneViewportSide: CGFloat = 512
+      let sceneScale = side / sceneViewportSide * (frames.plan == .tabletop ? 1.4 : 1)
       let isSideBySide = frames.plan == .expandedPanes || frames.plan == .book
       // In the wide layout, center the sphere in the visible pane. Other
       // arrangements leave extra room for the header above the scene.
@@ -62,9 +66,8 @@ struct OraclePilotPage: View {
           isPaused: !showsBall || (showsInfo && infoDetent == .large)
             || selectedHistoryEntry != nil,
           isShakeEnabled: !showsInfo && selectedHistoryEntry == nil && showsBall)
-          .frame(width: side, height: side)
-          // The tabletop pane has more room for the scene; retain clearance for its rings.
-          .scaleEffect(frames.plan == .tabletop ? 1.4 : 1)
+          .frame(width: sceneViewportSide, height: sceneViewportSide)
+          .scaleEffect(sceneScale)
           .offset(y: ballOffset)
           .frame(width: frames.ball.width, height: frames.ball.height)
           .clipped()
