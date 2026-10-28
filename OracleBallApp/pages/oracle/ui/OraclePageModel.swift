@@ -48,6 +48,7 @@ final class OraclePageModel {
   var isSubmitting = false
   var statusMessage: String?
   var showsSafetyIntervention = false
+  var safetyNeedsClarification = false
   private var requestTask: Task<Void, Never>?
 
   private(set) var provider: OracleInferenceProvider
@@ -447,11 +448,13 @@ final class OraclePageModel {
           }
           self.terminalRequestID = self.provider == .gliner ? 0 : requestID
           self.statusMessage = reason
-        case .safetyIntervention:
+        case let .safetyIntervention(category):
           self.answer = OracleAnswer(mode: request.mode, displayText: "", source: .offlineFixture)
           self.answerRequestID = requestID
           self.terminalRequestID = 0
-          self.statusMessage = String(localized: "Please seek support")
+          self.safetyNeedsClarification = category == .ambiguousRisk
+          self.statusMessage = self.safetyNeedsClarification
+            ? String(localized: "Please add context") : String(localized: "Please seek support")
           self.showsSafetyIntervention = true
         }
         self.isSubmitting = false

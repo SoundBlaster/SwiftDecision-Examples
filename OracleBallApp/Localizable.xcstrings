@@ -3964,6 +3964,18 @@
         "ru": { "stringUnit": { "state": "translated", "value": "Безопасность прежде всего" } }
       }
     },
+    "Please add context": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Please add context" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Уточните контекст" } }
+      }
+    },
+    "What kind of jump do you mean? Add context so the oracle does not make a potentially unsafe choice. If anyone is in immediate danger, contact local emergency services.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "What kind of jump do you mean? Add context so the oracle does not make a potentially unsafe choice. If anyone is in immediate danger, contact local emergency services." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "О каком прыжке идёт речь? Добавьте контекст, чтобы оракул не сделал потенциально опасный выбор. Если кому-то угрожает непосредственная опасность, обратитесь в местные экстренные службы." } }
+      }
+    },
     "Please seek support": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Please seek support" } },

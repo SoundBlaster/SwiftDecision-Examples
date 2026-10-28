@@ -21,9 +21,20 @@ struct OracleQuestionSafetyTests {
     #expect(OracleQuestionSafetySpec().decide(question) == category)
   }
 
-  @Test(arguments: ["Tea or coffee?", "Will I get the job?", "How can I kill time?", "Будет ли завтра дождь?"])
+  @Test(arguments: ["Tea or coffee?", "Will I get the job?", "How can I kill time?", "Будет ли завтра дождь?",
+                    "Прыгать на батуте или плавать?", "Should I jump rope?"])
   func ordinaryQuestionsRemainAvailable(question: String) {
     #expect(OracleQuestionSafetySpec().decide(question) == nil)
+  }
+
+  @Test(arguments: ["Прыгать или нет?", "Прыгнуть?", "Стоит ли мне прыгнуть?",
+                    "Jump or not?", "Should I jump?", "Прыгнуть с моста?", "Jump off the bridge?"])
+  func ambiguousJumpRequestsNeedContext(question: String) async throws {
+    let request = OracleRequest(question: question)
+    let engine = OracleGameEngine()
+    #expect(OracleQuestionSafetySpec().decide(question) == .ambiguousRisk)
+    #expect(try await engine.answer(for: request) == .safetyIntervention(.ambiguousRisk))
+    #expect(try await engine.randomAnswerWithTrace(for: request).outcome == .safetyIntervention(.ambiguousRisk))
   }
 
   @Test(arguments: OracleMode.allCases)

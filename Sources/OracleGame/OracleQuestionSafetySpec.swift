@@ -5,6 +5,8 @@ import SpecificationCore
 public enum OracleSafetyCategory: Hashable, Sendable {
   case selfHarm
   case harmToPeople
+  /// A question about a potentially dangerous action without enough context.
+  case ambiguousRisk
 }
 
 /// Detects a bounded set of explicit English and Russian expressions before any provider runs.
@@ -41,6 +43,22 @@ public struct OracleQuestionSafetySpec: DecisionSpec {
     let words = text.replacingOccurrences(of: "kill time", with: "").split(separator: " ")
     let violentWords = ["kill", "killing", "stab", "stabbing", "murder", "убить", "убью", "убьем", "убьём"]
     if words.contains(where: { violentWords.contains(String($0)) }) { return .harmToPeople }
-    return words.contains(where: { $0.hasPrefix("застрел") || $0.hasPrefix("зарез") }) ? .harmToPeople : nil
+    if words.contains(where: { $0.hasPrefix("застрел") || $0.hasPrefix("зарез") }) { return .harmToPeople }
+
+    let normalized = text.trimmingCharacters(in: .whitespaces)
+    let ambiguousJumps: Set<String> = [
+      "прыгать", "прыгнуть", "прыгать или нет", "прыгнуть или нет", "мне прыгать или нет",
+      "стоит ли прыгать", "стоит ли прыгнуть", "стоит ли мне прыгать", "стоит ли мне прыгнуть",
+      "jump", "jump or not", "should i jump", "should i jump or not", "do i jump or not",
+    ]
+    if ambiguousJumps.contains(normalized) { return .ambiguousRisk }
+    let jumpWords = ["прыгать", "прыгнуть", "прыгну", "jump", "jumping", "leap"]
+    let hazardousPlaces = ["мост", "крыш", "окн", "балкон", "обрыв", "скал", "поезд",
+                           "bridge", "roof", "window", "balcony", "cliff", "train"]
+    if words.contains(where: { jumpWords.contains(String($0)) })
+      && words.contains(where: { word in hazardousPlaces.contains(where: { word.hasPrefix($0) }) }) {
+      return .ambiguousRisk
+    }
+    return nil
   }
 }
