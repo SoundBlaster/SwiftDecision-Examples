@@ -6,13 +6,19 @@ public enum OracleSafetyCategory: Hashable, Sendable {
   case selfHarm
   case harmToPeople
   case dangerToLife
+  /// The optional bundled lexicon exists but could not be verified or decoded.
+  case filterUnavailable
   /// A question about a potentially dangerous action without enough context.
   case ambiguousRisk
 }
 
 /// Detects a bounded set of explicit English and Russian expressions before any provider runs.
 public struct OracleQuestionSafetySpec: DecisionSpec {
-  public init() {}
+  private static let bundledLexicon = OracleSafetyLexicon.loadBundled()
+  private let lexicon: Swift.Result<OracleSafetyLexicon, OracleSafetyLexicon.Error>
+
+  public init() { lexicon = Self.bundledLexicon }
+  init(lexicon: Swift.Result<OracleSafetyLexicon, OracleSafetyLexicon.Error>) { self.lexicon = lexicon }
 
   public func decide(_ question: String) -> OracleSafetyCategory? {
     let text = " " + question.lowercased().unicodeScalars.map {
@@ -52,7 +58,12 @@ public struct OracleQuestionSafetySpec: DecisionSpec {
       "стоит ли прыгать", "стоит ли прыгнуть", "стоит ли мне прыгать", "стоит ли мне прыгнуть",
       "jump", "jump or not", "should i jump", "should i jump or not", "do i jump or not",
     ]
-    if ambiguousJumps.contains(normalized) { return .ambiguousRisk }
+    if ambiguousJumps.contains(normalized) {
+      switch lexicon {
+      case let .success(index): return index.match(question) ?? .ambiguousRisk
+      case .failure: return .filterUnavailable
+      }
+    }
     let jumpWords = ["прыгать", "прыгнуть", "прыгну", "jump", "jumping", "leap"]
     let hazardousPlaces = ["мост", "крыш", "окн", "балкон", "обрыв", "скал", "поезд", "здани",
                            "bridge", "roof", "window", "balcony", "cliff", "train", "building"]
@@ -60,6 +71,10 @@ public struct OracleQuestionSafetySpec: DecisionSpec {
       && words.contains(where: { word in hazardousPlaces.contains(where: { word.hasPrefix($0) }) }) {
       return .dangerToLife
     }
-    return nil
+    guard !normalized.isEmpty else { return nil }
+    switch lexicon {
+    case let .success(index): return index.match(question)
+    case .failure: return .filterUnavailable
+    }
   }
 }

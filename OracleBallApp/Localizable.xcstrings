@@ -3976,6 +3976,12 @@
         "ru": { "stringUnit": { "state": "translated", "value": "Попробуйте переформулировать вопрос" } }
       }
     },
+    "Safety check unavailable": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Safety check unavailable" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Проверка безопасности недоступна" } }
+      }
+    },
     "Please seek support": {
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Please seek support" } },

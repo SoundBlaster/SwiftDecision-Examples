@@ -449,14 +449,16 @@ final class OraclePageModel {
           self.statusMessage = String(localized: "Try rephrasing your question")
         case let .safetyIntervention(category):
           let needsContext = category == .ambiguousRisk
+          let filterUnavailable = category == .filterUnavailable
           self.answer = OracleAnswer(mode: request.mode,
-                                     displayText: needsContext ? String(localized: "Not enough\ninformation") : "",
+                                     displayText: needsContext ? String(localized: "Not enough\ninformation")
+                                       : filterUnavailable ? String(localized: "Could not\nanswer") : "",
                                      source: .offlineFixture)
           self.answerRequestID = requestID
           self.terminalRequestID = 0
-          self.statusMessage = needsContext
-            ? String(localized: "Please add context") : String(localized: "Please seek support")
-          self.showsSafetyIntervention = !needsContext
+          self.statusMessage = needsContext ? String(localized: "Please add context")
+            : filterUnavailable ? String(localized: "Safety check unavailable") : String(localized: "Please seek support")
+          self.showsSafetyIntervention = !needsContext && !filterUnavailable
         }
         self.isSubmitting = false
       } catch is CancellationError {
