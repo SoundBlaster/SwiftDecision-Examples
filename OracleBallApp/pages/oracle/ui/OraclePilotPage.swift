@@ -254,7 +254,9 @@ private struct OraclePilotControls: View {
         Text(model.statusMessage ?? model.answerStatus)
           .font(.caption.weight(.medium))
           .foregroundStyle(.white.opacity(0.7))
+          .multilineTextAlignment(.center)
           .fixedSize(horizontal: false, vertical: true)
+          .frame(maxWidth: .infinity, alignment: .center)
           .nestedAccessibilityIdentifier("status")
 
         if showsFooter {
