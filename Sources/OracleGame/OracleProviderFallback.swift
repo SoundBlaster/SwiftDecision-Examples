@@ -71,7 +71,7 @@ enum OracleProviderFailure: Sendable, Equatable {
       category = .permanent
     }
     #endif
-    switch category {
+    return switch category {
     case .cancelled: .cancelled
     case .timedOut: .timedOut
     case .transport: .transport
