@@ -351,6 +351,7 @@ private struct OracleInfoSheet: View {
       OracleInferenceSettings(model: inferenceModel) {
         isShowingInstallationLog = true
       }
+      #if DEBUG
       Section {
         VStack(alignment: .leading, spacing: selectedDetent == .large ? 16 : 8) {
           HStack {
@@ -438,6 +439,7 @@ private struct OracleInfoSheet: View {
         .listRowSeparator(.hidden)
       }
       .textCase(nil)
+      #endif
 
       if selectedDetent == .large {
         Section {

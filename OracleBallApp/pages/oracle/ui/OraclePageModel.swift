@@ -85,8 +85,14 @@ final class OraclePageModel {
       FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("OracleGLiNER/active", isDirectory: true), diagnostic: diagnostic)
     usesInjectedEngine = engine != nil
+    #if DEBUG
     let selectedProvider = preferences.provider(hasJevKey: credentialsStore.readAPIKey() != nil,
                                                supportsGLiNER: OracleGLiNERBackend.isSupportedBuild)
+    #else
+    let selectedProvider = preferences.provider(hasJevKey: false,
+                                               supportsGLiNER: OracleGLiNERBackend.isSupportedBuild,
+                                               supportsJev: false)
+    #endif
     provider = selectedProvider
     historyEntries = resolvedHistoryStore.entries
     if let engine {
@@ -94,6 +100,7 @@ final class OraclePageModel {
       provider = .none
       return
     }
+    #if DEBUG
     if selectedProvider == .jev, let key = credentialsStore.readAPIKey(),
        let backend = try? JevOracleBackend(apiKey: key)
     {
@@ -103,10 +110,18 @@ final class OraclePageModel {
       if provider == .gliner { providerIssue = String(localized: "Load a local model to use GLiNER.") }
       else if provider == .jev { providerIssue = String(localized: "Add a Jev API key to use this provider.") }
     }
+    #else
+    self.engine = OracleGameEngine()
+    if provider == .gliner { providerIssue = String(localized: "Load a local model to use GLiNER.") }
+    #endif
   }
 
   var configuredAPIKey: String {
+    #if DEBUG
     credentialsStore.readAPIKey() ?? ""
+    #else
+    ""
+    #endif
   }
 
   var providerDescription: String {
@@ -127,6 +142,7 @@ final class OraclePageModel {
 
   @discardableResult
   func saveAPIKey(_ input: String) -> Bool {
+    #if DEBUG
     let key = input.trimmingCharacters(in: .whitespacesAndNewlines)
 
     do {
@@ -143,6 +159,9 @@ final class OraclePageModel {
       statusMessage = error.localizedDescription
       return false
     }
+    #else
+    return false
+    #endif
   }
 
   func prepareProvider() async {
@@ -171,6 +190,9 @@ final class OraclePageModel {
   func selectProvider(_ selection: OracleInferenceProvider) {
     guard !isPreparingModel else { return }
     guard selection != .gliner || supportsGLiNER else { return }
+    #if !DEBUG
+    guard selection != .jev else { return }
+    #endif
     cancelPendingSubmission()
     configurationTask?.cancel()
     configurationID += 1
@@ -187,11 +209,15 @@ final class OraclePageModel {
     switch selection {
     case .none: break
     case .jev:
+      #if DEBUG
       guard let key = credentialsStore.readAPIKey(), let backend = try? JevOracleBackend(apiKey: key) else {
         providerIssue = String(localized: "Add a Jev API key to use this provider.")
         return
       }
       engine = OracleGameEngine(backend: backend)
+      #else
+      break
+      #endif
     case .gliner:
       providerIssue = String(localized: "Loading local model…")
       isPreparingModel = true

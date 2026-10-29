@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 import XCTest
 @testable import OracleGame
@@ -251,3 +252,4 @@ private struct NearTieJevTransport: JevHTTPTransport {
     ]))
   }
 }
+#endif

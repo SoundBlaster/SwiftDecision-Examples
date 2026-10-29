@@ -1,7 +1,9 @@
 import Foundation
 import SpecificationCore
 import SwiftDecision
+#if DEBUG
 import SwiftJev
+#endif
 
 enum OracleProviderFailure: Sendable, Equatable {
   case cancelled
@@ -50,6 +52,7 @@ enum OracleProviderFailure: Sendable, Equatable {
   }
 
   static func classify(_ error: any Error) -> Self {
+    #if DEBUG
     switch JevFailureClassifier.classify(error) {
     case .cancelled: .cancelled
     case .timedOut: .timedOut
@@ -58,6 +61,10 @@ enum OracleProviderFailure: Sendable, Equatable {
     case .serviceUnavailable: .serviceUnavailable
     case .permanent: .permanent
     }
+    #else
+    // No hosted Jev backend is available in release builds.
+    return .permanent
+    #endif
   }
 }
 
