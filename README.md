@@ -33,6 +33,8 @@ precision and backward-compatibility contract.
 
 Release builds offer **GLiNER small / None** provider selection. To opt into Jev during development, generate the separate Debug project with `xcodegen generate --spec project.oracle-jev-debug.yml` and use its Debug configuration. The standard project does not enable the OracleJev trait. Oracle requests its separately provisioned model through Apple-Hosted Background Assets after an explicit install action; developer folder import remains available. No weights are bundled and local inference never falls back to a cloud provider. See [delivery setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
 
+Oracle's default version and build are set once as `ORACLE_MARKETING_VERSION` and `ORACLE_BUILD_NUMBER` in `project.yml`. Regenerate the project after changing them. The app, widget, and model downloader expand the corresponding Xcode settings in their Info.plist files. For TestFlight, `scripts/oracle-archive-testflight.py --version 1.0 --archive-path /path/to/Oracle.xcarchive -- <xcodebuild flags>` retrieves the next build number from App Store Connect and passes it to all three targets. Supply your usual signing and derived-data flags after `--`, and use `--profile` when needed. The lookup does not reserve a number; confirm version and build in the exported app and both extensions before upload.
+
 
 ## City Chain
 
