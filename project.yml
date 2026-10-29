@@ -1,4 +1,8 @@
 name: CityChainApp
+settings:
+  base:
+    ORACLE_MARKETING_VERSION: "1.0"
+    ORACLE_BUILD_NUMBER: "6"
 options:
   bundleIdPrefix: com.soundblaster
   developmentLanguage: en
@@ -98,7 +102,8 @@ targets:
       properties:
         CFBundleDisplayName: "Endless Answers"
         ITSAppUsesNonExemptEncryption: false
-        CFBundleVersion: "6"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         BAAppGroupID: group.ru.egormerkushev.oracle
         BAHasManagedAssetPacks: true
         BAUsesAppleHosting: true
@@ -121,6 +126,8 @@ targets:
       base:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
+        MARKETING_VERSION: "$(ORACLE_MARKETING_VERSION)"
+        CURRENT_PROJECT_VERSION: "$(ORACLE_BUILD_NUMBER)"
         CODE_SIGN_ENTITLEMENTS: OracleBallApp/OracleBallApp.entitlements
         DEVELOPMENT_TEAM: P8T2366K8X
         IPHONEOS_DEPLOYMENT_TARGET: "26.0"
@@ -171,12 +178,15 @@ targets:
       path: OracleWidgets/Info.plist
       properties:
         CFBundleDisplayName: Endless Answers Widgets
-        CFBundleVersion: "6"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: YES
+        MARKETING_VERSION: "$(ORACLE_MARKETING_VERSION)"
+        CURRENT_PROJECT_VERSION: "$(ORACLE_BUILD_NUMBER)"
         CODE_SIGN_ENTITLEMENTS: OracleWidgetsExtension.entitlements
         DEVELOPMENT_TEAM: P8T2366K8X
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
@@ -201,13 +211,15 @@ targets:
       path: OracleModelDownloader/Info.plist
       properties:
         CFBundleDisplayName: Endless Answers Model Downloader
-        CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "6"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         EXAppExtensionAttributes:
           EXExtensionPointIdentifier: com.apple.background-asset-downloader-extension
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: YES
+        MARKETING_VERSION: "$(ORACLE_MARKETING_VERSION)"
+        CURRENT_PROJECT_VERSION: "$(ORACLE_BUILD_NUMBER)"
         CODE_SIGN_ENTITLEMENTS: OracleModelDownloader/OracleModelDownloader.entitlements
         DEVELOPMENT_TEAM: P8T2366K8X
         PRODUCT_BUNDLE_IDENTIFIER: ru.egormerkushev.oracle.model-downloader

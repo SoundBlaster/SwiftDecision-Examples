@@ -44,7 +44,6 @@
 		6D104DAA48F83FFA6EBAD905 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 8A0159281E737744F28E5024 /* AppIcon.icon */; };
 		707B83D1BDF302B7B347FB89 /* OracleHistory in Frameworks */ = {isa = PBXBuildFile; productRef = E14F9F1E7EE4A975AA0F6EC8 /* OracleHistory */; };
 		73D9F4D9F66A8E7D19B64430 /* OracleWidgetTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC3AE3527A1B74DEFEB8C3B4 /* OracleWidgetTimeline.swift */; };
-		74857CDA306FD4E60077AEED /* OraclePilotPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74857CD9306FD4E60077AEED /* OraclePilotPage.swift */; };
 		7D280D82F2F7E5DF67FEA291 /* OraclePage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */; };
 		7E48BF0C8BEBFA45D50857C0 /* us-states-2024.geojson in Resources */ = {isa = PBXBuildFile; fileRef = 25EEF5E55A5683493177C464 /* us-states-2024.geojson */; };
 		818CC5BF2122B610B6BBCC9D /* Scout.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9494B890BFBDF6BFF85A115D /* Scout.xcassets */; };
@@ -63,6 +62,7 @@
 		A72A68238261606A5A001734 /* OracleWidgetSharedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8535B4FE08460A471C02ABCF /* OracleWidgetSharedState.swift */; };
 		A9864274D999BD5E611C1A94 /* CityChainPresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 08614B6BC24DBB4CE95CD5C7 /* CityChainPresentation */; };
 		AF6617E50ED31DA57800D22C /* OracleMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57250EFE799C3061E9C2760F /* OracleMesh.swift */; };
+		74857CDA306FD4E60077AEED /* OraclePilotPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74857CD9306FD4E60077AEED /* OraclePilotPage.swift */; };
 		B8487555A70BD40DA8F7B8F0 /* AskOracleField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A1AE4194E83ECDCE129A0C /* AskOracleField.swift */; };
 		BB11F0C59897D9F2EC6A94EB /* RouteScoutGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E1B667AC678F1A2330C6AA2 /* RouteScoutGuide.swift */; };
 		BEA5E9693D464575A1B0E5E0 /* CityAtlasMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E8DEB53DAADD0D87868E96 /* CityAtlasMapView.swift */; };
@@ -180,7 +180,6 @@
 		632F2811B6281ED49A08F2E4 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePage.swift; sourceTree = "<group>"; };
 		6B9F7144567D17541E66E983 /* InstantPredictionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantPredictionWidget.swift; sourceTree = "<group>"; };
-		74857CD9306FD4E60077AEED /* OraclePilotPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePilotPage.swift; sourceTree = "<group>"; };
 		7D2B12290F6ADAE2F1B1DBB2 /* CityChainApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CityChainApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D4B8D25E590F0131F861038 /* state-facts-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "state-facts-v1.json"; sourceTree = "<group>"; };
 		7DC241046DDA54C8B95AF4BB /* RouteJourneyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteJourneyCard.swift; sourceTree = "<group>"; };
@@ -192,7 +191,6 @@
 		8CAD9C413344AF26731F5A83 /* CityChainPageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainPageModel.swift; sourceTree = "<group>"; };
 		911A170638EF56C6D38F8199 /* OracleModeSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleModeSelector.swift; sourceTree = "<group>"; };
 		919366754759C2FA21BEC342 /* CityAtlasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityAtlasView.swift; sourceTree = "<group>"; };
-		1837C0086090A683556A031F /* SwiftDecision-Examples-oracle-pilot */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "SwiftDecision-Examples-oracle-pilot"; path = .; sourceTree = SOURCE_ROOT; };
 		93A1AE4194E83ECDCE129A0C /* AskOracleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskOracleField.swift; sourceTree = "<group>"; };
 		9494B890BFBDF6BFF85A115D /* Scout.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Scout.xcassets; sourceTree = "<group>"; };
 		94EC648DF9878086C3FDFAEB /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -210,6 +208,7 @@
 		B702F06B496B0B161550F616 /* OracleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleField.swift; sourceTree = "<group>"; };
 		B9E8DEB53DAADD0D87868E96 /* CityAtlasMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityAtlasMapView.swift; sourceTree = "<group>"; };
 		BABBD1A12DA4DC7CDD5E30DA /* CityChainAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainAppApp.swift; sourceTree = "<group>"; };
+		1837C0086090A683556A031F /* SwiftDecision-Examples-oracle-pilot */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "SwiftDecision-Examples-oracle-pilot"; path = .; sourceTree = SOURCE_ROOT; };
 		BCB7FC53B3F1BD79B3963ABE /* OracleFieldComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldComponent.swift; sourceTree = "<group>"; };
 		BD88EDB4A07A20B61CED052A /* OracleLighting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleLighting.swift; sourceTree = "<group>"; };
 		C12F66D65B6726987E960904 /* OracleRevealSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleRevealSystem.swift; sourceTree = "<group>"; };
@@ -218,6 +217,7 @@
 		C5DB9C4B106F38C8876F4AE1 /* CityTurnFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityTurnFeedbackView.swift; sourceTree = "<group>"; };
 		D28DFCC17C6D03DE5A7A7D1A /* OracleMotionInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionInput.swift; sourceTree = "<group>"; };
 		D4C81B75995F2AFAA80302DE /* OracleFieldMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldMesh.swift; sourceTree = "<group>"; };
+		74857CD9306FD4E60077AEED /* OraclePilotPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePilotPage.swift; sourceTree = "<group>"; };
 		D90DCE22F9699B427CAFDCEE /* OracleModelDownloader.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = OracleModelDownloader.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEC372D3239535942E74F4DC /* OracleBallApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OracleBallApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFB09BAB95325736C5B21919 /* OracleAppPredictionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleAppPredictionWidget.swift; sourceTree = "<group>"; };
@@ -556,8 +556,8 @@
 				59E78294926A686B393822C9 /* OracleInferenceSettings.swift */,
 				68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */,
 				55A4C6BD24CF45CE45B11625 /* OraclePageModel.swift */,
-				2FAFD99DC820B14AC5F98E6C /* OraclePipelineDetailView.swift */,
 				74857CD9306FD4E60077AEED /* OraclePilotPage.swift */,
+				2FAFD99DC820B14AC5F98E6C /* OraclePipelineDetailView.swift */,
 				C42FC4C253A67385FB7F325A /* OracleWelcomeView.swift */,
 			);
 			path = ui;
@@ -1030,7 +1030,6 @@
 				C428D200A15D0227F94E7C98 /* OracleField.metal in Sources */,
 				C660E0BCF93CFFEAC6ED29E0 /* OracleField.swift in Sources */,
 				C5CBA2C9D15B3CECA29148AF /* OracleFieldComponent.swift in Sources */,
-				74857CDA306FD4E60077AEED /* OraclePilotPage.swift in Sources */,
 				1A1ED4733AC5023DF7F56DD1 /* OracleFieldMesh.swift in Sources */,
 				248C23E9ABDAFA82B6D469EB /* OracleFieldSystem.swift in Sources */,
 				0F14080BDB66721C03229982 /* OracleHaptics.swift in Sources */,
@@ -1046,6 +1045,7 @@
 				7D280D82F2F7E5DF67FEA291 /* OraclePage.swift in Sources */,
 				1171D0C01276BB198AED2320 /* OraclePageModel.swift in Sources */,
 				F68B6A00A624552F48757EBB /* OraclePalette.swift in Sources */,
+				74857CDA306FD4E60077AEED /* OraclePilotPage.swift in Sources */,
 				A69FFEDBE6FEAF3BF6840BE8 /* OraclePipelineDetailView.swift in Sources */,
 				1E7947AE883BC2653A6DCA5F /* OracleRevealComponent.swift in Sources */,
 				D59B5FA5D6EDECEAF9F38A98 /* OracleRevealSystem.swift in Sources */,
@@ -1191,6 +1191,8 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ORACLE_BUILD_NUMBER = 6;
+				ORACLE_MARKETING_VERSION = 1.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -1230,6 +1232,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = OracleWidgetsExtension.entitlements;
+				CURRENT_PROJECT_VERSION = "$(ORACLE_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = P8T2366K8X;
 				INFOPLIST_FILE = OracleWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -1238,6 +1241,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MARKETING_VERSION = "$(ORACLE_MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = ru.egormerkushev.oracle.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1291,6 +1295,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = OracleBallApp/OracleBallApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = "$(ORACLE_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = P8T2366K8X;
 				INFOPLIST_FILE = OracleBallApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -1298,6 +1303,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = "$(ORACLE_MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = ru.egormerkushev.oracle;
 				SDKROOT = iphoneos;
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]" = "$(inherited) ORACLE_HAS_RESERVED_REGIONS";
@@ -1312,6 +1318,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = OracleModelDownloader/OracleModelDownloader.entitlements;
+				CURRENT_PROJECT_VERSION = "$(ORACLE_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = P8T2366K8X;
 				INFOPLIST_FILE = OracleModelDownloader/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -1319,6 +1326,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = "$(ORACLE_MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = "ru.egormerkushev.oracle.model-downloader";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1351,6 +1359,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = OracleWidgetsExtension.entitlements;
+				CURRENT_PROJECT_VERSION = "$(ORACLE_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = P8T2366K8X;
 				INFOPLIST_FILE = OracleWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -1359,6 +1368,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
+				MARKETING_VERSION = "$(ORACLE_MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = ru.egormerkushev.oracle.widgets;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1372,6 +1382,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = OracleModelDownloader/OracleModelDownloader.entitlements;
+				CURRENT_PROJECT_VERSION = "$(ORACLE_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = P8T2366K8X;
 				INFOPLIST_FILE = OracleModelDownloader/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -1379,6 +1390,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = "$(ORACLE_MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = "ru.egormerkushev.oracle.model-downloader";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1487,6 +1499,8 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				ORACLE_BUILD_NUMBER = 6;
+				ORACLE_MARKETING_VERSION = 1.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -1502,6 +1516,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = OracleBallApp/OracleBallApp.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = "$(ORACLE_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = P8T2366K8X;
 				INFOPLIST_FILE = OracleBallApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -1509,6 +1524,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = "$(ORACLE_MARKETING_VERSION)";
 				PRODUCT_BUNDLE_IDENTIFIER = ru.egormerkushev.oracle;
 				SDKROOT = iphoneos;
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]" = "$(inherited) ORACLE_HAS_RESERVED_REGIONS";
