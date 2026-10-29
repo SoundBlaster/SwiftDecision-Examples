@@ -1,7 +1,8 @@
 import Foundation
+import OracleHistory
 
 enum OracleWidgetSharedState {
-  static let suiteName = "group.ru.egormerkushev.oracle"
+  static let suiteName = OracleWidgetAccess.suiteName
   static let answerKey = "instant-prediction.answer"
   static let updatedAtKey = "instant-prediction.updated-at"
 
