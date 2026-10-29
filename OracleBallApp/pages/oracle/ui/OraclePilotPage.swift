@@ -77,6 +77,13 @@ struct OraclePilotPage: View {
           .allowsHitTesting(showsBall)
           .accessibilityHidden(!showsBall)
           .nestedAccessibilityIdentifier("ball")
+          // The system can animate layout changes while the device folds. Keep
+          // the scene's transform at its resolved geometry instead of allowing
+          // an inherited spring to overshoot its size or position.
+          .transaction { transaction in
+            transaction.animation = nil
+            transaction.disablesAnimations = true
+          }
 
         if headerOnBall {
           OracleHeader {
