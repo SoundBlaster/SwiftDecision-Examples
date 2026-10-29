@@ -1,6 +1,38 @@
 {
   "sourceLanguage": "en",
   "strings": {
+"Continue" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Продолжить"}}}},
+"OK" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"ОК"}}}},
+"Welcome to\nEndless Answers" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Добро пожаловать\nв Endless Answers"}}}},
+"A little wonder for the\nquestions on your mind." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Немного волшебства\nдля ваших вопросов."}}}},
+"Random game" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Случайная игра"}}}},
+"Shake the ball or tap send without a question for a random answer." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Встряхните шар или нажмите кнопку отправки без вопроса, чтобы получить случайный ответ."}}}},
+"On-device AI" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"ИИ на устройстве"}}}},
+"Ask a question and explore an answer with an optional local model." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Задайте вопрос и получите ответ с помощью необязательной локальной модели."}}}},
+"For entertainment" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Для развлечения"}}}},
+"Answers are not advice. Make important decisions with care." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Ответы не являются советами. Принимайте важные решения обдуманно."}}}},
+"For adults\n18 and over" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Только для взрослых\n18 лет и старше"}}}},
+"Endless Answers is intended\nfor adults." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Endless Answers предназначено\nдля взрослых."}}}},
+"This is an entertainment app. Do not rely on its answers for decisions about safety, health, or other important matters." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Это развлекательное приложение. Не полагайтесь на его ответы при решениях о безопасности, здоровье и в других важных вопросах."}}}},
+"AI on\nyour device" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"ИИ\nна устройстве"}}}},
+"Download GLiNER small to explore\nquestions on your device." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Загрузите GLiNER small, чтобы отвечать\nна вопросы прямо на устройстве."}}}},
+"Private by design" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Конфиденциально"}}}},
+"With GLiNER, questions are processed on this device.\nNo internet is needed after installation." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"GLiNER обрабатывает вопросы на этом устройстве.\nПосле установки интернет не нужен."}}}},
+"Optional download" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Необязательная загрузка"}}}},
+"About 70 MB to download and 87 MB of storage. You can install or remove it later in Settings." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Загрузка — около 70 МБ; модель займёт около 87 МБ. Её можно установить или удалить позже в настройках."}}}},
+"Experimental English model" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Экспериментальная модель для английского языка"}}}},
+"Results can be uncertain or incorrect." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Результаты могут быть неточными или ошибочными."}}}},
+"For adults only" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Только для взрослых"}}}},
+"This app is intended for people who are 18 or older." : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Это приложение предназначено для пользователей от 18 лет."}}}},
+"I am 18 or older" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Мне 18 лет или больше"}}}},
+"I am under 18" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Мне меньше 18 лет"}}}},
+"Connecting…" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Подключение…"}}}},
+"Downloading…" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Загрузка…"}}}},
+"Preparing model…" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Подготовка модели…"}}}},
+"Continue while preparing" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Продолжить во время подготовки"}}}},
+"Download model" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Загрузить модель"}}}},
+"Try again" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Повторить"}}}},
+"Not now" : {"extractionState":"manual","localizations":{"ru":{"stringUnit":{"state":"translated","value":"Не сейчас"}}}},
 "Version %@ (build %@)" : {
   "comment": "App version and build number shown below the history; first is version, second is build.",
   "extractionState": "manual",
@@ -3956,6 +3988,42 @@
             "value": "Загрузка около 70 МБ с серверов Apple. Модель занимает около 87 МБ отдельно от приложения. Обработка вопросов остаётся на устройстве."
           }
         }
+      }
+    },
+    "Safety first": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Safety first" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Безопасность прежде всего" } }
+      }
+    },
+    "Please add context": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Please add context" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Уточните контекст" } }
+      }
+    },
+    "Try rephrasing your question": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Try rephrasing your question" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Попробуйте переформулировать вопрос" } }
+      }
+    },
+    "Safety check unavailable": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Safety check unavailable" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Проверка безопасности недоступна" } }
+      }
+    },
+    "Please seek support": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Please seek support" } },
+        "ru": { "stringUnit": { "state": "translated", "value": "Обратитесь за поддержкой" } }
+      }
+    },
+    "This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service.": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "В такой ситуации нужна поддержка человека, а не предсказание. Если кому-то угрожает непосредственная опасность, обратитесь в местные экстренные службы. Свяжитесь с человеком, которому доверяете, или с квалифицированной кризисной службой." } }
       }
     },
     "Could not install the Apple-hosted model. Please try again.": {

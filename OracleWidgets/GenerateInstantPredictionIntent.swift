@@ -8,18 +8,20 @@ struct GenerateInstantPredictionIntent: AppIntent {
   static let title: LocalizedStringResource = "Reveal a prediction"
 
   func perform() async throws -> some IntentResult {
+    guard let defaults = OracleWidgetSharedState.defaults else {
+      throw PredictionIntentError.sharedStorageUnavailable
+    }
+    guard OracleWidgetAccess.isAllowed(in: defaults) else {
+      throw PredictionIntentError.welcomeRequired
+    }
     let result = try await OracleGameEngine().randomAnswerWithTrace()
     let answer: OracleAnswer
 
     switch result.outcome {
     case let .accepted(value), let .fallback(value, _):
       answer = value
-    case .abstained:
+    case .abstained, .safetyIntervention:
       throw PredictionIntentError.noAnswer
-    }
-
-    guard let defaults = OracleWidgetSharedState.defaults else {
-      throw PredictionIntentError.sharedStorageUnavailable
     }
 
     defaults.set(answer.displayText, forKey: OracleWidgetSharedState.answerKey)
@@ -37,16 +39,19 @@ struct GenerateInstantPredictionIntent: AppIntent {
   }
 }
 
-private enum PredictionIntentError: LocalizedError {
+private enum PredictionIntentError: Error, CustomLocalizedStringResourceConvertible {
   case noAnswer
   case sharedStorageUnavailable
+  case welcomeRequired
 
-  var errorDescription: String? {
+  var localizedStringResource: LocalizedStringResource {
     switch self {
     case .noAnswer:
       "The oracle could not reveal a prediction."
     case .sharedStorageUnavailable:
       "Shared widget storage is unavailable."
+    case .welcomeRequired:
+      "Open Endless Answers and complete setup first."
     }
   }
 }

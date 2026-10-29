@@ -1,15 +1,17 @@
 import Foundation
+import OracleHistory
 import WidgetKit
 
 struct OracleWidgetEntry: TimelineEntry {
   let date: Date
   let answer: String?
   let updatedAt: Date?
+  let isWelcomeCompleted: Bool
 }
 
 struct OracleWidgetTimelineProvider: TimelineProvider {
   func placeholder(in context: Context) -> OracleWidgetEntry {
-    OracleWidgetEntry(date: .now, answer: "A favorable turn", updatedAt: .now)
+    OracleWidgetEntry(date: .now, answer: nil, updatedAt: nil, isWelcomeCompleted: false)
   }
 
   func getSnapshot(in context: Context, completion: @escaping (OracleWidgetEntry) -> Void) {
@@ -23,9 +25,11 @@ struct OracleWidgetTimelineProvider: TimelineProvider {
 
   private func currentEntry() -> OracleWidgetEntry {
     let defaults = OracleWidgetSharedState.defaults
+    let isWelcomeCompleted = OracleWidgetAccess.isAllowed(in: defaults)
     return OracleWidgetEntry(
       date: .now,
-      answer: defaults?.string(forKey: OracleWidgetSharedState.answerKey),
-      updatedAt: defaults?.object(forKey: OracleWidgetSharedState.updatedAtKey) as? Date)
+      answer: isWelcomeCompleted ? defaults?.string(forKey: OracleWidgetSharedState.answerKey) : nil,
+      updatedAt: isWelcomeCompleted ? defaults?.object(forKey: OracleWidgetSharedState.updatedAtKey) as? Date : nil,
+      isWelcomeCompleted: isWelcomeCompleted)
   }
 }

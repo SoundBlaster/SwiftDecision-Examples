@@ -1,0 +1,16 @@
+(()=>{const langs=["en","ru"];
+const buttons=document.querySelectorAll(".language a");
+function render(lang){document.documentElement.lang=lang;
+document.querySelectorAll("[data-language]").forEach(e=>e.hidden=e.dataset.language!==lang);
+document.querySelectorAll("[data-en][data-ru]").forEach(e=>e.textContent=e.dataset[lang]);
+document.querySelectorAll("[data-alt-en][data-alt-ru]").forEach(e=>e.alt=e.dataset[lang==="ru"?"altRu":"altEn"]);
+buttons.forEach(e=>e.setAttribute("aria-current",e.lang===lang?"true":"false"));
+document.querySelectorAll("a[data-internal]").forEach(e=>{const u=new URL(e.href);
+u.searchParams.set("lang",lang);
+e.href=u.toString()})}const selected=new URLSearchParams(location.search).get("lang");
+render(langs.includes(selected)?selected:"en");
+buttons.forEach(e=>e.addEventListener("click",event=>{event.preventDefault();
+const u=new URL(location.href);
+u.searchParams.set("lang",e.lang);
+history.replaceState(null,"",u);
+render(e.lang)}))})();

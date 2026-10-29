@@ -4,9 +4,11 @@ import UIKit
 import OracleGame
 import OracleHistory
 import NestedA11yIDs
+import WidgetKit
 
 /// The launch-time flag never swaps a live renderer during an answer.
 struct OraclePage: View {
+  @AppStorage("oracle.welcome.completed.v1") private var hasCompletedWelcome = false
   @State private var model: OraclePageModel
   @State private var usesDuoPilot: Bool
 
@@ -25,16 +27,34 @@ struct OraclePage: View {
   }
 
   var body: some View {
-    if usesDuoPilot {
-      OraclePilotPage(model: model)
-    } else {
-      OracleLegacyPage(model: model)
+    Group {
+      if usesDuoPilot {
+        OraclePilotPage(model: model)
+      } else {
+        OracleLegacyPage(model: model)
+      }
+    }
+    .alert("Safety first", isPresented: $model.showsSafetyIntervention) {
+      Button("OK", role: .cancel) {}
+    } message: {
+      Text("This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service.")
+    }
+    .fullScreenCover(isPresented: Binding(
+      get: { !hasCompletedWelcome },
+      set: { _ in })) {
+      OracleWelcomeView(model: model) {
+        hasCompletedWelcome = true
+        OracleWidgetAccess.synchronize(from: .standard, to: UserDefaults(suiteName: OracleWidgetAccess.suiteName))
+        WidgetCenter.shared.reloadTimelines(ofKind: "com.soundblaster.oracleball.instant-prediction")
+      }
+      .interactiveDismissDisabled()
     }
   }
 }
 
 private struct OracleLegacyPage: View {
   @Environment(\.scenePhase) private var scenePhase
+  @AppStorage("oracle.welcome.completed.v1") private var hasCompletedWelcome = false
   @State private var model: OraclePageModel
   @State private var isShowingInfo = false
   @State private var shouldFocusQuestionAfterInfoDismissal = false
@@ -218,6 +238,7 @@ private struct OracleLegacyPage: View {
     }
     .onOpenURL { url in
       guard url.scheme == "oracleball", url.host == "random" else { return }
+      guard hasCompletedWelcome else { return }
       model.handleWidgetPrediction()
       if isShowingInfo {
         shouldFocusQuestionAfterInfoDismissal = true
@@ -374,6 +395,7 @@ struct OracleInfoSheet: View {
       OracleInferenceSettings(model: inferenceModel) {
         isShowingInstallationLog = true
       }
+      #if DEBUG && ORACLE_JEV
       Section {
         VStack(alignment: .leading, spacing: selectedDetent == .large ? 16 : 8) {
           HStack {
@@ -461,6 +483,7 @@ struct OracleInfoSheet: View {
         .listRowSeparator(.hidden)
       }
       .textCase(nil)
+      #endif
 
       if selectedDetent == .large {
         Section {

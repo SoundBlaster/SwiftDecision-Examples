@@ -38,14 +38,15 @@ public struct OracleInferencePreferences {
   }
 
   /// Migrates existing Jev/offline installations; archived or disabled providers stay offline.
-  public func provider(hasJevKey: Bool, supportsGLiNER: Bool) -> OracleInferenceProvider {
+  public func provider(hasJevKey: Bool, supportsGLiNER: Bool, supportsJev: Bool = true) -> OracleInferenceProvider {
     let selection: OracleInferenceProvider
     if let raw = defaults.string(forKey: providerKey) {
       selection = OracleInferenceProvider(rawValue: raw) ?? .none
     } else {
       selection = hasJevKey ? .jev : .none
     }
-    let resolved = selection == .gliner && !supportsGLiNER ? .none : selection
+    let unavailable = (selection == .gliner && !supportsGLiNER) || (selection == .jev && !supportsJev)
+    let resolved: OracleInferenceProvider = unavailable ? .none : selection
     select(resolved)
     return resolved
   }

@@ -4,7 +4,7 @@ Small applications that demonstrate model decisions composed with `Specification
 
 ## OracleBallApp
 
-Oracle is a free reference app for SwiftDecision and SwiftJev, with domain policies built on SpecificationCore. See the [product roadmap](DOCS/ORACLE_PRODUCT_ROADMAP.md) and [v1 release readiness](DOCS/ORACLE_V1_RELEASE_READINESS.md) for the first free release; optional paid customization is deferred.
+Oracle is a free reference app for SwiftDecision, with domain policies built on SpecificationCore. Jev integration is available in Debug builds only. See the [product roadmap](DOCS/ORACLE_PRODUCT_ROADMAP.md) and [v1 release readiness](DOCS/ORACLE_V1_RELEASE_READINESS.md) for the first free release; optional paid customization is deferred.
 
 OracleBallApp is an iOS 26 SwiftUI and RealityKit Magic 8 Ball rendering demo.
 It supports offline answer simulation and optional inference providers while
@@ -31,7 +31,7 @@ questions and traces as JSON or readable text. See
 [`DOCS/ORACLE_HISTORY_EXPORT.md`](DOCS/ORACLE_HISTORY_EXPORT.md) for the format,
 precision and backward-compatibility contract.
 
-GLiNER adds explicit **Jev / GLiNER small / None** provider selection. Oracle requests its separately provisioned model through Apple-Hosted Background Assets after an explicit install action; developer folder import remains available. No weights are bundled and local inference never falls back to a cloud provider. See [delivery setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
+Release builds offer **GLiNER small / None** provider selection. To opt into Jev during development, generate the separate Debug project with `xcodegen generate --spec project.oracle-jev-debug.yml` and use its Debug configuration. The standard project does not enable the OracleJev trait. Oracle requests its separately provisioned model through Apple-Hosted Background Assets after an explicit install action; developer folder import remains available. No weights are bundled and local inference never falls back to a cloud provider. See [delivery setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
 
 
 ## City Chain
@@ -63,7 +63,7 @@ let game = CityChainGame(decisions: DecisionEngine(backend: backend))
 
 `makeJev` performs configuration validation and does not send a request during initialization. Keep the API key outside source control and inject it from the app's development or deployment secret configuration. The existing SwiftUI app uses the offline backend until its `AppDependencies` is constructed with a live backend.
 
-OracleBallApp exposes the same opt-in path through `JevOracleBackend` while keeping
+In Debug builds OracleBallApp exposes the same opt-in path through `JevOracleBackend` while keeping
 the `OracleGameEngine` API unchanged:
 
 With the default `.automatic` mode, `OracleGameEngine` routes boolean questions
@@ -105,3 +105,20 @@ classification and answer generation using its existing engine. Network and HTTP
 classification comes from SwiftJev. The 2.5-second duration, cooldown, selected
 intent preservation, SpecificationCore fallback rule and UI lifecycle remain
 application policy.
+# Oracle String Catalog checks
+
+Initialize the pinned checker with `git submodule update --init
+tools/StringCatalogDoctor`, then run `make strings-check`. The config covers
+the Oracle app, widget and OracleGame catalogs in Russian; English is their
+source language. The explicit `scripts/oracle-strings-baseline.json` tracks
+known findings. After fixing an existing finding, run
+`python3 tools/StringCatalogDoctor/string_catalog_doctor --prune-baseline`
+and review the baseline change. Do not regenerate it to suppress regressions.
+
+Optionally enable the versioned pre-commit hook with `git config --local
+core.hooksPath .githooks`; Git configuration is shared among linked worktrees
+unless worktree-specific configuration is enabled. The hook checks staged
+catalogs, configuration and baseline using the staged, clean submodule revision.
+Stage changes to the hook, Makefile and .gitmodules before committing. This is
+a structural check, not a translation or UI review; plural completeness and
+all formatting constructs are outside its coverage.

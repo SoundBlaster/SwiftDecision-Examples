@@ -33,6 +33,10 @@ playground.xcworkspace
 .swiftpm/
 .asc/metadata/review/
 
+# Locally authored Oracle safety dictionary and its packed app resource.
+/private/OracleSafetyLexicon.json
+/Sources/OracleGame/Resources/OracleSafetyLexicon.private.bin
+
 # CocoaPods
 #
 # We recommend against adding the Pods directory to your .gitignore. However

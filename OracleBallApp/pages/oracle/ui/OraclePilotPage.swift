@@ -7,6 +7,7 @@ import UIKit
 
 /// Pilot composition keeps the scene and composer at stable structural positions.
 struct OraclePilotPage: View {
+  @AppStorage("oracle.welcome.completed.v1") private var hasCompletedWelcome = false
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @Environment(\.scenePhase) private var scenePhase
@@ -187,6 +188,7 @@ struct OraclePilotPage: View {
     }
     .onOpenURL { url in
       guard url.scheme == "oracleball", url.host == "random" else { return }
+      guard hasCompletedWelcome else { return }
       model.handleWidgetPrediction()
       let wasShowingHistory = selectedHistoryEntry != nil
       selectedHistoryEntry = nil

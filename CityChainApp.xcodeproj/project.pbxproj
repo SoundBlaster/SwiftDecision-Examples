@@ -29,6 +29,7 @@
 		2B35EB3F221E57F5A8B6DDEF /* CityChainScoutMapUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 312337C1A45C700A37313663 /* CityChainScoutMapUITests.swift */; };
 		2CCEE2308AE20D4D17F0FDFB /* AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A67E1F11F5D3410963D22099 /* AppDependencies.swift */; };
 		2D0F7D6CD3818F07344C8A38 /* OracleBallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9E8AA3D45A8DA72E5C9C6AE /* OracleBallApp.swift */; };
+		2E148A73EF3F9D99D4B80CE1 /* OracleWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C42FC4C253A67385FB7F325A /* OracleWelcomeView.swift */; };
 		33F3AA614B0AA0C50B6B26E9 /* OracleWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = ACDC26693EFD67FE407BDC53 /* OracleWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		48C4C4E3A605725A5B907DF4 /* CityChainGame in Frameworks */ = {isa = PBXBuildFile; productRef = BCFC25CE5B72400FF274C46C /* CityChainGame */; };
 		4C42B82A0ED1932D32802E9A /* CityAtlasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 919366754759C2FA21BEC342 /* CityAtlasView.swift */; };
@@ -53,6 +54,7 @@
 		87B4B7B9F11F79B15A07712E /* OracleHostedModelDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39D566EE0097EAFB3569A05B /* OracleHostedModelDownloader.swift */; };
 		87BF65EE99D6ACD07F95C3FE /* OracleAppPredictionWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFB09BAB95325736C5B21919 /* OracleAppPredictionWidget.swift */; };
 		88B94470AC44FFD8F0C04E9C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 87EE378652E67B4C681C7CEA /* LaunchScreen.storyboard */; };
+		899EAD0A140F9A839201F761 /* OracleWelcomeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07963095416E4377B286439D /* OracleWelcomeUITests.swift */; };
 		984555AD6DFED2631EFF285C /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A81CA36897223D0124FDDFE5 /* Localizable.xcstrings */; };
 		9AD97E3CBCC1F59D2BCF1BDD /* OracleGame in Frameworks */ = {isa = PBXBuildFile; productRef = B526B27F616260884223ACF6 /* OracleGame */; };
 		9FBEEA3B784DB2B700A82822 /* NestedA11yIDs in Frameworks */ = {isa = PBXBuildFile; productRef = A80462350E333E838A687772 /* NestedA11yIDs */; };
@@ -147,12 +149,12 @@
 
 /* Begin PBXFileReference section */
 		00A74CBD7C2E32A5A6D5FAED /* OracleWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleWidgetsBundle.swift; sourceTree = "<group>"; };
+		07963095416E4377B286439D /* OracleWelcomeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleWelcomeUITests.swift; sourceTree = "<group>"; };
 		08F11375CD8728D3A558D4B7 /* OracleHistoryExportMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleHistoryExportMenu.swift; sourceTree = "<group>"; };
 		1298BCF7A4C481829D00DD0D /* OracleBallViewport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleBallViewport.swift; sourceTree = "<group>"; };
 		15519B2D3913C91241F53B9E /* OracleWindow.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = OracleWindow.metal; sourceTree = "<group>"; };
 		159F12FD9C4CCDFACAF355AB /* CityChainAppUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CityChainAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		173D0B5C45B582AFDB6217F4 /* OracleMaterials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMaterials.swift; sourceTree = "<group>"; };
-		1837C0086090A683556A031F /* SwiftDecision-Examples-oracle-pilot */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "SwiftDecision-Examples-oracle-pilot"; path = .; sourceTree = SOURCE_ROOT; };
 		189A2400EF9C0600C7420458 /* OracleCredentialsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleCredentialsStore.swift; sourceTree = "<group>"; };
 		2083F00EA6DAE97338B46E3A /* OracleMotionComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionComponent.swift; sourceTree = "<group>"; };
 		25EEF5E55A5683493177C464 /* us-states-2024.geojson */ = {isa = PBXFileReference; path = "us-states-2024.geojson"; sourceTree = "<group>"; };
@@ -190,6 +192,7 @@
 		8CAD9C413344AF26731F5A83 /* CityChainPageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityChainPageModel.swift; sourceTree = "<group>"; };
 		911A170638EF56C6D38F8199 /* OracleModeSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleModeSelector.swift; sourceTree = "<group>"; };
 		919366754759C2FA21BEC342 /* CityAtlasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityAtlasView.swift; sourceTree = "<group>"; };
+		1837C0086090A683556A031F /* SwiftDecision-Examples-oracle-pilot */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "SwiftDecision-Examples-oracle-pilot"; path = .; sourceTree = SOURCE_ROOT; };
 		93A1AE4194E83ECDCE129A0C /* AskOracleField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AskOracleField.swift; sourceTree = "<group>"; };
 		9494B890BFBDF6BFF85A115D /* Scout.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Scout.xcassets; sourceTree = "<group>"; };
 		94EC648DF9878086C3FDFAEB /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -210,6 +213,7 @@
 		BCB7FC53B3F1BD79B3963ABE /* OracleFieldComponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleFieldComponent.swift; sourceTree = "<group>"; };
 		BD88EDB4A07A20B61CED052A /* OracleLighting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleLighting.swift; sourceTree = "<group>"; };
 		C12F66D65B6726987E960904 /* OracleRevealSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleRevealSystem.swift; sourceTree = "<group>"; };
+		C42FC4C253A67385FB7F325A /* OracleWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleWelcomeView.swift; sourceTree = "<group>"; };
 		C440A94AC7B3B70E4C383882 /* OraclePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePalette.swift; sourceTree = "<group>"; };
 		C5DB9C4B106F38C8876F4AE1 /* CityTurnFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityTurnFeedbackView.swift; sourceTree = "<group>"; };
 		D28DFCC17C6D03DE5A7A7D1A /* OracleMotionInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OracleMotionInput.swift; sourceTree = "<group>"; };
@@ -554,6 +558,7 @@
 				55A4C6BD24CF45CE45B11625 /* OraclePageModel.swift */,
 				2FAFD99DC820B14AC5F98E6C /* OraclePipelineDetailView.swift */,
 				74857CD9306FD4E60077AEED /* OraclePilotPage.swift */,
+				C42FC4C253A67385FB7F325A /* OracleWelcomeView.swift */,
 			);
 			path = ui;
 			sourceTree = "<group>";
@@ -690,6 +695,7 @@
 			isa = PBXGroup;
 			children = (
 				4C1ABCEFDF8B508F160F6631 /* OracleKeyboardDismissalUITests.swift */,
+				07963095416E4377B286439D /* OracleWelcomeUITests.swift */,
 			);
 			path = OracleBallAppUITests;
 			sourceTree = "<group>";
@@ -1044,6 +1050,7 @@
 				1E7947AE883BC2653A6DCA5F /* OracleRevealComponent.swift in Sources */,
 				D59B5FA5D6EDECEAF9F38A98 /* OracleRevealSystem.swift in Sources */,
 				50807669B747813DBC71B7FD /* OracleScene.swift in Sources */,
+				2E148A73EF3F9D99D4B80CE1 /* OracleWelcomeView.swift in Sources */,
 				28B49B28EE662B70EEE0AA13 /* OracleWindow.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1074,6 +1081,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0C413AFAC6BB64504225BC2A /* OracleKeyboardDismissalUITests.swift in Sources */,
+				899EAD0A140F9A839201F761 /* OracleWelcomeUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

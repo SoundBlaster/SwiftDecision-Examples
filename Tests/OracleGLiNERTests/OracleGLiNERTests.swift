@@ -11,6 +11,20 @@ private func fixtureBackend() -> OracleGLiNERBackend {
 }
 
 struct OracleGLiNERTests {
+  @Test func unavailableJevSelectionMigratesToOfflineWithoutUsingStoredKey() {
+    let name = "OracleGLiNERTests.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: name)!
+    defer { defaults.removePersistentDomain(forName: name) }
+    let preferences = OracleInferencePreferences(defaults: defaults)
+    preferences.select(.jev)
+    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true, supportsJev: false) == .none)
+    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true, supportsJev: true) == .none)
+    preferences.select(.jev)
+    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true, supportsJev: true) == .jev)
+    preferences.select(.gliner)
+    #expect(preferences.provider(hasJevKey: true, supportsGLiNER: true, supportsJev: false) == .gliner)
+  }
+
   @Test func localProviderDoesNotRequireLegacyPilotOptIn() {
     let name = "OracleGLiNERTests.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: name)!

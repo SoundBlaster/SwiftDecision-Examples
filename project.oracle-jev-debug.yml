@@ -1,0 +1,17 @@
+# Developer-only project. Do not use for Release or distribution archives.
+include:
+  - project.yml
+name: CityChainOracleJevDebug
+packages:
+  SwiftDecisionExamples:
+    path: .
+    traits: [OracleJev]
+targets:
+  OracleBallApp:
+    settings:
+      base:
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphoneos27.1*]": "$(inherited) ORACLE_HAS_RESERVED_REGIONS ORACLE_JEV"
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS[sdk=iphonesimulator27.1*]": "$(inherited) ORACLE_HAS_RESERVED_REGIONS ORACLE_JEV"
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) ORACLE_JEV"

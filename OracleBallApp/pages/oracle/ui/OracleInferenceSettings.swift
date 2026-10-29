@@ -13,7 +13,9 @@ struct OracleInferenceSettings: View {
   var body: some View {
     Section("Inference") {
       Picker("Provider", selection: Binding(get: { model.provider }, set: model.selectProvider)) {
+        #if DEBUG && ORACLE_JEV
         Text("Jev").tag(OracleInferenceProvider.jev)
+        #endif
         if model.supportsGLiNER {
           Text("GLiNER small").tag(OracleInferenceProvider.gliner)
         }
