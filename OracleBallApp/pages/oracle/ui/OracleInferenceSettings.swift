@@ -9,30 +9,82 @@ struct OracleInferenceSettings: View {
   let model: OraclePageModel
   let onShowInstallationLog: () -> Void
   @State private var isSelectingFolder = false
+  @State private var showsModelSetup = false
 
   var body: some View {
     Section("Inference") {
-      Picker("Provider", selection: Binding(get: { model.provider }, set: model.selectProvider)) {
-        #if DEBUG && ORACLE_JEV
-        Text("Jev").tag(OracleInferenceProvider.jev)
-        #endif
-        if model.supportsGLiNER {
-          Text("GLiNER small").tag(OracleInferenceProvider.gliner)
+      Button {
+        model.selectProvider(.none)
+        showsModelSetup = false
+      } label: {
+        HStack {
+          VStack(alignment: .leading, spacing: 3) {
+            Text("Offline simulation")
+            Text("Use the app without a local AI model.")
+              .font(.caption).foregroundStyle(.secondary)
+          }
+          Spacer()
+          if model.provider == .none { Image(systemName: "checkmark").foregroundStyle(.tint) }
         }
-        Text("None").tag(OracleInferenceProvider.none)
+        .contentShape(Rectangle())
       }
+      .buttonStyle(.plain)
       .disabled(model.isPreparingModel)
-      .accessibilityIdentifier("oracle.settings.provider")
-
-      Text(model.providerDescription)
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .accessibilityIdentifier("oracle.settings.provider-status")
+      .accessibilityIdentifier("oracle.settings.provider.none")
 
       if model.supportsGLiNER {
+        Button {
+          showsModelSetup = true
+          if model.isModelInstalled, model.provider != .gliner { model.selectProvider(.gliner) }
+        } label: {
+          HStack {
+            VStack(alignment: .leading, spacing: 3) {
+              Text("On-device AI")
+              Text(model.isModelInstalled ? "GLiNER small · Installed" : "GLiNER small · Not installed")
+                .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if model.provider == .gliner { Image(systemName: "checkmark").foregroundStyle(.tint) }
+            else { Image(systemName: "chevron.right").foregroundStyle(.secondary) }
+          }
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(model.isPreparingModel)
+        .accessibilityIdentifier("oracle.settings.provider.gliner")
+      }
+
+        #if DEBUG && ORACLE_JEV
+      Button("Jev") { model.selectProvider(.jev) }
+        .disabled(model.isPreparingModel)
+        #endif
+      if model.supportsGLiNER && (showsModelSetup || model.provider == .gliner || model.isPreparingModel || model.modelIssue != nil) {
+          if !model.isModelInstalled {
+            Text("Experimental English model. Questions are processed on this device. Download about 70 MB; the model uses about 87 MB of storage.")
+              .font(.caption).foregroundStyle(.secondary)
+            if model.isDownloadingModel || model.isPreparingModel {
+              OracleModelDownloadStatus(isDownloading: model.isDownloadingModel,
+                                        progress: model.modelDownloadProgress)
+                .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
+              if model.isDownloadingModel {
+                Button("Cancel download", action: model.cancelHostedModelInstallation)
+              }
+            } else {
+              Button(model.modelIssue == nil ? "Download model" : "Try again", action: model.installHostedGLiNERModel)
+                .accessibilityIdentifier("oracle.settings.gliner-install")
+            }
+          } else {
+          if model.isPreparingModel {
+            OracleModelDownloadStatus(isDownloading: model.isDownloadingModel,
+                                      progress: model.modelDownloadProgress)
+          }
+          if let issue = model.providerIssue {
+            Text(issue).font(.caption).foregroundStyle(.secondary)
+          }
           Text("Experimental English model. Questions stay on this device. Estimates are not calibrated probabilities.")
             .font(.caption)
             .foregroundStyle(.secondary)
+          DisclosureGroup("Advanced settings") {
           VStack(alignment: .leading, spacing: 8) {
             HStack {
               Text("GLiNER confidence threshold")
@@ -63,24 +115,10 @@ struct OracleInferenceSettings: View {
               .foregroundStyle(.secondary)
           }
           .disabled(model.isSubmitting || model.isPreparingModel)
-          Text(model.isModelInstalled ? "Local model installed" : "Local model not installed")
-            .font(.subheadline)
-            .accessibilityIdentifier("oracle.settings.gliner-model-status")
-          if model.isDownloadingModel || model.isPreparingModel {
-            OracleModelDownloadStatus(isDownloading: model.isDownloadingModel,
-                                      progress: model.modelDownloadProgress)
-              .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
-          }
-          if model.isDownloadingModel {
-            Button("Cancel download", action: model.cancelHostedModelInstallation)
-          }
-          if !model.isModelInstalled {
-            Button("Install local model", action: model.installHostedGLiNERModel)
+            Button("Remove local model", role: .destructive, action: model.removeGLiNERModel)
               .disabled(model.isPreparingModel)
-              .accessibilityIdentifier("oracle.settings.gliner-install")
-            Text("Download about 70 MB from Apple. About 87 MB is stored separately from the app. Inference stays on this device.")
-              .font(.caption)
-              .foregroundStyle(.secondary)
+              .accessibilityIdentifier("oracle.settings.gliner-remove")
+          }
           }
           Button(action: onShowInstallationLog) {
             Label("Model installation log", systemImage: "doc.text.magnifyingglass")
@@ -102,11 +140,6 @@ struct OracleInferenceSettings: View {
           Text("Choose the GLiNER small INT8 export folder in Files. About 87 MB is stored separately from the app and can be removed below.")
             .font(.caption)
             .foregroundStyle(.secondary)
-          }
-          if model.isModelInstalled {
-            Button("Remove local model", role: .destructive, action: model.removeGLiNERModel)
-              .disabled(model.isPreparingModel)
-              .accessibilityIdentifier("oracle.settings.gliner-remove")
           }
           if let issue = model.modelIssue {
             Text(issue)
