@@ -47,6 +47,7 @@ final class OraclePageModel {
   var terminalRequestID = 0
   var isSubmitting = false
   var statusMessage: String?
+  var showsSafetyIntervention = false
   private var requestTask: Task<Void, Never>?
 
   private(set) var provider: OracleInferenceProvider
@@ -388,7 +389,9 @@ final class OraclePageModel {
       localModelSelected: provider == .gliner,
       modelInstalled: isModelInstalled,
       preparingModel: isPreparingModel))
-    guard isRandomSimulation || usesMissingModelSimulation || (!isPreparingModel && providerIssue == nil) else {
+    let requiresSafetyIntervention = OracleQuestionSafetySpec().decide(question) != nil
+    guard requiresSafetyIntervention || isRandomSimulation || usesMissingModelSimulation
+      || (!isPreparingModel && providerIssue == nil) else {
       statusMessage = providerIssue ?? String(localized: "Loading local model…")
       return
     }
@@ -405,7 +408,7 @@ final class OraclePageModel {
       do {
         let tracedOutcome: OracleTracedOutcome
         if isRandomSimulation || usesMissingModelSimulation {
-          tracedOutcome = try await engine.randomAnswerWithTrace()
+          tracedOutcome = try await engine.randomAnswerWithTrace(for: request)
         } else {
           tracedOutcome = try await engine.answerWithTrace(for: request, capturingFailures: true)
         }
@@ -433,7 +436,7 @@ final class OraclePageModel {
           } else if answer.noulValue == true || answer.mode != .noul {
             self.haptics.play(.positiveResult)
           }
-        case let .abstained(reason):
+        case .abstained:
           if self.provider == .gliner {
             self.answer = OracleAnswer(mode: request.mode, displayText: String(localized: "Not enough\ninformation"),
                                        source: .model(identifier: "fastino/gliner2.5-small-v1"))
@@ -443,7 +446,19 @@ final class OraclePageModel {
             self.answerRequestID = requestID
           }
           self.terminalRequestID = self.provider == .gliner ? 0 : requestID
-          self.statusMessage = reason
+          self.statusMessage = String(localized: "Try rephrasing your question")
+        case let .safetyIntervention(category):
+          let needsContext = category == .ambiguousRisk
+          let filterUnavailable = category == .filterUnavailable
+          self.answer = OracleAnswer(mode: request.mode,
+                                     displayText: needsContext ? String(localized: "Not enough\ninformation")
+                                       : filterUnavailable ? String(localized: "Could not\nanswer") : "",
+                                     source: .offlineFixture)
+          self.answerRequestID = requestID
+          self.terminalRequestID = 0
+          self.statusMessage = needsContext ? String(localized: "Please add context")
+            : filterUnavailable ? String(localized: "Safety check unavailable") : String(localized: "Please seek support")
+          self.showsSafetyIntervention = !needsContext && !filterUnavailable
         }
         self.isSubmitting = false
       } catch is CancellationError {

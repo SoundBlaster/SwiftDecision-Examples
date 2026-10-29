@@ -14,7 +14,7 @@ struct GenerateInstantPredictionIntent: AppIntent {
     switch result.outcome {
     case let .accepted(value), let .fallback(value, _):
       answer = value
-    case .abstained:
+    case .abstained, .safetyIntervention:
       throw PredictionIntentError.noAnswer
     }
 
