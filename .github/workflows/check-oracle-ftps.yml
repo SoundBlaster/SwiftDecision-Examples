@@ -1,0 +1,81 @@
+name: Check Endless Answers FTPS access
+on:
+  push:
+    branches: [codex/oracle-ftps-check]
+    paths: [.github/workflows/check-oracle-ftps.yml]
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: FTP
+    env:
+      FTP_HOST: ${{ vars.FTP_HOST }}
+      FTP_PORT: ${{ vars.FTP_PORT }}
+      FTP_USER: ${{ vars.FTP_USER }}
+      FTP_REMOTE_ROOT: ${{ vars.FTP_REMOTE_ROOT }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+    steps:
+      - name: Check connection and target write access
+        shell: bash
+        run: |
+          python3 - <<'PYCODE'
+          import ftplib
+          import io
+          import os
+          import ssl
+          import sys
+          import urllib.request
+          import uuid
+
+          required = ('FTP_HOST', 'FTP_PORT', 'FTP_USER', 'FTP_REMOTE_ROOT', 'FTP_PASSWORD')
+          missing = [name for name in required if not os.environ.get(name)]
+          if missing:
+              sys.exit('Missing settings: ' + ', '.join(missing))
+          if os.environ['FTP_PORT'] != '21' or os.environ['FTP_REMOTE_ROOT'] != '/www/egormerkushev.ru/8ball':
+              sys.exit('Unexpected FTP port or destination.')
+          context = ssl.create_default_context()
+          context.verify_flags &= ~ssl.VERIFY_X509_PARTIAL_CHAIN
+          stage = 'certificate chain'
+          try:
+              url = 'https://secure.globalsign.com/cacert/gsgccr6alphasslca2025.crt'
+              with urllib.request.urlopen(url, timeout=20) as response:
+                  context.load_verify_locations(cadata=ssl.DER_cert_to_PEM_cert(response.read()))
+              ftp = ftplib.FTP_TLS(context=context, timeout=20)
+              stage = 'TLS connection'
+              ftp.connect(os.environ['FTP_HOST'], 21)
+              ftp.auth()
+              print('PASS: certificate chain and hostname verified.', flush=True)
+              stage = 'authentication'
+              ftp.login(os.environ['FTP_USER'], os.environ['FTP_PASSWORD'])
+              ftp.prot_p()
+              print('PASS: login and protected data channel.', flush=True)
+              stage = 'parent directory'
+              ftp.cwd('/www/egormerkushev.ru')
+              print('PASS: parent directory accessible.', flush=True)
+              names = ftp.nlst()
+              target_present = any(name.rstrip('/').split('/')[-1] == '8ball' for name in names)
+              if not target_present:
+                  stage = 'create target directory'
+                  ftp.mkd('8ball')
+                  print('Created target directory for the site.', flush=True)
+              stage = 'target directory'
+              ftp.cwd('8ball')
+              print('PASS: target directory accessible.', flush=True)
+              filename = '.oracle-ftps-check-' + uuid.uuid4().hex + '.txt'
+              content = b'Endless Answers FTPS write check\n'
+              stage = 'write test file'
+              ftp.storbinary('STOR ' + filename, io.BytesIO(content))
+              stage = 'read test file'
+              result = io.BytesIO()
+              ftp.retrbinary('RETR ' + filename, result.write)
+              if result.getvalue() != content:
+                  sys.exit('FAIL: test file contents differ; test file retained for inspection: ' + filename)
+              print('PASS: test file written and read back.', flush=True)
+              stage = 'remove own test file'
+              ftp.delete(filename)
+              print('PASS: test file removed. No site content was uploaded.', flush=True)
+              ftp.quit()
+          except (OSError, ftplib.Error) as error:
+              sys.exit('FAIL at ' + stage + ': ' + str(error))
+          PYCODE
