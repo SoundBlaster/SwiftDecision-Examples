@@ -1,5 +1,7 @@
 import RealityKit
 import SwiftUI
+import OracleHistory
+import WidgetKit
 #if DEBUG
 import OracleGLiNER
 #endif
@@ -12,6 +14,8 @@ struct OracleBallApp: App {
       UserDefaults.standard.removeObject(forKey: "oracle.welcome.completed.v1")
     }
     #endif
+    OracleWidgetAccess.synchronize(from: .standard, to: UserDefaults(suiteName: OracleWidgetAccess.suiteName))
+    WidgetCenter.shared.reloadTimelines(ofKind: "com.soundblaster.oracleball.instant-prediction")
     OracleRevealComponent.registerComponent()
     OracleMotionComponent.registerComponent()
     OracleFieldComponent.registerComponent()

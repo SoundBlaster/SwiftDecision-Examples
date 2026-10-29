@@ -48,7 +48,7 @@ private struct InstantPredictionWidgetView: View {
 
       Spacer(minLength: 0)
 
-      Text(entry.answer ?? "Ask the oracle")
+      Text(entry.isWelcomeCompleted ? (entry.answer ?? "Ask the oracle") : "Complete setup in the app")
         .font((isSmall ? Font.headline : Font.title2).weight(.semibold))
         .foregroundStyle(.white)
         .lineLimit(isSmall ? 2 : 3)
@@ -56,17 +56,25 @@ private struct InstantPredictionWidgetView: View {
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityAddTraits(.updatesFrequently)
 
-      Button(intent: GenerateInstantPredictionIntent()) {
-        Label(entry.answer == nil ? "Reveal" : "Ask again", systemImage: "arrow.clockwise")
-          .font((isSmall ? Font.caption : Font.subheadline).weight(.semibold))
-          .foregroundStyle(.white)
-          .lineLimit(1)
-          .minimumScaleFactor(0.75)
+      if entry.isWelcomeCompleted {
+        Button(intent: GenerateInstantPredictionIntent()) {
+          Label(entry.answer == nil ? "Reveal" : "Ask again", systemImage: "arrow.clockwise")
+            .font((isSmall ? Font.caption : Font.subheadline).weight(.semibold))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, isSmall ? 10 : 12)
+        .padding(.vertical, isSmall ? 6 : 8)
+        .background(.white.opacity(0.12), in: Capsule())
+      } else {
+        Link(destination: URL(string: "oracleball://random")!) {
+          Label("Open app", systemImage: "arrow.up.right")
+            .font((isSmall ? Font.caption : Font.subheadline).weight(.semibold))
+            .foregroundStyle(.white)
+        }
       }
-      .buttonStyle(.plain)
-      .padding(.horizontal, isSmall ? 10 : 12)
-      .padding(.vertical, isSmall ? 6 : 8)
-      .background(.white.opacity(0.12), in: Capsule())
     }
     .containerBackground(for: .widget) {
       LinearGradient(

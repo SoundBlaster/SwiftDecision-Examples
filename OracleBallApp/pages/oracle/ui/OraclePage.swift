@@ -4,6 +4,7 @@ import UIKit
 import OracleGame
 import OracleHistory
 import NestedA11yIDs
+import WidgetKit
 
 struct OraclePage: View {
   @Environment(\.scenePhase) private var scenePhase
@@ -184,7 +185,11 @@ struct OraclePage: View {
     .fullScreenCover(isPresented: Binding(
       get: { !hasCompletedWelcome },
       set: { _ in })) {
-      OracleWelcomeView(model: model) { hasCompletedWelcome = true }
+      OracleWelcomeView(model: model) {
+        hasCompletedWelcome = true
+        OracleWidgetAccess.synchronize(from: .standard, to: UserDefaults(suiteName: OracleWidgetAccess.suiteName))
+        WidgetCenter.shared.reloadTimelines(ofKind: "com.soundblaster.oracleball.instant-prediction")
+      }
         .interactiveDismissDisabled()
     }
     .sheet(isPresented: $isShowingInfo, onDismiss: focusQuestionAfterInfoDismissal) {
