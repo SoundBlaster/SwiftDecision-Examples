@@ -29,7 +29,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: afcadf29fbaf1acc3f4b33a4b7979cf26247c100
+          ref: f34ee825039c9f1f7dcefe1412fbd8b64b03182a
 
       - name: Validate deployment settings
         run: |
@@ -73,7 +73,6 @@ jobs:
           set net:max-retries 2
           set net:timeout 30
           lcd "$GITHUB_WORKSPACE/website/8ball"
-          mkdir -p "$FTP_REMOTE_ROOT"
           cd "$FTP_REMOTE_ROOT"
           mirror -R --verbose --exclude-glob .DS_Store . .
           bye
