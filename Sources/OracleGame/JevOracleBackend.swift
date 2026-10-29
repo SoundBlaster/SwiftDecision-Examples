@@ -1,4 +1,4 @@
-#if DEBUG
+#if DEBUG && ORACLE_JEV
 import Foundation
 import SwiftDecision
 import SwiftJev

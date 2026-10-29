@@ -351,7 +351,7 @@ private struct OracleInfoSheet: View {
       OracleInferenceSettings(model: inferenceModel) {
         isShowingInstallationLog = true
       }
-      #if DEBUG
+      #if DEBUG && ORACLE_JEV
       Section {
         VStack(alignment: .leading, spacing: selectedDetent == .large ? 16 : 8) {
           HStack {

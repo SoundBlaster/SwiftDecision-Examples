@@ -26,7 +26,7 @@ questions and traces as JSON or readable text. See
 [`DOCS/ORACLE_HISTORY_EXPORT.md`](DOCS/ORACLE_HISTORY_EXPORT.md) for the format,
 precision and backward-compatibility contract.
 
-Release builds offer **GLiNER small / None** provider selection; Debug builds also expose Jev. Oracle requests its separately provisioned model through Apple-Hosted Background Assets after an explicit install action; developer folder import remains available. No weights are bundled and local inference never falls back to a cloud provider. See [delivery setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
+Release builds offer **GLiNER small / None** provider selection. To opt into Jev during development, generate the separate Debug project with `xcodegen generate --spec project.oracle-jev-debug.yml` and use its Debug configuration. The standard project does not enable the OracleJev trait. Oracle requests its separately provisioned model through Apple-Hosted Background Assets after an explicit install action; developer folder import remains available. No weights are bundled and local inference never falls back to a cloud provider. See [delivery setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
 
 ## City Chain
 

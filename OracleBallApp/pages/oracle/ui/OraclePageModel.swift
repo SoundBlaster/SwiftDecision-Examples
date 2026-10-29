@@ -85,7 +85,7 @@ final class OraclePageModel {
       FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("OracleGLiNER/active", isDirectory: true), diagnostic: diagnostic)
     usesInjectedEngine = engine != nil
-    #if DEBUG
+    #if DEBUG && ORACLE_JEV
     let selectedProvider = preferences.provider(hasJevKey: credentialsStore.readAPIKey() != nil,
                                                supportsGLiNER: OracleGLiNERBackend.isSupportedBuild)
     #else
@@ -100,7 +100,7 @@ final class OraclePageModel {
       provider = .none
       return
     }
-    #if DEBUG
+    #if DEBUG && ORACLE_JEV
     if selectedProvider == .jev, let key = credentialsStore.readAPIKey(),
        let backend = try? JevOracleBackend(apiKey: key)
     {
@@ -117,7 +117,7 @@ final class OraclePageModel {
   }
 
   var configuredAPIKey: String {
-    #if DEBUG
+    #if DEBUG && ORACLE_JEV
     credentialsStore.readAPIKey() ?? ""
     #else
     ""
@@ -142,7 +142,7 @@ final class OraclePageModel {
 
   @discardableResult
   func saveAPIKey(_ input: String) -> Bool {
-    #if DEBUG
+    #if DEBUG && ORACLE_JEV
     let key = input.trimmingCharacters(in: .whitespacesAndNewlines)
 
     do {
@@ -190,7 +190,7 @@ final class OraclePageModel {
   func selectProvider(_ selection: OracleInferenceProvider) {
     guard !isPreparingModel else { return }
     guard selection != .gliner || supportsGLiNER else { return }
-    #if !DEBUG
+    #if !DEBUG || !ORACLE_JEV
     guard selection != .jev else { return }
     #endif
     cancelPendingSubmission()
@@ -209,7 +209,7 @@ final class OraclePageModel {
     switch selection {
     case .none: break
     case .jev:
-      #if DEBUG
+      #if DEBUG && ORACLE_JEV
       guard let key = credentialsStore.readAPIKey(), let backend = try? JevOracleBackend(apiKey: key) else {
         providerIssue = String(localized: "Add a Jev API key to use this provider.")
         return

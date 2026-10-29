@@ -302,7 +302,7 @@ final class OracleGameTests: XCTestCase {
     XCTAssertEqual(answer.source, .model(identifier: "jev-audit-model"))
   }
 
-  #if DEBUG
+  #if DEBUG && ORACLE_JEV
   func testJevAdapterUsesInjectedTransportWithoutLiveNetworking() async throws {
     let responseBody = try JSONSerialization.data(withJSONObject: [
       "model": "jev-fixture",

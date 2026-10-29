@@ -1,7 +1,7 @@
 import Foundation
 import SpecificationCore
 import SwiftDecision
-#if DEBUG
+#if DEBUG && ORACLE_JEV
 import SwiftJev
 #endif
 
@@ -52,7 +52,7 @@ enum OracleProviderFailure: Sendable, Equatable {
   }
 
   static func classify(_ error: any Error) -> Self {
-    #if DEBUG
+    #if DEBUG && ORACLE_JEV
     switch JevFailureClassifier.classify(error) {
     case .cancelled: .cancelled
     case .timedOut: .timedOut

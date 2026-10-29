@@ -17,7 +17,10 @@ let package = Package(
     .library(name: "OracleHistory", targets: ["OracleHistory"]),
     .library(name: "OracleGLiNER", targets: ["OracleGLiNER"]),
   ],
-  traits: [.trait(name: "GLiNER", description: "Enable the experimental local GLiNER provider.")],
+  traits: [
+    .trait(name: "GLiNER", description: "Enable the experimental local GLiNER provider."),
+    .trait(name: "OracleJev", description: "Enable Oracle's development-only Jev adapter."),
+  ],
   dependencies: [
     .package(
       url: "https://github.com/SoundBlaster/SwiftDecision.git",
@@ -44,13 +47,15 @@ let package = Package(
       dependencies: [
         .product(name: "SwiftDecision", package: "SwiftDecision"),
         .product(name: "SpecificationCore", package: "SpecificationCore"),
-        .product(name: "SwiftJev", package: "SwiftJev"),
+        .product(name: "SwiftJev", package: "SwiftJev", condition: .when(traits: ["OracleJev"])),
       ],
-      resources: [.process("Resources")]
+      resources: [.process("Resources")],
+      swiftSettings: [.define("ORACLE_JEV", .when(traits: ["OracleJev"]))]
     ),
     .testTarget(
       name: "OracleGameTests",
-      dependencies: ["OracleGame", .product(name: "SwiftJev", package: "SwiftJev")]
+      dependencies: ["OracleGame", .product(name: "SwiftJev", package: "SwiftJev")],
+      swiftSettings: [.define("ORACLE_JEV", .when(traits: ["OracleJev"]))]
     ),
     .target(
       name: "OracleHistory",
