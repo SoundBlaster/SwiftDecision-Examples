@@ -99,3 +99,20 @@ classification and answer generation using its existing engine. Network and HTTP
 classification comes from SwiftJev. The 2.5-second duration, cooldown, selected
 intent preservation, SpecificationCore fallback rule and UI lifecycle remain
 application policy.
+# Oracle String Catalog checks
+
+Initialize the pinned checker with `git submodule update --init
+tools/StringCatalogDoctor`, then run `make strings-check`. The config covers
+the Oracle app, widget and OracleGame catalogs in Russian; English is their
+source language. The explicit `scripts/oracle-strings-baseline.json` tracks
+known findings. After fixing an existing finding, run
+`python3 tools/StringCatalogDoctor/string_catalog_doctor --prune-baseline`
+and review the baseline change. Do not regenerate it to suppress regressions.
+
+Optionally enable the versioned pre-commit hook with `git config --local
+core.hooksPath .githooks`; Git configuration is shared among linked worktrees
+unless worktree-specific configuration is enabled. The hook checks staged
+catalogs, configuration and baseline using the staged, clean submodule revision.
+Stage changes to the hook, Makefile and .gitmodules before committing. This is
+a structural check, not a translation or UI review; plural completeness and
+all formatting constructs are outside its coverage.

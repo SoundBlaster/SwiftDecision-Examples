@@ -6,12 +6,15 @@ ASC_METADATA_DIR ?= ./metadata
 ASC_REVIEW_DIR ?= ./.asc/metadata/review
 
 .DEFAULT_GOAL := help
-.PHONY: help asc-auth asc-status asc-builds asc-review-doctor asc-validate \
+.PHONY: help strings-check asc-auth asc-status asc-builds asc-review-doctor asc-validate \
 	asc-metadata-validate asc-metadata-plan _require-asc-app _require-asc-version
 
 help: ## Show available App Store Connect shortcuts.
 	@grep -E '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*## "}; {printf "%-24s %s\n", $$1, $$2}'
+
+strings-check: ## Check Oracle String Catalogs for localization regressions.
+	@python3 tools/StringCatalogDoctor/string_catalog_doctor --root '$(CURDIR)' $(if $(filter 1,$(STRINGS_CHECK_STAGED)),--staged,)
 
 _require-asc-app:
 	@test -n "$(ASC_APP)" || { echo "Set ASC_APP to the App Store Connect app ID, bundle ID, or exact app name." >&2; exit 2; }

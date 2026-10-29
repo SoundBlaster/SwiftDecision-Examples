@@ -1,0 +1,3 @@
+[submodule "tools/StringCatalogDoctor"]
+	path = tools/StringCatalogDoctor
+	url = https://github.com/SoundBlaster/StringCatalogDoctor
