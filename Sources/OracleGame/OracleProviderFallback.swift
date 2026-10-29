@@ -1,7 +1,9 @@
 import Foundation
 import SpecificationCore
 import SwiftDecision
+#if DEBUG && ORACLE_JEV
 import SwiftJev
+#endif
 
 enum OracleProviderFailure: Sendable, Equatable {
   case cancelled
@@ -50,7 +52,26 @@ enum OracleProviderFailure: Sendable, Equatable {
   }
 
   static func classify(_ error: any Error) -> Self {
-    switch JevFailureClassifier.classify(error) {
+    #if DEBUG && ORACLE_JEV
+    let category = JevFailureClassifier.classify(error)
+    #else
+    let engineCategory = DecisionFailureCategory.classify(error)
+    let category: DecisionFailureCategory
+    if engineCategory != .permanent {
+      category = engineCategory
+    } else if let urlError = error as? URLError {
+      switch urlError.code {
+      case .cancelled: category = .cancelled
+      case .timedOut: category = .timedOut
+      case .cannotFindHost, .cannotConnectToHost, .networkConnectionLost,
+           .dnsLookupFailed, .notConnectedToInternet: category = .transport
+      default: category = .permanent
+      }
+    } else {
+      category = .permanent
+    }
+    #endif
+    return switch category {
     case .cancelled: .cancelled
     case .timedOut: .timedOut
     case .transport: .transport

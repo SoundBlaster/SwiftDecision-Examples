@@ -36,5 +36,20 @@ jobs:
           CODE_SIGNING_ALLOWED=NO
       - name: Test the game engine
         run: swift test
+      - name: Test the development Jev adapter
+        run: swift test --traits OracleJev
       - name: Test the optional local inference adapter without model downloads
         run: swift test --traits GLiNER --triple arm64-apple-macosx14.0
+      - name: Build Oracle Release and check for Jev
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -skipMacroValidation -project CityChainApp.xcodeproj \
+            -scheme OracleBallApp -configuration Release \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/oracle-release" build CODE_SIGNING_ALLOWED=NO
+          binary="$RUNNER_TEMP/oracle-release/Build/Products/Release-iphonesimulator/OracleBallApp.app/OracleBallApp"
+          if strings "$binary" | grep -E 'JevDecisionBackend|JevOracleBackend|api\.typesafe\.ai'; then
+            echo 'Unexpected Jev implementation in Oracle Release' >&2
+            exit 1
+          fi

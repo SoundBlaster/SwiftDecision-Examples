@@ -1,3 +1,4 @@
+#if DEBUG && ORACLE_JEV
 import Foundation
 import SwiftDecision
 import SwiftJev
@@ -36,3 +37,4 @@ public struct JevOracleBackend: OracleBackendMetadata {
     try await backend.predict(for: prompt)
   }
 }
+#endif
