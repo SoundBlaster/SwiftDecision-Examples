@@ -44,6 +44,7 @@
 		6D104DAA48F83FFA6EBAD905 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 8A0159281E737744F28E5024 /* AppIcon.icon */; };
 		707B83D1BDF302B7B347FB89 /* OracleHistory in Frameworks */ = {isa = PBXBuildFile; productRef = E14F9F1E7EE4A975AA0F6EC8 /* OracleHistory */; };
 		73D9F4D9F66A8E7D19B64430 /* OracleWidgetTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC3AE3527A1B74DEFEB8C3B4 /* OracleWidgetTimeline.swift */; };
+		74857CDA306FD4E60077AEED /* OraclePilotPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74857CD9306FD4E60077AEED /* OraclePilotPage.swift */; };
 		7D280D82F2F7E5DF67FEA291 /* OraclePage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */; };
 		7E48BF0C8BEBFA45D50857C0 /* us-states-2024.geojson in Resources */ = {isa = PBXBuildFile; fileRef = 25EEF5E55A5683493177C464 /* us-states-2024.geojson */; };
 		818CC5BF2122B610B6BBCC9D /* Scout.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9494B890BFBDF6BFF85A115D /* Scout.xcassets */; };
@@ -179,6 +180,7 @@
 		632F2811B6281ED49A08F2E4 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePage.swift; sourceTree = "<group>"; };
 		6B9F7144567D17541E66E983 /* InstantPredictionWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantPredictionWidget.swift; sourceTree = "<group>"; };
+		74857CD9306FD4E60077AEED /* OraclePilotPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OraclePilotPage.swift; sourceTree = "<group>"; };
 		7D2B12290F6ADAE2F1B1DBB2 /* CityChainApp.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CityChainApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D4B8D25E590F0131F861038 /* state-facts-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "state-facts-v1.json"; sourceTree = "<group>"; };
 		7DC241046DDA54C8B95AF4BB /* RouteJourneyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteJourneyCard.swift; sourceTree = "<group>"; };
@@ -555,6 +557,7 @@
 				68F74D03A6B2BFC5B062E4D3 /* OraclePage.swift */,
 				55A4C6BD24CF45CE45B11625 /* OraclePageModel.swift */,
 				2FAFD99DC820B14AC5F98E6C /* OraclePipelineDetailView.swift */,
+				74857CD9306FD4E60077AEED /* OraclePilotPage.swift */,
 				C42FC4C253A67385FB7F325A /* OracleWelcomeView.swift */,
 			);
 			path = ui;
@@ -1027,6 +1030,7 @@
 				C428D200A15D0227F94E7C98 /* OracleField.metal in Sources */,
 				C660E0BCF93CFFEAC6ED29E0 /* OracleField.swift in Sources */,
 				C5CBA2C9D15B3CECA29148AF /* OracleFieldComponent.swift in Sources */,
+				74857CDA306FD4E60077AEED /* OraclePilotPage.swift in Sources */,
 				1A1ED4733AC5023DF7F56DD1 /* OracleFieldMesh.swift in Sources */,
 				248C23E9ABDAFA82B6D469EB /* OracleFieldSystem.swift in Sources */,
 				0F14080BDB66721C03229982 /* OracleHaptics.swift in Sources */,

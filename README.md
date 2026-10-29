@@ -21,12 +21,18 @@ an iOS 26+ simulator or device. Use the arrow to replay; the engine infers
 whether the question needs a Noul, Choice, or Score answer. No API key is needed
 for the offline fixture.
 
+The [Duo layout pilot](DOCS/ORACLE_DUO_LAYOUT_PILOT.md) adds adaptive single-pane,
+expanded, book, and tabletop arrangements selected by SpecificationCore. It is
+enabled by default on iOS 27.1 and later. Set `ORACLE_DUO_LAYOUT_PILOT=0` in the
+OracleBallApp scheme to use the legacy layout.
+
 Use the share button in History or an entry's Decision pipeline to export saved
 questions and traces as JSON or readable text. See
 [`DOCS/ORACLE_HISTORY_EXPORT.md`](DOCS/ORACLE_HISTORY_EXPORT.md) for the format,
 precision and backward-compatibility contract.
 
 Release builds offer **GLiNER small / None** provider selection. To opt into Jev during development, generate the separate Debug project with `xcodegen generate --spec project.oracle-jev-debug.yml` and use its Debug configuration. The standard project does not enable the OracleJev trait. Oracle requests its separately provisioned model through Apple-Hosted Background Assets after an explicit install action; developer folder import remains available. No weights are bundled and local inference never falls back to a cloud provider. See [delivery setup and validation notes](DOCS/EXPERIMENTS/GLINER_ORACLE_PILOT.md).
+
 
 ## City Chain
 

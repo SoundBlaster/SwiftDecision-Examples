@@ -6,7 +6,53 @@ import OracleHistory
 import NestedA11yIDs
 import WidgetKit
 
+/// The launch-time flag never swaps a live renderer during an answer.
 struct OraclePage: View {
+  @AppStorage("oracle.welcome.completed.v1") private var hasCompletedWelcome = false
+  @State private var model: OraclePageModel
+  @State private var usesDuoPilot: Bool
+
+  init(model: OraclePageModel = OraclePageModel()) {
+    _model = State(initialValue: model)
+    let environment = ProcessInfo.processInfo.environment["ORACLE_DUO_LAYOUT_PILOT"]
+    let override = environment.map { $0 == "1" || $0.lowercased() == "true" }
+      ?? (UserDefaults.standard.object(forKey: "oracleDuoLayoutPilot") as? Bool)
+    if let override {
+      _usesDuoPilot = State(initialValue: override)
+    } else if #available(iOS 27.1, *) {
+      _usesDuoPilot = State(initialValue: true)
+    } else {
+      _usesDuoPilot = State(initialValue: false)
+    }
+  }
+
+  var body: some View {
+    Group {
+      if usesDuoPilot {
+        OraclePilotPage(model: model)
+      } else {
+        OracleLegacyPage(model: model)
+      }
+    }
+    .alert("Safety first", isPresented: $model.showsSafetyIntervention) {
+      Button("OK", role: .cancel) {}
+    } message: {
+      Text("This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service.")
+    }
+    .fullScreenCover(isPresented: Binding(
+      get: { !hasCompletedWelcome },
+      set: { _ in })) {
+      OracleWelcomeView(model: model) {
+        hasCompletedWelcome = true
+        OracleWidgetAccess.synchronize(from: .standard, to: UserDefaults(suiteName: OracleWidgetAccess.suiteName))
+        WidgetCenter.shared.reloadTimelines(ofKind: "com.soundblaster.oracleball.instant-prediction")
+      }
+      .interactiveDismissDisabled()
+    }
+  }
+}
+
+private struct OracleLegacyPage: View {
   @Environment(\.scenePhase) private var scenePhase
   @AppStorage("oracle.welcome.completed.v1") private var hasCompletedWelcome = false
   @State private var model: OraclePageModel
@@ -176,22 +222,7 @@ struct OraclePage: View {
     }
     .a11yRoot("oracle")
     .preferredColorScheme(.dark)
-    .alert("Safety first", isPresented: $model.showsSafetyIntervention) {
-      Button("OK", role: .cancel) {}
-    } message: {
-      Text("This question needs human support, not a prediction. If anyone is in immediate danger, contact local emergency services. Reach out to someone you trust or a qualified crisis support service.")
-    }
     .task { await model.prepareProvider() }
-    .fullScreenCover(isPresented: Binding(
-      get: { !hasCompletedWelcome },
-      set: { _ in })) {
-      OracleWelcomeView(model: model) {
-        hasCompletedWelcome = true
-        OracleWidgetAccess.synchronize(from: .standard, to: UserDefaults(suiteName: OracleWidgetAccess.suiteName))
-        WidgetCenter.shared.reloadTimelines(ofKind: "com.soundblaster.oracleball.instant-prediction")
-      }
-        .interactiveDismissDisabled()
-    }
     .sheet(isPresented: $isShowingInfo, onDismiss: focusQuestionAfterInfoDismissal) {
       OracleInfoSheet(
         apiKey: model.configuredAPIKey,
@@ -259,7 +290,7 @@ struct OraclePage: View {
 
 }
 
-private struct OracleHeader: View {
+struct OracleHeader: View {
   let onInfo: () -> Void
   @ScaledMetric(relativeTo: .body) private var sparkSize: CGFloat = 16
   @ScaledMetric(relativeTo: .body) private var settingsButtonSize: CGFloat = 44
@@ -320,7 +351,7 @@ private struct OracleSpark: Shape {
   }
 }
 
-private struct OracleInfoSheet: View {
+struct OracleInfoSheet: View {
   @Environment(\.dismiss) private var dismiss
   @State private var apiKey: String
   @State private var isConfigured: Bool
@@ -592,7 +623,7 @@ private struct OracleInfoSheet: View {
   }
 }
 
-private struct OracleHistoryRow: View {
+struct OracleHistoryRow: View {
   let entry: OracleHistoryEntry
 
   var body: some View {

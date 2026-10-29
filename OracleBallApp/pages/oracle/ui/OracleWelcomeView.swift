@@ -45,19 +45,17 @@ struct OracleWelcomeView: View {
       .padding(.top, compact ? 24 : 90)
       .padding(.bottom, compact ? 12 : 24)
     }
-    .safeAreaInset(edge: .bottom, spacing: 0) { footer(showsBackground: true) }
+    .safeAreaInset(edge: .bottom, spacing: 0) { footer }
   }
 
-  private func footer(showsBackground: Bool) -> some View {
+  private var footer: some View {
     controls
       .frame(maxWidth: 460)
       .frame(maxWidth: .infinity)
       .padding(.horizontal, 28)
       .padding(.top, 14)
       .padding(.bottom, 12)
-      .background {
-        if showsBackground { Rectangle().fill(.regularMaterial) }
-      }
+      .background(Color(uiColor: .systemGroupedBackground))
   }
 
   @ViewBuilder private func pageHeader(compact: Bool) -> some View {
@@ -163,7 +161,7 @@ struct OracleWelcomeView: View {
             .padding(.horizontal, 28)
             .padding(.vertical, 16)
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) { footer(showsBackground: false) }
+        .safeAreaInset(edge: .bottom, spacing: 0) { footer }
         .frame(width: fold.after.width, height: fold.after.height)
         .clipped()
         .position(x: fold.after.midX, y: fold.after.midY)
